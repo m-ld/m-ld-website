@@ -1,0 +1,25 @@
+{
+  "tagline": "decentralised shared state",
+  "platforms": [
+    {
+      "name": "java",
+      "icon": "fab fa-java"
+    },
+    {
+      "name": "javascript",
+      "icon": "fab fa-js"
+    },
+    {
+      "name": "xamarin",
+      "icon": "fab fa-microsoft"
+    },
+    {
+      "name": "flutter",
+      "icon": "fab fa-google"
+    },
+    {
+      "name": "...",
+      "icon": "fas fa-edit"
+    }
+  ]
+}

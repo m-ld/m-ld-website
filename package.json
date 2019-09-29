@@ -3,10 +3,11 @@
   "version": "0.0.1",
   "description": "m-ld.org website",
   "scripts": {
-    "deploy": "npm run build && npm run postcss",
-    "build": "node-sass src/main.scss dist/main.css",
-    "postcss": "postcss --use autoprefixer --output dist/main.css dist/main.css",
-    "watch": "npm run build -- --watch"
+    "clean": "rm -rf public",
+    "build": "npm run build:dev && npm run postcss && npx eleventy",
+    "build:dev": "node-sass src/main.scss public/main.css",
+    "postcss": "postcss --use autoprefixer --output public/main.css public/main.css",
+    "watch": "npm run build:dev && npx eleventy --watch"
   },
   "repository": {
     "type": "git",

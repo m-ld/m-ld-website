@@ -18,27 +18,35 @@
       </div>
     </div>
   </section>
-  <section class="section">
+  <section id="intro" class="section">
     <div class="columns">
       <div class="column is-8-desktop is-offset-2-desktop">
-        <h1 class="title has-text-centered">{{snips.tagline}}</h1>
+        <h1 class="title has-text-centered">{{index.tagline}}</h1>
         <div class="content has-text-justified">
           {% include intro.html %}
         </div>
+        <div class="has-text-centered">
+          <a class="button is-info is-large">show me</a>
+        </div>
       </div>
     </div>
+  </section>
+  <section id="streams" class="section">
     <div class="columns has-text-centered">
       <div class="column">
         <a class="box" style="height: 100%">
           <h1 class="title is-4">architecture</h1>
-          <img src="narrative.svg#svgView(viewBox(360, 50, 400, 570))" width="100%" />
+          <img src="narrative.svg#svgView(viewBox(360, 50, 400, 570))" />
         </a>
       </div>
       <div class="column">
         <a class="box" style="height: 100%">
           <h1 class="title is-4">api</h1>
           <div class="content has-text-left">
-            <pre>{% include api-example.json %}</pre>
+            <pre>{% include api-example-1.json %}</pre>
+          </div>
+          <div class="content has-text-left">
+            <pre>{% include api-example-2.json %}</pre>
           </div>
         </a>
       </div>
@@ -46,41 +54,46 @@
         <div class="box" style="height: 100%">
           <h1 class="title is-4">platforms</h1>
           <div class="tile is-ancestor is-vertical buttons are-large">
+            {%- for platform in index.platforms -%}
             <div class="tile is-child">
               <a class="button tile is-child is-light">
-                <span class="icon"><i class="fab fa-java"></i></span>
-                <span>java</span>
+                <span class="icon"><i class="{{platform.icon}}"></i></span>
+                <span>{{platform.name}}</span>
               </a>
             </div>
-            <div class="tile is-child">
-              <a class="button tile is-child is-light">
-                <span class="icon"><i class="fab fa-js"></i></span>
-                <span>javascript</span>
-              </a>
-            </div>
-            <div class="tile is-child">
-              <a class="button tile is-child is-light">
-                <span class="icon"><i class="fab fa-microsoft"></i></span>
-                <span>xamarin</span>
-              </a>
-            </div>
-            <div class="tile is-child">
-              <a class="button tile is-child is-light">
-                <span class="icon"><i class="fab fa-google"></i></span>
-                <span>flutter</span>
-              </a>
-            </div>
-            <div class="tile is-child">
-              <a class="button tile is-child is-light">
-                <span class="icon"><i class="fas fa-edit"></i></span>
-                <span>...</span>
-              </a>
-            </div>
+            {%- endfor -%}
           </div>
         </div>
       </div>
     </div>
   </section>
+  <section id="faq" class="section">
+    <div class="columns">
+      <div class="column is-8-desktop is-offset-2-desktop">
+        <h1 class="title has-text-centered">frequently asked questions</h1>
+        {%- for faq in collections.faq -%}
+        <div class="content has-text-weight-bold is-medium">
+          {{ faq.data.question }}
+        </div>
+        <div class="content">
+          <blockquote>{{ faq.templateContent }}</blockquote>
+        </div>
+        {%- endfor -%}
+      </div>
+    </div>
+  </section>
+  <footer class="footer level">
+    <div class="level-left content">
+      <p>
+        <b>m-ld</b> source code licensed
+        <a href="http://opensource.org/licenses/mit-license.php">MIT</a>, website content
+        licensed <a href="http://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY NC SA 4.0</a>.
+      </p>
+    </div>
+    <div class="level-right is-large content">
+      <a href="https://github.com/gsvarovsky/m-ld"><i class="fab fa-github"></i></a>
+    </div>
+  </footer>
 </body>
 
 </html>
