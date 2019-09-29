@@ -7,7 +7,7 @@
     "build": "npm run build:dev && npm run postcss && npx eleventy",
     "build:dev": "node-sass src/main.scss public/main.css",
     "postcss": "postcss --use autoprefixer --output public/main.css public/main.css",
-    "watch": "npm run build:dev && npx eleventy --watch"
+    "dev": "npm run build:dev && npx eleventy --serve"
   },
   "repository": {
     "type": "git",

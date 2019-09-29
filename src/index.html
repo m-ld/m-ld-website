@@ -53,14 +53,12 @@
       <div class="column">
         <div class="box" style="height: 100%">
           <h1 class="title is-4">platforms</h1>
-          <div class="tile is-ancestor is-vertical buttons are-large">
+          <div class="buttons are-medium">
             {%- for platform in index.platforms -%}
-            <div class="tile is-child">
-              <a class="button tile is-child is-light">
-                <span class="icon"><i class="{{platform.icon}}"></i></span>
-                <span>{{platform.name}}</span>
-              </a>
-            </div>
+            <a class="button is-light is-fullwidth">
+              <span class="icon"><i class="{{platform.icon}}"></i></span>
+              <span>{{platform.name}}</span>
+            </a>
             {%- endfor -%}
           </div>
         </div>

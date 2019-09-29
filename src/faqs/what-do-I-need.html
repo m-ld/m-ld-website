@@ -4,6 +4,6 @@ question: To use m-ld, what do I need?
 ---
 <p><b>m-ld</b> is usually deployed embedded in your app so that access latency is zero. So, first you need a <a>distribution</a> of <b>m-ld</b> for your app's platform. Alternatively, you could use a clone deployed on a server (for example, using a <a>Docker microservice</a>).</p>
 
-<p>You also need an MQTT message broker. If you'd like to deploy your own, you could use <a href="https://mosquitto.org/">Eclipse Mosquitto</a>, but it might be better to use a cloud service. Note the <a>requirements for a message broker</a>.</p>
+<p>You also need a <a>supported message broker</a>. If you'd like to deploy your own, you could use <a href="https://mosquitto.org/">Eclipse Mosquitto</a>, but it might be better to use a cloud service. Note the <a>requirements for a message broker</a>.</p>
 
 <p>Finally, if your app requires data to be persisted after the last user has closed it, you will need a clone deployed on a server, which stores the data onto disk. A <a>Docker microservice</a> is ideal for this.</p>

@@ -1,0 +1,9 @@
+---
+tags: faq
+question: Is my data secure?
+---
+<p><b>m-ld</b> data can be secured <i>in motion</i> and <i>at rest</i>.</p>
+
+<p>In order for a clone to obtain and maintain the current app state, it must have access to the message broker. This means that the security of the data is dependent on the security of the message broker. This will typically comprise <a>authentication</a> of the user and <a>encryption</a> of the data on the wire.</p>
+
+<p>A clone may also allow the data to be encrypted when persisted to disk. Where this is supported it is specific to the clone <a>distribution</a>.</p>

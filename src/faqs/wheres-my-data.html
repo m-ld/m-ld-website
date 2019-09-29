@@ -2,10 +2,10 @@
 tags: faq
 question: Where is my data?
 ---
-<p>Logically, data belongs to a <i>domain</i>, which is a collection of clones that belong to it. A clone is identified by a domain name, like <code>example.m-ld.org</code>.</p>
-
-<p>The data is physically stored in the clone, which is typically embedded in the app that uses it. Different clone implementations may:</p><ul>
+<p>The data is physically stored locally to an app in a <i>clone</i>, which is typically embedded in the app via a library, or very close by in a local process. Different clone implementations may:</p><ul>
   <li>Keep the data in memory only</li>
   <li>Persist the data directly to disk</li>
   <li>Use some platform-specific local storage</li>
 </ul>
+
+<p>Logically, data belongs to a <i>domain</i>, which is a collection of clones that belong to it. An app could use one or more domains for different purposes.</p>
