@@ -1,0 +1,8 @@
+{
+  "@describe" : "?p",
+  "@where" : {
+    "@id" : "?p",
+    "@type" : "Person",
+    "name" : { "@contains" : "Fred" }
+  }
+}

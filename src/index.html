@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>m-ld</title>
+  <link rel="stylesheet" href="main.css">
+  <script src="https://kit.fontawesome.com/d6983a3220.js" crossorigin="anonymous"></script>
+</head>
+
+<body>
+  <section class="hero is-medium is-light">
+    <div class="hero-body">
+      <div class="container has-text-centered">
+        <img src="m-ld.svg" width="400em" />
+      </div>
+    </div>
+  </section>
+  <section class="section">
+    <div class="columns">
+      <div class="column is-8-desktop is-offset-2-desktop">
+        <h1 class="title has-text-centered">{{snips.tagline}}</h1>
+        <div class="content has-text-justified">
+          {% include intro.html %}
+        </div>
+      </div>
+    </div>
+    <div class="columns has-text-centered">
+      <div class="column">
+        <a class="box" style="height: 100%">
+          <h1 class="title is-4">architecture</h1>
+          <img src="narrative.svg#svgView(viewBox(360, 50, 400, 570))" width="100%" />
+        </a>
+      </div>
+      <div class="column">
+        <a class="box" style="height: 100%">
+          <h1 class="title is-4">api</h1>
+          <div class="content has-text-left">
+            <pre>{% include api-example.json %}</pre>
+          </div>
+        </a>
+      </div>
+      <div class="column">
+        <div class="box" style="height: 100%">
+          <h1 class="title is-4">platforms</h1>
+          <div class="tile is-ancestor is-vertical buttons are-large">
+            <div class="tile is-child">
+              <a class="button tile is-child is-light">
+                <span class="icon"><i class="fab fa-java"></i></span>
+                <span>java</span>
+              </a>
+            </div>
+            <div class="tile is-child">
+              <a class="button tile is-child is-light">
+                <span class="icon"><i class="fab fa-js"></i></span>
+                <span>javascript</span>
+              </a>
+            </div>
+            <div class="tile is-child">
+              <a class="button tile is-child is-light">
+                <span class="icon"><i class="fab fa-microsoft"></i></span>
+                <span>xamarin</span>
+              </a>
+            </div>
+            <div class="tile is-child">
+              <a class="button tile is-child is-light">
+                <span class="icon"><i class="fab fa-google"></i></span>
+                <span>flutter</span>
+              </a>
+            </div>
+            <div class="tile is-child">
+              <a class="button tile is-child is-light">
+                <span class="icon"><i class="fas fa-edit"></i></span>
+                <span>...</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</body>
+
+</html>

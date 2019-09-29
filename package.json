@@ -1,0 +1,28 @@
+{
+  "name": "m-ld-website",
+  "version": "0.0.1",
+  "description": "m-ld.org website",
+  "scripts": {
+    "deploy": "npm run build && npm run postcss",
+    "build": "node-sass src/main.scss dist/main.css",
+    "postcss": "postcss --use autoprefixer --output dist/main.css dist/main.css",
+    "watch": "npm run build -- --watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gsvarovsky/m-ld-website.git"
+  },
+  "author": "George Svarovsky <gsvarovsky@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/gsvarovsky/m-ld-website/issues"
+  },
+  "homepage": "https://github.com/gsvarovsky/m-ld-website#readme",
+  "devDependencies": {
+    "@11ty/eleventy": "^0.9.0",
+    "autoprefixer": "^9.6.1",
+    "bulma": "^0.7.5",
+    "node-sass": "^4.12.0",
+    "postcss-cli": "^6.1.3"
+  }
+}
