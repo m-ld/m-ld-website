@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>m-ld</title>
+  <link rel="stylesheet" href="/main.css">
+  <script src="https://kit.fontawesome.com/d6983a3220.js" crossorigin="anonymous"></script>
+  <script src="https://d3js.org/d3.v5.min.js"></script>
+</head>
+
+<body>
+  <svg id="page" viewBox="0 0 1920 1080" width="100%" height="100%">
+  </svg>
+  <script>
+    const MAGIC_DIV_SCALE = 10 / 9;
+    const data = [
+      { '@id': '12345678', text: 'Hello!', x: 200, y: 100 },
+      { '@id': '12445678', text: 'Well hello!', x: 300, y: 300 }
+    ];
+
+    const page = d3.select('#page');
+    window.onresize = () => page.attr('viewBox', `0 0 ${window.innerWidth} ${window.innerHeight}`);
+    window.onresize();
+
+    const messages = page.selectAll('.message').data(data, d => d ? d['@id'] : this.id);
+    const newMessages = messages.enter().select(function () {
+      page.node().insertAdjacentHTML('beforeend', `{% include message.html %}`);
+      return page.node().lastChild;
+    }).attr('id', d => d['@id']);
+    newMessages.select('.shape').attr('x', d => d.x).attr('y', d => d.y);
+    newMessages.select('.content > div').text(d => d.text).on('input', function (d) {
+      d.text = this.textContent;
+      sizeToContent.apply(this);
+    });
+    newMessages.each(sizeToContent);
+
+    function setAttr(selection, attrs) {
+      for (key in attrs)
+        selection.attr(key, attrs[key]);
+    }
+
+    function clientToSvg(x, y, node) {
+      var pt = page.node().createSVGPoint();
+      pt.x = x;
+      pt.y = y;
+      return pt.matrixTransform(node.getScreenCTM().inverse());
+    }
+
+    function messageParent(node) {
+      if (node)
+        return d3.select(node).classed('message') ? node : messageParent(node.parentElement)
+    }
+
+    function sizeToContent() {
+      const message = d3.select(messageParent(this)),
+        s = message.select('.shape'),
+        c = message.select('.content');
+      // Ensure the content is in the same position as the shape
+      setAttr(c, { x: s.attr('x'), y: s.attr('y') });
+      // Size the shape to the content
+      var { width, height } = c.select('div').node().getBoundingClientRect();
+      var { x: width, y: height } = clientToSvg(width, height, c.node());
+      setAttr(s, { width: width * MAGIC_DIV_SCALE, height });
+      setAttr(c, { width: width * MAGIC_DIV_SCALE, height });
+    }
+  </script>
+</body>
+
+</html>
