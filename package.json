@@ -4,10 +4,8 @@
   "description": "m-ld.org website",
   "scripts": {
     "clean": "rm -rf public",
-    "build": "npm run build:dev && npm run postcss && npx eleventy",
-    "build:dev": "node-sass src/main.scss public/main.css",
-    "postcss": "postcss --use autoprefixer --output public/main.css public/main.css",
-    "dev": "npm run build:dev && npx eleventy --serve"
+    "build": "npx eleventy",
+    "dev": "npx eleventy --serve"
   },
   "repository": {
     "type": "git",

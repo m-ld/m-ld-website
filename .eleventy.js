@@ -3,6 +3,6 @@ module.exports = function (eleventyConfig) {
 
     return {
         dir: { input: 'src', output: 'public' },
-        templateFormats: ['html', 'svg', 'md']
+        templateFormats: ['html', 'svg', 'md', '11ty.js']
     }
 }
