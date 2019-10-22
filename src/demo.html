@@ -10,9 +10,8 @@
   <script src="https://d3js.org/d3.v5.min.js"></script>
 </head>
 
-<body>
-  <svg id="page" viewBox="0 0 1920 1080" width="100%" height="100%">
-  </svg>
+<body style="overflow: hidden;">
+  <svg id="page"></svg>
   <script>
     const MAGIC_DIV_SCALE = 10 / 9;
     const data = [
@@ -21,8 +20,26 @@
     ];
 
     const page = d3.select('#page');
-    window.onresize = () => page.attr('viewBox', `0 0 ${window.innerWidth} ${window.innerHeight}`);
-    window.onresize();
+    window.addEventListener('resize', function () {
+      // Coerce the viewbox to the aspect ratio of the screen but keep the zoom
+      var [vBx, vBy, ,] = getViewBox(), width = window.innerWidth, height = window.innerHeight;
+      var [right, bottom] = clientToSvg(width, height);
+      setViewBox(vBx, vBy, right - vBx, bottom - vBy);
+      setAttr(page, { width, height });
+    });
+    // Set the initial zoom to zero
+    setViewBox(0, 0, window.innerWidth, window.innerHeight);
+    setAttr(page, { width : window.innerWidth, height : window.innerHeight });
+
+    page.on('wheel', function () {
+      var [mx, my] = clientToSvg(d3.event.clientX, d3.event.clientY);
+      // Scale the viewbox such that the mouse position is static
+      var [vBx, vBy, vBw, vBh] = getViewBox();
+      var px = (mx - vBx) / vBw, py = (my - vBy) / vBh, d = -d3.event.deltaY;
+      var p = vBw / vBh, dx = (p * d) / (1 + p), dy = d / (1 + p);
+      setViewBox(vBx - (px * dx), vBy - (py * dy), vBw + dx, vBh + dy);
+      d3.event.preventDefault();
+    });
 
     const messages = page.selectAll('.message').data(data, d => d ? d['@id'] : this.id);
     const newMessages = messages.enter().select(function () {
@@ -36,16 +53,26 @@
     });
     newMessages.each(sizeToContent);
 
+    function getViewBox() {
+      return page.attr('viewBox').split(/[\s,]+/).map(Number);
+    }
+
+    function setViewBox(x, y, width, height) {
+      if (width > 0 && height > 0)
+        page.attr('viewBox', [x, y, width, height].join(' '));
+    }
+
     function setAttr(selection, attrs) {
       for (key in attrs)
         selection.attr(key, attrs[key]);
     }
 
-    function clientToSvg(x, y, node) {
+    function clientToSvg(x, y) {
       var pt = page.node().createSVGPoint();
       pt.x = x;
       pt.y = y;
-      return pt.matrixTransform(node.getScreenCTM().inverse());
+      pt = pt.matrixTransform(page.node().getScreenCTM().inverse());
+      return [pt.x, pt.y];
     }
 
     function messageParent(node) {
@@ -60,10 +87,11 @@
       // Ensure the content is in the same position as the shape
       setAttr(c, { x: s.attr('x'), y: s.attr('y') });
       // Size the shape to the content
-      var { width, height } = c.select('div').node().getBoundingClientRect();
-      var { x: width, y: height } = clientToSvg(width, height, c.node());
-      setAttr(s, { width: width * MAGIC_DIV_SCALE, height });
-      setAttr(c, { width: width * MAGIC_DIV_SCALE, height });
+      var { left, top, right, bottom } = c.select('div').node().getBoundingClientRect();
+      var [left,  top] = clientToSvg(left, top), [right, bottom] = clientToSvg(right, bottom);
+      var width = (right - left) * MAGIC_DIV_SCALE, height = (bottom - top) * MAGIC_DIV_SCALE;
+      setAttr(s, { width, height });
+      setAttr(c, { width, height });
     }
   </script>
 </body>
