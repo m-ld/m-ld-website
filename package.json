@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "description": "m-ld.org website",
   "scripts": {
-    "clean": "rm -rf public",
+    "clean": "rm -rf _site",
     "build": "npx eleventy",
     "dev": "npx eleventy --serve"
   },
@@ -23,9 +23,11 @@
     "browserify": "^16.5.0",
     "bulma": "^0.7.5",
     "node-sass": "^4.12.0",
-    "postcss-cli": "^6.1.3"
+    "postcss-cli": "^6.1.3",
+    "tsify": "^4.0.1"
   },
   "dependencies": {
+    "@types/d3": "^5.7.2",
     "d3": "^5.12.0"
   }
 }
