@@ -11,7 +11,18 @@
 </head>
 
 <body style="overflow: hidden;">
-  <svg id="page"></svg>
+  <svg id="page">
+    <defs>
+      <g class="message" id="message-template">
+        <rect class="shape" rx="10" style="fill: lightgrey" />
+        <foreignObject class="content">
+          <div xmlns="http://www.w3.org/1999/xhtml" contenteditable="true"
+            style="display: inline-block; padding: 15px; white-space: nowrap">
+          </div>
+        </foreignObject>
+      </g>
+    </defs>
+  </svg>
 </body>
 
 </html>
