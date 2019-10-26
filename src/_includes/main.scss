@@ -1,3 +1,32 @@
 @charset "utf-8";
 
 @import "../../node_modules/bulma/bulma";
+
+$fa-font-path: "/webfonts";
+
+@import "../../node_modules/@fortawesome/fontawesome-free/scss/fontawesome.scss";
+@import "../../node_modules/@fortawesome/fontawesome-free/scss/brands.scss";
+@import "../../node_modules/@fortawesome/fontawesome-free/scss/solid.scss";
+
+.message-box {
+  fill: $light
+}
+
+.message-buttons {
+  visibility: hidden;
+}
+
+.message:hover .message-buttons {
+  visibility: visible;
+}
+
+.message-close {
+  fill: $danger
+}
+
+.message-buttons text {
+  @extend .fas;
+  fill: $white;
+  font-size: 20px;
+  pointer-events: none;
+}

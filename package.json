@@ -19,6 +19,7 @@
   "homepage": "https://github.com/gsvarovsky/m-ld-website#readme",
   "devDependencies": {
     "@11ty/eleventy": "^0.9.0",
+    "@fortawesome/fontawesome-free": "^5.11.2",
     "autoprefixer": "^9.6.1",
     "browserify": "^16.5.0",
     "bulma": "^0.7.5",

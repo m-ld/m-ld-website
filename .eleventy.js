@@ -1,5 +1,5 @@
 module.exports = function (eleventyConfig) {
-    eleventyConfig.addPassthroughCopy({ 'src/favicon': 'favicon' });
+    eleventyConfig.addPassthroughCopy({ 'node_modules/@fortawesome/fontawesome-free/webfonts': 'webfonts' });
 
     return {
         dir: { input: 'src' },
