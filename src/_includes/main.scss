@@ -24,9 +24,21 @@ $fa-font-path: "/webfonts";
   fill: $danger
 }
 
+.message-add {
+  fill: $success
+}
+
+.message-move {
+  fill: $warning
+}
+
+.message-code {
+  fill: $info
+}
+
 .message-buttons text {
   @extend .fas;
   fill: $white;
-  font-size: 20px;
   pointer-events: none;
+  font-size: 0.8em;
 }

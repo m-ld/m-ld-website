@@ -4,6 +4,7 @@ import { Message } from './Message';
 import { BoardView } from './BoardView';
 
 const MAGIC_DIV_SCALE: number = 10 / 9;
+const MIN_MESSAGE_WIDTH: number = 115; // Width of buttons + 20
 
 export class MessageView {
   private readonly group: d3.Selection<SVGGElement, Message, HTMLElement, unknown>;
@@ -19,11 +20,7 @@ export class MessageView {
   }
 
   public static sync(data: Message[], view: BoardView) {
-    const enter = view.page.selectAll('.message')
-      .data(data, function (this: Element, msg: Message) {
-        return msg ? msg['@id'] : this.id;
-      })
-      .enter()
+    const enter = MessageView.messages(view, data).enter()
       .select(() => view.append(<Element>MessageView.template().cloneNode(true)))
       .classed('message', true)
       .attr('id', msg => msg['@id'])
@@ -37,13 +34,25 @@ export class MessageView {
     enter.each(function (this: Element) {
       new MessageView(this).sizeToContent(view);
     });
+    enter.select('.message-close').on('click', function (this: Element) {
+      // TODO: Push removal to m-ld instead
+      d3.select(MessageView.messageParent(this)).remove();
+    });
+  }
+
+  private static messages(view: BoardView, data: Message[]) {
+    return view.page.selectAll('.message')
+      .data(data, function (this: Element, msg: Message) {
+        return msg ? msg['@id'] : this.id;
+      });
   }
 
   private sizeToContent(view: BoardView) {
     // Size the shape to the content
     var { left, top, right, bottom } = this.text.node().getBoundingClientRect();
     var [left, top] = view.clientToSvg(left, top), [right, bottom] = view.clientToSvg(right, bottom);
-    var width = (right - left) * MAGIC_DIV_SCALE, height = (bottom - top) * MAGIC_DIV_SCALE;
+    var width = Math.max((right - left) * MAGIC_DIV_SCALE, MIN_MESSAGE_WIDTH),
+      height = (bottom - top) * MAGIC_DIV_SCALE;
     setAttr(this.box, { width, height });
     setAttr(this.content, { width, height });
   }
