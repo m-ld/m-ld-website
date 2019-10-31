@@ -2,6 +2,7 @@ import * as d3 from 'd3';
 import { setAttr } from './util';
 import { Message } from './Message';
 import { BoardView } from './BoardView';
+import { DragBehavior } from 'd3';
 
 const MAGIC_DIV_SCALE: number = 10 / 9;
 const MIN_MESSAGE_WIDTH: number = 115; // Width of buttons + 20
@@ -38,6 +39,17 @@ export class MessageView {
       // TODO: Push removal to m-ld instead
       d3.select(MessageView.messageParent(this)).remove();
     });
+    enter.selectAll('.message-move').call(d3.drag()
+      .container(view.page.node())
+      .on('drag', function (this: Element) {
+        // Do not modify the message itself here, just the visual location
+        const msgSel = d3.select(MessageView.messageParent(this)),
+          [x, y] = MessageView.translation(msgSel);
+        msgSel.attr('transform', `translate(${x + d3.event.dx}, ${y + d3.event.dy})`);
+      })
+      .on('end', function (this: Element) {
+        // TODO: Commit the change to the x, y of the message
+      }));
   }
 
   private static messages(view: BoardView, data: Message[]) {
@@ -66,5 +78,10 @@ export class MessageView {
     if (node)
       return d3.select(node).classed('message') ?
         <SVGGElement>node : MessageView.messageParent(node.parentElement);
+  }
+
+  private static translation(msgSel: d3.Selection<SVGGElement, unknown, null, undefined>): Array<number> {
+    const t = msgSel.attr('transform').match(/translate\(([-0-9\.]+),\s+([-0-9\.]+)\)/);
+    return [Number(t[1]), Number(t[2])];
   }
 }
