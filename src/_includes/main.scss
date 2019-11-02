@@ -42,3 +42,8 @@ $fa-font-path: "/webfonts";
   pointer-events: none;
   font-size: 0.8em;
 }
+
+.link {
+  stroke-width: 3;
+  stroke: $light;
+}
