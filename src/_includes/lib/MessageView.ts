@@ -36,6 +36,7 @@ export class MessageView {
       .on('drag', MessageView.call(mv => {
         // Do not modify the message data here, just the visual location
         const [x, y] = mv.getPosition();
+        mv.group.raise();
         mv.setPosition(x + d3.event.dx, y + d3.event.dy);
         mv.update();
       }, view))
@@ -80,20 +81,31 @@ export class MessageView {
     // TODO Re-draw inbound links
   }
 
-  private updateLink(thatId: String) {
-    const linkId = `${this.msg()["@id"]}-${thatId}`;
+  private updateLink(thatId: string) {
     const thatNode = <Element>this.boardView.page.select(`#${thatId}`).node();
     if (thatNode) {
       const that = new MessageView(thatNode, this.boardView);
       const thisRect = this.getRect(), thatRect = that.getRect();
       if (thisRect.area() && thatRect.area()) {
-        let link = this.boardView.page.select(`#${linkId}`);
-        if (link.empty())
-          link = this.boardView.page.append('line').attr('id', linkId).classed('link', true);
+        const link = this.findOrCreateLink(thatId);
         const centreLine = new Line(thisRect.centre(), thatRect.centre());
-        const linkLine = new Line(thisRect.intersect(centreLine)[0], thatRect.intersect(centreLine)[0]);
-        setAttr(link, linkLine);
+        const begin = thisRect.intersect(centreLine), end = thatRect.intersect(centreLine);
+        if (begin.length && end.length) {
+          setAttr(link, new Line(begin[0], end[0]));
+        } else { // Messages overlap
+          link.remove();
+        }
       }
+    }
+  }
+
+  private findOrCreateLink(thatId: string) {
+    const linkId = `${this.msg()["@id"]}-${thatId}`;
+    const link = this.boardView.page.select(`#${linkId}`);
+    if (link.empty()) {
+      return this.boardView.page.select('#links').append('line').attr('id', linkId).classed('link', true);
+    } else {
+      return link;
     }
   }
 
