@@ -12,24 +12,28 @@
 <body style="overflow: hidden;">
   <svg id="page">
     <defs>
-      <g id="message-template">
-        <rect class="message-box" rx="10" />
-        <foreignObject class="message-content">
+      <g id="board-message-template">
+        <rect class="board-message-box" rx="10" />
+        <foreignObject class="board-message-body">
           <div xmlns="http://www.w3.org/1999/xhtml" contenteditable="true"
             style="display: inline-block; padding: 15px; white-space: nowrap; outline: none">
           </div>
         </foreignObject>
-        <g transform="translate(10, -10)") class="message-buttons">
-          <circle r="10" class="message-close" cx="10" cy="10" />
+        <g transform="translate(10, -10)" ) class="board-message-buttons">
+          <circle r="10" class="board-message-close" cx="10" cy="10" />
           <text x="5.5" y="15">&#xf00d;</text>
-          <circle r="10" class="message-add" cx="35" cy="10" />
+          <circle r="10" class="board-message-add" cx="35" cy="10" />
           <text x="29.5" y="15">&#xf067;</text>
-          <circle r="10" class="message-move" cx="60" cy="10" cursor="grab" />
+          <circle r="10" class="board-message-move" cx="60" cy="10" cursor="grab" />
           <text x="55" y="15">&#xf08d;</text>
-          <circle r="10" class="message-code" cx="85" cy="10" />
+          <circle r="10" class="board-message-code" cx="85" cy="10" />
           <text x="77" y="15">&#xf121;</text>
         </g>
       </g>
+      <marker id="link-arrowhead" viewBox="0 0 4 4" refX="2" refY="2" markerWidth="4"
+        markerHeight="4" orient="auto">
+        <path d="M 0 0 L 4 2 L 0 4 z"></path>
+      </marker>
     </defs>
     <g id="links"></g>
   </svg>

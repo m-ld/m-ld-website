@@ -14,7 +14,7 @@ module.exports = class {
   };
 
   async render({ tsPath }) {
-    var b = browserify().add(tsPath).plugin("tsify", { noImplicitAny: true });
+    var b = browserify().add(tsPath).plugin("tsify", { noImplicitAny: true, target: 'ES5' });
     return promisify(b.bundle.bind(b))();
   }
 }

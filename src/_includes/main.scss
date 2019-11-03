@@ -8,35 +8,35 @@ $fa-font-path: "/webfonts";
 @import "../../node_modules/@fortawesome/fontawesome-free/scss/brands.scss";
 @import "../../node_modules/@fortawesome/fontawesome-free/scss/solid.scss";
 
-.message-box {
+.board-message-box {
   fill: $light
 }
 
-.message-buttons {
+.board-message-buttons {
   visibility: hidden;
 }
 
-.message:hover .message-buttons {
+.message:hover .board-message-buttons {
   visibility: visible;
 }
 
-.message-close {
+.board-message-close {
   fill: $danger
 }
 
-.message-add {
-  fill: $success
+.board-message-add {
+  fill: $primary
 }
 
-.message-move {
+.board-message-move {
   fill: $warning
 }
 
-.message-code {
+.board-message-code {
   fill: $info
 }
 
-.message-buttons text {
+.board-message-buttons text {
   @extend .fas;
   fill: $white;
   pointer-events: none;
@@ -45,5 +45,10 @@ $fa-font-path: "/webfonts";
 
 .link {
   stroke-width: 3;
-  stroke: $light;
+  stroke-linecap: round;
+  stroke: $link;
+}
+
+#link-arrowhead {
+  fill: $link;
 }

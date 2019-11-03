@@ -21,23 +21,23 @@ export class MessageView {
       .select(() => view.append(<Element>MessageView.template().cloneNode(true)))
       .classed('message', true)
       .attr('id', msg => msg['@id'])
-      .each(MessageView.call(mv => mv.setPosition(mv.msg().x, mv.msg().y), view));
-    enter.select('.message-content > div')
+      .each(MessageView.call(mv => mv.position = [mv.msg.x, mv.msg.y], view));
+    enter.select('.board-message-body > div')
       .text(msg => msg.text)
       .on('input', MessageView.call(mv => mv.update(), view));
     enter.each(MessageView.call(mv => mv.update(), view));
 
     // TODO: Push removal to m-ld instead
     // TODO: Remove link lines
-    enter.select('.message-close').on('click', MessageView.call(mv => mv.group.remove(), view));
+    enter.select('.board-message-close').on('click', MessageView.call(mv => mv.group.remove(), view));
 
-    enter.selectAll('.message-move').call(d3.drag()
+    enter.selectAll('.board-message-move').call(d3.drag()
       .container(view.page.node())
       .on('drag', MessageView.call(mv => {
         // Do not modify the message data here, just the visual location
-        const [x, y] = mv.getPosition();
+        const [x, y] = mv.position;
         mv.group.raise();
-        mv.setPosition(x + d3.event.dx, y + d3.event.dy);
+        mv.position = [x + d3.event.dx, y + d3.event.dy];
         mv.update();
       }, view))
       .on('end', MessageView.call(mv => {
@@ -51,33 +51,33 @@ export class MessageView {
     }
   }
 
-  private msg(): Message {
+  private get msg(): Message {
     return this.group.datum();
   }
 
-  private box(): d3.Selection<SVGRectElement, Message, HTMLElement, unknown> {
-    return this.group.select('.message-box');
+  private get box(): d3.Selection<SVGRectElement, Message, HTMLElement, unknown> {
+    return this.group.select('.board-message-box');
   }
 
-  private content(): d3.Selection<SVGForeignObjectElement, Message, HTMLElement, unknown> {
-    return this.group.select('.message-content');
+  private get body(): d3.Selection<SVGForeignObjectElement, Message, HTMLElement, unknown> {
+    return this.group.select('.board-message-body');
   }
 
-  private text(): d3.Selection<HTMLDivElement, Message, HTMLElement, unknown> {
-    return this.content().select('div');
+  private get text(): d3.Selection<HTMLDivElement, Message, HTMLElement, unknown> {
+    return this.body.select('div');
   }
 
   private update() {
     // Size the shape to the content
-    var { left, top, right, bottom } = this.text().node().getBoundingClientRect();
+    var { left, top, right, bottom } = this.text.node().getBoundingClientRect();
     var [left, top] = this.boardView.clientToSvg(left, top),
       [right, bottom] = this.boardView.clientToSvg(right, bottom);
     var width = Math.max((right - left) * MAGIC_DIV_SCALE, MIN_MESSAGE_WIDTH),
       height = (bottom - top) * MAGIC_DIV_SCALE;
-    setAttr(this.box(), { width, height });
-    setAttr(this.content(), { width, height });
+    setAttr(this.box, { width, height });
+    setAttr(this.body, { width, height });
     // Re-draw outbound links
-    this.msg().linkTo.forEach(thatId => this.updateLink(thatId));
+    this.msg.linkTo.forEach(thatId => this.updateLink(thatId));
     // TODO Re-draw inbound links
   }
 
@@ -85,11 +85,11 @@ export class MessageView {
     const thatNode = <Element>this.boardView.page.select(`#${thatId}`).node();
     if (thatNode) {
       const that = new MessageView(thatNode, this.boardView);
-      const thisRect = this.getRect(), thatRect = that.getRect();
-      if (thisRect.area() && thatRect.area()) {
+      if (this.rect.area && that.rect.area) {
         const link = this.findOrCreateLink(thatId);
-        const centreLine = new Line(thisRect.centre(), thatRect.centre());
-        const begin = thisRect.intersect(centreLine), end = thatRect.intersect(centreLine);
+        const centreLine = new Line(this.rect.centre, that.rect.centre);
+        const begin = this.rect.intersect(centreLine),
+          end = that.rect.expand(5).intersect(centreLine);
         if (begin.length && end.length) {
           setAttr(link, new Line(begin[0], end[0]));
         } else { // Messages overlap
@@ -100,29 +100,33 @@ export class MessageView {
   }
 
   private findOrCreateLink(thatId: string) {
-    const linkId = `${this.msg()["@id"]}-${thatId}`;
+    const linkId = `${this.msg["@id"]}-${thatId}`;
     const link = this.boardView.page.select(`#${linkId}`);
     if (link.empty()) {
-      return this.boardView.page.select('#links').append('line').attr('id', linkId).classed('link', true);
+      return this.boardView.page.select('#links')
+        .append('line')
+        .attr('id', linkId)
+        .classed('link', true)
+        .attr('marker-end', 'url(#link-arrowhead)');
     } else {
       return link;
     }
   }
 
-  private getRect(): Rectangle {
-    return new Rectangle(this.getPosition(), this.getSize());
+  private get rect(): Rectangle {
+    return new Rectangle(this.position, this.size);
   }
 
-  private getSize(): number[] {
-    return [Number(this.box().attr('width')), Number(this.box().attr('height'))];
+  private get size(): number[] {
+    return [Number(this.box.attr('width')), Number(this.box.attr('height'))];
   }
 
-  private getPosition(): Array<number> {
+  private get position(): number[] {
     const t = this.group.attr('transform').match(/translate\(([-0-9\.]+),\s+([-0-9\.]+)\)/);
     return [Number(t[1]), Number(t[2])];
   }
 
-  private setPosition(x: number, y: number) {
+  private set position([x, y]: number[]) {
     this.group.attr('transform', `translate(${x}, ${y})`);
   }
 
@@ -135,7 +139,7 @@ export class MessageView {
 
   private static template(): Element {
     // Note that the template is found in /src/demo.html
-    return <Element>d3.select('#message-template').node();
+    return <Element>d3.select('#board-message-template').node();
   }
 
   private static messageParent(node: Element): SVGGElement {

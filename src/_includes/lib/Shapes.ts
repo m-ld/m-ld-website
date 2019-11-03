@@ -1,3 +1,5 @@
+import { numberTypeAnnotation } from "babel-types";
+
 const { checkIntersection } = require('line-intersect');
 
 export class Rectangle {
@@ -13,56 +15,61 @@ export class Rectangle {
     this.height = height;
   }
 
-  size(): number[] {
+  get size(): number[] {
     return [this.width, this.height];
   }
 
-  area(): number {
+  get area(): number {
     return this.width * this.height;
   }
 
-  centre(): number[] {
+  get centre(): number[] {
     return [this.x + this.width / 2, this.y + this.height / 2];
   }
 
-  sides(): Line[] {
-    return [this.top(), this.right(), this.bottom(), this.left()];
+  get sides(): Line[] {
+    return [this.top, this.right, this.bottom, this.left];
   }
 
   intersect(line: Line): number[][] {
-    return this.sides().map(side => side.intersect(line)).filter(point => point);
+    return this.sides.map(side => side.intersect(line)).filter(point => point);
   }
 
-  left(): Line {
-    return new Line(this.bottomLeft(), this.topLeft());
+  get left(): Line {
+    return new Line(this.bottomLeft, this.topLeft);
   }
 
-  bottom(): Line {
-    return new Line(this.bottomRight(), this.bottomLeft());
+  get bottom(): Line {
+    return new Line(this.bottomRight, this.bottomLeft);
   }
 
-  right(): Line {
-    return new Line(this.topRight(), this.bottomRight());
+  get right(): Line {
+    return new Line(this.topRight, this.bottomRight);
   }
 
-  top(): Line {
-    return new Line(this.topLeft(), this.topRight());
+  get top(): Line {
+    return new Line(this.topLeft, this.topRight);
   }
 
-  topLeft(): number[] {
+  get topLeft(): number[] {
     return [this.x, this.y];
   }
 
-  bottomLeft(): number[] {
+  get bottomLeft(): number[] {
     return [this.x, this.y + this.height];
   }
 
-  bottomRight(): number[] {
+  get bottomRight(): number[] {
     return [this.x + this.width, this.y + this.height];
   }
 
-  topRight(): number[] {
+  get topRight(): number[] {
     return [this.x + this.width, this.y];
+  }
+
+  expand(pixels: number): Rectangle {
+    return new Rectangle([this.x - pixels, this.y - pixels],
+      [this.width + pixels * 2, this.height + pixels * 2]);
   }
 }
 
