@@ -1,5 +1,3 @@
-import { numberTypeAnnotation } from "babel-types";
-
 const { checkIntersection } = require('line-intersect');
 
 export class Rectangle {

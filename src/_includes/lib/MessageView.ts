@@ -3,6 +3,7 @@ import { setAttr } from './util';
 import { Message } from './Message';
 import { BoardView } from './BoardView';
 import { Line, Rectangle } from './Shapes';
+import { Board } from './Board';
 
 const MAGIC_DIV_SCALE: number = 10 / 9;
 const MIN_MESSAGE_WIDTH: number = 115; // Width of buttons + 20
@@ -16,33 +17,33 @@ export class MessageView {
     this.boardView = boardView;
   }
 
-  public static sync(data: Message[], view: BoardView) {
-    const enter = MessageView.messages(view, data).enter()
-      .select(() => view.append(<Element>MessageView.template().cloneNode(true)))
+  public static sync(bv: BoardView) {
+    const enter = MessageView.messages(bv).enter()
+      .select(() => bv.append(<Element>MessageView.template().cloneNode(true)))
       .classed('message', true)
       .attr('id', msg => msg['@id'])
-      .each(MessageView.call(mv => mv.position = [mv.msg.x, mv.msg.y], view));
+      .each(MessageView.call(mv => mv.position = [mv.msg.x, mv.msg.y], bv));
     enter.select('.board-message-body > div')
       .text(msg => msg.text)
-      .on('input', MessageView.call(mv => mv.update(), view));
-    enter.each(MessageView.call(mv => mv.update(), view));
+      .on('input', MessageView.call(mv => mv.update(), bv));
+    enter.each(MessageView.call(mv => mv.update(), bv));
 
     // TODO: Push removal to m-ld instead
     // TODO: Remove link lines
-    enter.select('.board-message-close').on('click', MessageView.call(mv => mv.group.remove(), view));
+    enter.select('.board-message-close').on('click', MessageView.call(mv => mv.group.remove(), bv));
 
     enter.selectAll('.board-message-move').call(d3.drag()
-      .container(view.page.node())
+      .container(bv.svg.node())
       .on('drag', MessageView.call(mv => {
         // Do not modify the message data here, just the visual location
         const [x, y] = mv.position;
         mv.group.raise();
         mv.position = [x + d3.event.dx, y + d3.event.dy];
         mv.update();
-      }, view))
+      }, bv))
       .on('end', MessageView.call(mv => {
-        // TODO: Commit the change to the x, y of the message
-      }, view)));
+        // TODO: Commit the change to the message
+      }, bv)));
   }
 
   private static call(action: (mv: MessageView) => void, view: BoardView): (this: Element) => void {
@@ -77,33 +78,35 @@ export class MessageView {
     setAttr(this.box, { width, height });
     setAttr(this.body, { width, height });
     // Re-draw outbound links
-    this.msg.linkTo.forEach(thatId => this.updateLink(thatId));
-    // TODO Re-draw inbound links
+    this.msg.linkTo.forEach(thatId => this.callOther(thatId, that => this.updateLink(that)));
+    // Re-draw inbound links
+    this.boardView.board.linksTo(this.msg["@id"])
+      .forEach(thatId => this.callOther(thatId, that => that.updateLink(this)));
   }
 
-  private updateLink(thatId: string) {
-    const thatNode = <Element>this.boardView.page.select(`#${thatId}`).node();
-    if (thatNode) {
-      const that = new MessageView(thatNode, this.boardView);
-      if (this.rect.area && that.rect.area) {
-        const link = this.findOrCreateLink(thatId);
-        const centreLine = new Line(this.rect.centre, that.rect.centre);
-        const begin = this.rect.intersect(centreLine),
-          end = that.rect.expand(5).intersect(centreLine);
-        if (begin.length && end.length) {
-          setAttr(link, new Line(begin[0], end[0]));
-        } else { // Messages overlap
-          link.remove();
-        }
+  private callOther(thatId: string, action: (mv: MessageView) => void) {
+    this.boardView.svg.select(`#${thatId}`).each(MessageView.call(action, this.boardView));
+  }
+
+  private updateLink(that: MessageView) {
+    if (that && this.rect.area && that.rect.area) {
+      const link = this.findOrCreateLink(that.msg["@id"]);
+      const centreLine = new Line(this.rect.centre, that.rect.centre);
+      const begin = this.rect.intersect(centreLine),
+        end = that.rect.expand(5).intersect(centreLine);
+      if (begin.length && end.length) {
+        setAttr(link, new Line(begin[0], end[0]));
+      } else { // Messages overlap
+        link.remove();
       }
     }
   }
 
   private findOrCreateLink(thatId: string) {
     const linkId = `${this.msg["@id"]}-${thatId}`;
-    const link = this.boardView.page.select(`#${linkId}`);
+    const link = this.boardView.svg.select(`#${linkId}`);
     if (link.empty()) {
-      return this.boardView.page.select('#links')
+      return this.boardView.svg.select('#links')
         .append('line')
         .attr('id', linkId)
         .classed('link', true)
@@ -130,9 +133,9 @@ export class MessageView {
     this.group.attr('transform', `translate(${x}, ${y})`);
   }
 
-  private static messages(view: BoardView, data: Message[]) {
-    return view.page.selectAll('.message')
-      .data(data, function (this: Element, msg: Message) {
+  private static messages(view: BoardView) {
+    return view.svg.selectAll('.message')
+      .data(view.board.messages, function (this: Element, msg: Message) {
         return msg ? msg['@id'] : this.id;
       });
   }
