@@ -1,70 +1,85 @@
 import * as d3 from 'd3';
 import { Message } from './Message';
-import { setAttr } from './util';
+import { setAttr, shortId } from './util';
 import { Board } from './Board';
+import { InfiniteView } from './InfiniteView';
+import { MessageView } from './MessageView';
 
-export class BoardView {
+export class BoardView extends InfiniteView {
   readonly board: Board;
-  readonly svg: d3.Selection<SVGSVGElement, Message, HTMLElement, unknown>;
 
-  constructor(selector: string, board: Board) {
+  constructor(selectSvg: string, board: Board) {
+    super(selectSvg);
     this.board = board;
-    this.svg = d3.select(selector);
-    window.onresize = () => {
-      // Coerce the viewbox to the aspect ratio of the screen but keep the zoom
-      const [vBx, vBy, ,] = this.getViewBox(), [width, height] = BoardView.windowSize();
-      const [right, bottom] = this.clientToSvg(width, height);
-      this.setViewBox(vBx, vBy, right - vBx, bottom - vBy);
-      setAttr(this.svg, { width, height });
-    };
-    // Set the initial zoom to zero
-    const [width, height] = BoardView.windowSize();
-    this.setViewBox(0, 0, width, height);
-    setAttr(this.svg, { width, height });
-    // Set up wheel zoom
-    this.svg.on('wheel', () => {
-      const [mx, my] = this.clientToSvg(d3.event.clientX, d3.event.clientY);
-      // Scale the viewbox such that the mouse position is static
-      const [vBx, vBy, vBw, vBh] = this.getViewBox();
-      const px = (mx - vBx) / vBw, py = (my - vBy) / vBh, d = -d3.event.deltaY;
-      const p = vBw / vBh, dx = (p * d) / (1 + p), dy = d / (1 + p);
-      this.setViewBox(vBx - (px * dx), vBy - (py * dy), vBw + dx, vBh + dy);
-      d3.event.preventDefault();
+
+    // Sync all the messages in the given board now
+    this.sync(board.messages);
+
+    this.board.events.on('add', msg => this.sync([msg]));
+
+    this.board.events.on('remove', msg => {
+      this.withThatMessage(msg['@id'], mv => mv.group.remove());
+      // Remove all links to and from the removed messsage
+      this.svg.selectAll(`.link[id$="-${msg['@id']}"], line[id^="${msg['@id']}-"]`).remove();
     });
-    // Set up the drag pan
-    this.svg.call(d3.drag().on('drag', () => {
-      const [, , vBw, vBh] = this.getViewBox();
-      const [nx, ny] = this.clientToSvg(-d3.event.dx, -d3.event.dy);
-      this.setViewBox(nx, ny, vBw, vBh);
-    }).filter(() => {
-      // Ignore events on child elements
-      return document.elementFromPoint(
-        d3.event.clientX, d3.event.clientY) == this.svg.node();
+  }
+
+  private sync(messages: Message[]) {
+    const selection = this.svg.selectAll('.message')
+      .data(messages, function (this: Element, msg: Message) {
+        return msg ? msg['@id'] : this.id;
+      });
+
+    const enter = selection.enter()
+      .select(() => this.append(<Element>MessageView.template.cloneNode(true)))
+      .classed('message', true)
+      .attr('id', msg => msg['@id'])
+      .each(this.withThisMessage(mv => mv.position = [mv.msg.x, mv.msg.y]));
+    enter.select('.board-message-body > div')
+      .text(msg => msg.text)
+      .on('input', this.withThisMessage(mv => mv.update()));
+    enter.select('.board-message-close').on('click',
+      this.withThisMessage(mv => this.board.remove(mv.msg['@id'])));
+    enter.select('.board-message-add').on('click', this.withThisMessage(mv => {
+      const id = shortId();
+      mv.msg.linkTo.push(id);
+      // TODO: Prevent collisions
+      this.board.add({ '@id': id, text: '', x: mv.msg.x + 50, y: mv.msg.y + 100, linkTo: [] });
+      this.withThatMessage(id, mv => mv.text.node().focus());
     }));
+    enter.selectAll('.board-message-move').call(d3.drag()
+      .container(this.svg.node())
+      .on('drag', this.withThisMessage(mv => {
+        // Do not modify the message data here, just the visual location
+        const [x, y] = mv.position;
+        mv.group.raise();
+        mv.position = [x + d3.event.dx, y + d3.event.dy];
+        mv.update();
+      }))
+      .on('end', this.withThisMessage(mv => {
+        // Commit the change to the message
+        const [x, y] = mv.position;
+        mv.msg.x = x;
+        mv.msg.y = y;
+        // TODO: Notify update
+      })));
+
+    // Call update for everyone, including the new folks
+    selection.merge(enter).each(this.withThisMessage(mv => mv.update()));
   }
 
-  public append(el: Element): Element {
+  withThisMessage(action: (mv: MessageView) => void): (this: Element) => void {
+    const bv = this;
+    return function (this: Element) {
+      action.call(null, new MessageView(this, bv));
+    }
+  }
+
+  withThatMessage(thatId: string, action: (mv: MessageView) => void) {
+    this.svg.select(`#${thatId}`).each(this.withThisMessage(action));
+  }
+
+  append(el: Element): Element {
     return this.svg.node().insertAdjacentElement('beforeend', el);
-  }
-
-  public clientToSvg(x: number, y: number): Array<number> {
-    let pt = this.svg.node().createSVGPoint();
-    pt.x = x;
-    pt.y = y;
-    pt = pt.matrixTransform(this.svg.node().getScreenCTM().inverse());
-    return [pt.x, pt.y];
-  }
-
-  private getViewBox(): Array<number> {
-    return this.svg.attr('viewBox').split(/[\s,]+/).map(Number);
-  }
-
-  private setViewBox(x: number, y: number, width: number, height: number) {
-    if (width > 0 && height > 0)
-      this.svg.attr('viewBox', [x, y, width, height].join(' '));
-  }
-
-  private static windowSize(): Array<number> {
-    return [window.innerWidth, window.innerHeight];
   }
 }

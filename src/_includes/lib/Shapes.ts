@@ -1,4 +1,4 @@
-const { checkIntersection } = require('line-intersect');
+import { checkIntersection } from 'line-intersect';
 
 export class Rectangle {
   readonly x: number;

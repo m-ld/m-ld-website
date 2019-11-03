@@ -12,12 +12,12 @@ export class Board {
   private messagesById: { [key: string]: Message } = {};
 
   constructor(...messages: Message[]) {
-    messages.forEach(msg => this.messagesById[msg["@id"]] = msg);
+    messages.forEach(msg => this.messagesById[msg['@id']] = msg);
   }
 
   add(msg: Message): boolean {
-    if (!this.messagesById[msg["@id"]]) {
-      this.messagesById[msg["@id"]] = msg;
+    if (!this.messagesById[msg['@id']]) {
+      this.messagesById[msg['@id']] = msg;
       this.events.emit('add', msg);
       return true;
     }
@@ -35,7 +35,7 @@ export class Board {
   }
 
   linksTo(id: string): string[] {
-    return this.messages.filter(msg => msg.linkTo.includes(id)).map(msg => msg["@id"]);
+    return this.messages.filter(msg => msg.linkTo.includes(id)).map(msg => msg['@id']);
   }
 
   get messages() {
