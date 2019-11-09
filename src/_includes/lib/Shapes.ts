@@ -12,7 +12,6 @@ export class Rectangle {
     this.width = width;
     this.height = height;
   }
-
   get size(): number[] {
     return [this.width, this.height];
   }
@@ -31,6 +30,15 @@ export class Rectangle {
 
   intersect(line: Line): number[][] {
     return this.sides.map(side => side.intersect(line)).filter(point => point);
+  }
+
+  intersects(that: Rectangle): boolean {
+    return !!that.points.filter(p => this.contains(p)).length;
+  }
+
+  contains([x, y]: number[]): boolean {
+    const [right, bottom] = this.bottomRight;
+    return x >= this.x && y >= this.y && x <= right && y <= bottom;
   }
 
   get left(): Line {
@@ -63,6 +71,10 @@ export class Rectangle {
 
   get topRight(): number[] {
     return [this.x + this.width, this.y];
+  }
+
+  get points(): number[][] {
+    return [this.topLeft, this.topRight, this.bottomRight, this.bottomLeft];
   }
 
   expand(pixels: number): Rectangle {

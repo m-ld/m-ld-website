@@ -9,41 +9,49 @@ $fa-font-path: "/webfonts";
 @import "../../node_modules/@fortawesome/fontawesome-free/scss/solid.scss";
 
 .board-message-box {
-  fill: $light
+  fill: $light;
+
+  &.link-target {
+    stroke: $link;
+    stroke-width: 3;
+  }
 }
 
-.board-message-buttons {
+.board-message-button {
   visibility: hidden;
+
+  text {
+    @extend .fas;
+    fill: $white;
+    pointer-events: none;
+    font-size: 0.8em;
+  }
 }
 
-.message:hover .board-message-buttons {
-  visibility: visible;
+.board-message:hover,
+.board-message.linking {
+  .board-message-button {
+    visibility: visible;
+  }
 }
 
 .board-message-close {
-  fill: $danger
+  fill: $danger;
 }
 
 .board-message-add {
-  fill: $primary
+  fill: $primary;
 }
 
 .board-message-move {
-  fill: $warning
+  fill: $warning;
 }
 
 .board-message-code {
-  fill: $info
+  fill: $info;
 }
 
-.board-message-buttons text {
-  @extend .fas;
-  fill: $white;
-  pointer-events: none;
-  font-size: 0.8em;
-}
-
-.link {
+.link-line {
   stroke-width: 3;
   stroke-linecap: round;
   stroke: $link;

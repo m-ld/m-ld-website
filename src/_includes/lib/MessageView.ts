@@ -3,20 +3,20 @@ import { setAttr } from './util';
 import { Message } from './Message';
 import { BoardView } from './BoardView';
 import { Line, Rectangle } from './Shapes';
+import { GroupUI } from './GroupUI';
 
 const MAGIC_DIV_SCALE: number = 10 / 9;
 const MIN_MESSAGE_WIDTH: number = 115; // Width of buttons + 20
 
-export class MessageView {
+export class MessageView extends GroupUI<Message> {
   readonly boardView: BoardView;
-  readonly group: d3.Selection<SVGGElement, Message, HTMLElement, unknown>;
 
   constructor(node: Element, boardView: BoardView) {
-    this.group = d3.select(MessageView.messageParent(node));
+    super(MessageView.messageParent(node));
     this.boardView = boardView;
   }
 
-  private withThat(thatId: string, action: (mv: MessageView) => void) {
+  private withThat(thatId: string, action: (mv: MessageView) => any) {
     this.boardView.withThatMessage(thatId, action);
   }
 
@@ -38,16 +38,14 @@ export class MessageView {
 
   update() {
     // Size the shape to the content
-    var { left, top, right, bottom } = this.text.node().getBoundingClientRect();
-    var [left, top] = this.boardView.clientToSvg(left, top),
-      [right, bottom] = this.boardView.clientToSvg(right, bottom);
-    var width = Math.max((right - left) * MAGIC_DIV_SCALE, MIN_MESSAGE_WIDTH),
-      height = (bottom - top) * MAGIC_DIV_SCALE;
+    const textRect = this.boardView.svgRect(this.text.node());
+    var width = Math.max(textRect.width * MAGIC_DIV_SCALE, MIN_MESSAGE_WIDTH),
+      height = textRect.height * MAGIC_DIV_SCALE;
     setAttr(this.box, { width, height });
     setAttr(this.body, { width, height });
-    // Re-draw outbound links
+    // Re-draw outbound link-lines
     this.msg.linkTo.forEach(thatId => this.withThat(thatId, that => this.updateLink(that)));
-    // Re-draw inbound links
+    // Re-draw inbound link-lines
     this.boardView.board.linksTo(this.msg['@id'])
       .forEach(thatId => this.withThat(thatId, that => that.updateLink(this)));
   }
@@ -70,10 +68,10 @@ export class MessageView {
     const linkId = `${this.msg['@id']}-${thatId}`;
     const link = this.boardView.svg.select(`#${linkId}`);
     if (link.empty()) {
-      return this.boardView.svg.select('#links')
+      return this.boardView.svg.select('#link-lines')
         .append('line')
         .attr('id', linkId)
-        .classed('link', true)
+        .classed('link-line', true)
         .attr('marker-end', 'url(#link-arrowhead)');
     } else {
       return link;
@@ -88,15 +86,6 @@ export class MessageView {
     return [Number(this.box.attr('width')), Number(this.box.attr('height'))];
   }
 
-  get position(): number[] {
-    const t = this.group.attr('transform').match(/translate\(([-0-9\.]+),\s+([-0-9\.]+)\)/);
-    return [Number(t[1]), Number(t[2])];
-  }
-
-  set position([x, y]: number[]) {
-    this.group.attr('transform', `translate(${x}, ${y})`);
-  }
-
   static get template(): Element {
     // Note that the template is found in /src/demo.html
     return <Element>d3.select('#board-message-template').node();
@@ -104,7 +93,11 @@ export class MessageView {
 
   static messageParent(node: Element): SVGGElement {
     if (node)
-      return d3.select(node).classed('message') ?
+      return d3.select(node).classed('board-message') ?
         <SVGGElement>node : this.messageParent(node.parentElement);
+  }
+
+  static same(mv1: MessageView, mv2: MessageView) {
+    return (!mv1 && !mv2) || (mv1 && mv2 && mv1.msg["@id"] == mv2.msg["@id"]);
   }
 }
