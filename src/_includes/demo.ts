@@ -19,7 +19,7 @@ window.onload = function () {
       x: 250, y: 200,
       linkTo: []
     };
-    hello.linkTo.push(msg1["@id"]);
+    hello.linkTo.push(msg1['@id']);
     board.add(msg1);
 
     setTimeout(() => {
@@ -29,7 +29,7 @@ window.onload = function () {
         x: 300, y: 300,
         linkTo: []
       };
-      msg1.linkTo.push(msg2["@id"]);
+      msg1.linkTo.push(msg2['@id']);
       board.add(msg2);
     }, 2000);
   }, 2000);

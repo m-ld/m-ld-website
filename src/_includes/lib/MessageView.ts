@@ -1,5 +1,5 @@
 import * as d3 from 'd3';
-import { setAttr } from './util';
+import { setAttr, idNotInFilter } from './util';
 import { Message } from './Message';
 import { BoardView } from './BoardView';
 import { Line, Rectangle } from './Shapes';
@@ -14,10 +14,6 @@ export class MessageView extends GroupUI<Message> {
   constructor(node: Element, boardView: BoardView) {
     super(MessageView.messageParent(node));
     this.boardView = boardView;
-  }
-
-  private withThat(thatId: string, action: (mv: MessageView) => any) {
-    this.boardView.withThatMessage(thatId, action);
   }
 
   get msg(): Message {
@@ -43,11 +39,41 @@ export class MessageView extends GroupUI<Message> {
       height = textRect.height * MAGIC_DIV_SCALE;
     setAttr(this.box, { width, height });
     setAttr(this.body, { width, height });
+
+    const outLinks = this.msg.linkTo;
     // Re-draw outbound link-lines
-    this.msg.linkTo.forEach(thatId => this.withThat(thatId, that => this.updateLink(that)));
+    outLinks.forEach(thatId => this.withThat(thatId, that => this.updateLink(that)));
+    // Remove non-existent outbound link-lines
+    this.allOutLinkLines()
+      .filter(idNotInFilter(outLinks.map(thatId => MessageView.linkId(this.msg['@id'], thatId))))
+      .remove();
+
+    const inLinks = this.boardView.board.linksTo(this.msg['@id']);
     // Re-draw inbound link-lines
-    this.boardView.board.linksTo(this.msg['@id'])
-      .forEach(thatId => this.withThat(thatId, that => that.updateLink(this)));
+    inLinks.forEach(thatId => this.withThat(thatId, that => that.updateLink(this)));
+    // Remove non-existent inbound link-lines
+    this.allInLinkLines()
+      .filter(idNotInFilter(inLinks.map(thatId => MessageView.linkId(thatId, this.msg['@id']))))
+      .remove();
+  }
+
+  remove() {
+    this.group.remove();
+    // Remove all link-lines from and to the removed messsage
+    this.allOutLinkLines().remove();
+    this.allInLinkLines().remove();
+  }
+
+  private allOutLinkLines() {
+    return this.boardView.svg.selectAll(`.link-line[id^="${this.msg['@id']}-"]`);
+  }
+
+  private allInLinkLines() {
+    return this.boardView.svg.selectAll(`.link-line[id$="-${this.msg['@id']}"]`);
+  }
+
+  static linkId(fromId: string, toId: string) {
+    return `${fromId}-${toId}`;
   }
 
   private updateLink(that: MessageView) {
@@ -65,17 +91,20 @@ export class MessageView extends GroupUI<Message> {
   }
 
   private findOrCreateLink(thatId: string) {
-    const linkId = `${this.msg['@id']}-${thatId}`;
+    const linkId = MessageView.linkId(this.msg['@id'], thatId);
     const link = this.boardView.svg.select(`#${linkId}`);
     if (link.empty()) {
-      return this.boardView.svg.select('#link-lines')
-        .append('line')
-        .attr('id', linkId)
+      return this.boardView.svg.selectAll('#link-lines')
+        .append(MessageView.createLinkLineNode)
         .classed('link-line', true)
-        .attr('marker-end', 'url(#link-arrowhead)');
+        .attr('id', linkId);
     } else {
       return link;
     }
+  }
+
+  private withThat(thatId: string, action: (mv: MessageView) => any) {
+    this.boardView.withThatMessage(thatId, action);
   }
 
   get rect(): Rectangle {
@@ -86,9 +115,13 @@ export class MessageView extends GroupUI<Message> {
     return [Number(this.box.attr('width')), Number(this.box.attr('height'))];
   }
 
-  static get template(): Element {
+  static createMessageViewNode(): Element {
     // Note that the template is found in /src/demo.html
-    return <Element>d3.select('#board-message-template').node();
+    return <Element>(<Element>d3.select('#board-message-template').node()).cloneNode(true);
+  }
+
+  static createLinkLineNode(): Element {
+    return <Element>(<Element>d3.select('#link-line-template').node()).cloneNode(true);
   }
 
   static messageParent(node: Element): SVGGElement {
@@ -98,6 +131,6 @@ export class MessageView extends GroupUI<Message> {
   }
 
   static same(mv1: MessageView, mv2: MessageView) {
-    return (!mv1 && !mv2) || (mv1 && mv2 && mv1.msg["@id"] == mv2.msg["@id"]);
+    return (!mv1 && !mv2) || (mv1 && mv2 && mv1.msg['@id'] == mv2.msg['@id']);
   }
 }

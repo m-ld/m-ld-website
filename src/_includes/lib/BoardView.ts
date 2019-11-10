@@ -18,12 +18,7 @@ export class BoardView extends InfiniteView {
     this.sync(board.messages);
 
     this.board.events.on('add', msg => this.sync([msg]));
-
-    this.board.events.on('remove', msg => {
-      this.withThatMessage(msg['@id'], mv => mv.group.remove());
-      // Remove all link-lines to and from the removed messsage
-      this.svg.selectAll(`.link-line[id$="-${msg['@id']}"], .link-line[id^="${msg['@id']}-"]`).remove();
-    });
+    this.board.events.on('remove', msg => this.withThatMessage(msg['@id'], mv => mv.remove()));
   }
 
   private sync(messages: Message[]) {
@@ -33,24 +28,19 @@ export class BoardView extends InfiniteView {
       });
 
     const enter = selection.enter()
-      .select(() => this.append(<Element>MessageView.template.cloneNode(true)))
+      .select(() => this.append(MessageView.createMessageViewNode()))
       .classed('board-message', true)
       .attr('id', msg => msg['@id'])
       .each(this.withThisMessage(mv => mv.position = [mv.msg.x, mv.msg.y]));
     enter.select('.board-message-body > div')
       .text(msg => msg.text)
       .on('input', this.withThisMessage(mv => mv.update()));
-    enter.select('.board-message-close circle').on('click',
-      this.withThisMessage(mv => this.board.remove(mv.msg['@id'])));
+    enter.select('.board-message-close circle')
+      .on('click', this.withThisMessage(mv => this.board.remove(mv.msg['@id'])))
+      .call(this.setupBtnDrag(this.unlinkDragging, this.unlinkDragEnd));
     enter.selectAll('.board-message-add circle')
       .on('click', this.withThisMessage(this.addNewMessage))
-      .call(d3.drag() // Set up drag-to-link behaviour
-        .container(this.svg.node())
-        .clickDistance(3) // Ensure that single-click hits click handler
-        .subject(this.withThisMessage(this.linkDragSubject))
-        .on('start', this.withThisMessage(this.linkDragStart))
-        .on('drag', this.withThisMessage(this.linkDragging))
-        .on('end', this.withThisMessage(this.linkDragEnd)));
+      .call(this.setupBtnDrag(this.linkDragging, this.linkDragEnd));
     enter.selectAll('.board-message-move circle').call(d3.drag()
       .container(this.svg.node())
       .on('start', this.withThisMessage(this.moveDragStart))
@@ -59,6 +49,18 @@ export class BoardView extends InfiniteView {
 
     // Call update for everyone, including the new folks
     selection.merge(enter).each(this.withThisMessage(mv => mv.update()));
+  }
+
+  private setupBtnDrag(dragging: (mv: MessageView) => void,
+    dragEnd: (mv: MessageView, dragged: SVGElement) => void):
+    (selection: d3.Selection<d3.BaseType, unknown, Element, Message>) => void {
+    return d3.drag() // Set up drag-to-link behaviour
+      .container(this.svg.node())
+      .clickDistance(3) // Ensure that single-click hits click handler
+      .subject(this.withThisMessage(this.btnDragSubject))
+      .on('start', this.withThisMessage(this.btnDragStart))
+      .on('drag', this.withThisMessage(dragging))
+      .on('end', this.withThisMessage(dragEnd));
   }
 
   private moveDragStart(_: MessageView, dragged: SVGElement) {
@@ -81,40 +83,59 @@ export class BoardView extends InfiniteView {
     mv.msg.y = y;
   }
 
-  private linkDragSubject(_: MessageView, dragged: SVGElement) {
+  private btnDragSubject(_: MessageView, dragged: SVGElement) {
     const button = new GroupUI(<SVGGElement>svgParent(dragged)), startPos = button.position;
     return { x: d3.event.x, y: d3.event.y, button, startPos };
   }
 
-  private linkDragStart(mv: MessageView, dragged: SVGElement) {
+  private btnDragStart(mv: MessageView, dragged: SVGElement) {
     d3.select(dragged).attr('cursor', 'none');
-    mv.group.classed('linking', true);
+    mv.group.classed('active', true);
   }
 
   private linkDragging(mv: MessageView) {
+    this.btnDragging(
+      mv, thatId => thatId != mv.msg['@id'] && !mv.msg.linkTo.includes(thatId), 'link-target');
+  }
+
+  private linkDragEnd(mv: MessageView, dragged: SVGElement) {
+    this.btnDragEnd(dragged, mv, thatId => mv.msg.linkTo.push(thatId), 'link-target');
+  }
+
+  private unlinkDragging(mv: MessageView) {
+    this.btnDragging(
+      mv, thatId => thatId != mv.msg['@id'] && mv.msg.linkTo.includes(thatId), 'unlink-target');
+  }
+
+  private unlinkDragEnd(mv: MessageView, dragged: SVGElement) {
+    this.btnDragEnd(dragged, mv,
+      thatId => mv.msg.linkTo = mv.msg.linkTo.filter(thisId => thatId != thisId), 'unlink-target');
+  }
+
+  private btnDragging(mv: MessageView, filter: (thatId: string) => boolean, targetClass: string) {
     mv.group.raise(); // So that the button drags over other messages
     const drag = d3.event.subject, [cx, cy] = drag.button.position;
     drag.button.position = [cx + d3.event.dx, cy + d3.event.dy];
     // Hit-test for other messages
-    const target = this.hitTest(this.svgRect(drag.button.group.node()),
-      that => !MessageView.same(mv, that) && !mv.msg.linkTo.includes(that.msg['@id']));
+    const target = this.hitTest(this.svgRect(drag.button.group.node()), filter);
     if (!MessageView.same(drag.target, target)) {
-      target && target.box.classed('link-target', true);
-      drag.target && drag.target.box.classed('link-target', false);
+      target && target.box.classed(targetClass, true);
+      drag.target && drag.target.box.classed(targetClass, false);
     }
     drag.target = target;
   }
 
-  private linkDragEnd(mv: MessageView, dragged: SVGElement) {
+  private btnDragEnd(
+    dragged: SVGElement, mv: MessageView, commit: (thatId: string) => void, targetClass: string) {
     const drag = d3.event.subject;
     d3.select(dragged).attr('cursor', 'alias');
     if (drag.target) {
-      drag.target.box.classed('link-target', false);
-      mv.msg.linkTo.push(drag.target.msg['@id']);
+      drag.target.box.classed(targetClass, false);
+      commit(drag.target.msg['@id']);
       mv.update();
     }
     drag.button.position = drag.startPos;
-    mv.group.classed('linking', false);
+    mv.group.classed('active', false);
   }
 
   private addNewMessage(mv: MessageView) {
@@ -125,17 +146,10 @@ export class BoardView extends InfiniteView {
     this.withThatMessage(id, mv => mv.text.node().focus());
   }
 
-  svgRect(el: Element): Rectangle {
-    var { left, top, right, bottom } = el.getBoundingClientRect();
-    var [left, top] = this.clientToSvg([left, top]),
-      [right, bottom] = this.clientToSvg([right, bottom]);
-    return new Rectangle([left, top], [right - left, bottom - top]);
-  }
-
-  hitTest(test: Rectangle, filter: (mv: MessageView) => boolean): MessageView {
+  hitTest(test: Rectangle, filter: (id: string) => boolean): MessageView {
     // May need to be optimised with e.g. rbush
     const foundNode = this.svg.selectAll('.board-message').filter(this.withThisMessage(mv => {
-      return mv.rect.intersects(test) && filter(mv);
+      return mv.rect.intersects(test) && filter(mv.msg['@id']);
     })).node();
     return foundNode && new MessageView(<Element>foundNode, this);
   }

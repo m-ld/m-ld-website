@@ -30,7 +30,13 @@ export function svgRound(amount: number, decimals: number = 2) {
   return Number(Math.round(Number(`${amount}e${decimals}`)) + `e-${decimals}`);
 }
 
-export function svgParent(el: SVGElement) : SVGElement {
+export function svgParent(el: SVGElement): SVGElement {
   if (el.parentElement instanceof SVGElement)
-  return el.parentElement;
+    return el.parentElement;
+}
+
+export function idNotInFilter(ids: string[]): (this: Element) => boolean {
+  return function (this: Element) {
+    return !ids.includes(this.id);
+  };
 }

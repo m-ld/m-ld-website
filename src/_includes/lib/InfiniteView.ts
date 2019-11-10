@@ -1,6 +1,7 @@
 import * as d3 from 'd3';
 import { Message } from './Message';
 import { setAttr, svgPoint, svgRound } from './util';
+import { Rectangle } from './Shapes';
 
 export class InfiniteView {
   readonly svg: d3.Selection<SVGSVGElement, Message, HTMLElement, unknown>;
@@ -40,9 +41,16 @@ export class InfiniteView {
     }));
   }
 
-  public clientToSvg([x, y]: number[]): number[] {
+  clientToSvg([x, y]: number[]): number[] {
     const pt = svgPoint(this.svg.node(), [x, y]).matrixTransform(this.svg.node().getScreenCTM().inverse());
     return [pt.x, pt.y];
+  }
+
+  svgRect(el: Element): Rectangle {
+    var { left, top, right, bottom } = el.getBoundingClientRect();
+    var [left, top] = this.clientToSvg([left, top]),
+      [right, bottom] = this.clientToSvg([right, bottom]);
+    return new Rectangle([left, top], [right - left, bottom - top]);
   }
 
   private getViewBox(): number[] {

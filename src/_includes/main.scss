@@ -15,6 +15,11 @@ $fa-font-path: "/webfonts";
     stroke: $link;
     stroke-width: 3;
   }
+
+  &.unlink-target {
+    stroke: $danger;
+    stroke-width: 3;
+  }
 }
 
 .board-message-button {
@@ -29,7 +34,7 @@ $fa-font-path: "/webfonts";
 }
 
 .board-message:hover,
-.board-message.linking {
+.board-message.active {
   .board-message-button {
     visibility: visible;
   }
