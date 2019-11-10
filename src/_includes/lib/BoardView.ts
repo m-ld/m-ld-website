@@ -34,11 +34,12 @@ export class BoardView extends InfiniteView {
       .each(this.withThisMessage(mv => mv.position = [mv.msg.x, mv.msg.y]));
     enter.select('.board-message-body > div')
       .text(msg => msg.text)
+      .on('focus', this.withThisMessage(mv => mv.group.raise()))
       .on('input', this.withThisMessage(mv => mv.update()));
     enter.select('.board-message-close circle')
       .on('click', this.withThisMessage(mv => this.board.remove(mv.msg['@id'])))
       .call(this.setupBtnDrag(this.unlinkDragging, this.unlinkDragEnd));
-    enter.selectAll('.board-message-add circle')
+    enter.select('.board-message-add circle')
       .on('click', this.withThisMessage(this.addNewMessage))
       .call(this.setupBtnDrag(this.linkDragging, this.linkDragEnd));
     enter.selectAll('.board-message-move circle').call(d3.drag()
@@ -46,6 +47,8 @@ export class BoardView extends InfiniteView {
       .on('start', this.withThisMessage(this.moveDragStart))
       .on('drag', this.withThisMessage(this.moveDragging))
       .on('end', this.withThisMessage(this.moveDragEnd)));
+    enter.select('.board-message-code circle')
+      .on('click', this.withThisMessage(mv => mv.toggleCode()));
 
     // Call update for everyone, including the new folks
     selection.merge(enter).each(this.withThisMessage(mv => mv.update()));
@@ -81,11 +84,12 @@ export class BoardView extends InfiniteView {
     const [x, y] = mv.position;
     mv.msg.x = x;
     mv.msg.y = y;
+    mv.update();
   }
 
   private btnDragSubject(_: MessageView, dragged: SVGElement) {
     const button = new GroupUI(<SVGGElement>svgParent(dragged)), startPos = button.position;
-    return { x: d3.event.x, y: d3.event.y, button, startPos };
+    return { x: d3.event.x, y: d3.event.y, button, startPos, cursor: d3.select(dragged).attr('cursor') };
   }
 
   private btnDragStart(mv: MessageView, dragged: SVGElement) {
@@ -128,7 +132,7 @@ export class BoardView extends InfiniteView {
   private btnDragEnd(
     dragged: SVGElement, mv: MessageView, commit: (thatId: string) => void, targetClass: string) {
     const drag = d3.event.subject;
-    d3.select(dragged).attr('cursor', 'alias');
+    d3.select(dragged).attr('cursor', drag.cursor);
     if (drag.target) {
       drag.target.box.classed(targetClass, false);
       commit(drag.target.msg['@id']);

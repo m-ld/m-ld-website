@@ -8,7 +8,7 @@ window.onload = function () {
     '@id': shortId(),
     text: 'Hello!',
     x: 200, y: 100,
-    linkTo: ['b1234567']
+    linkTo: []
   };
   const board = new Board(hello);
   new BoardView('#board', board);

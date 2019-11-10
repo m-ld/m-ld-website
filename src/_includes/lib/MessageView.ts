@@ -33,6 +33,12 @@ export class MessageView extends GroupUI<Message> {
   }
 
   update() {
+    // If not in code mode, commit on update
+    if (this.codeMode)
+      this.text.select('pre').text(this.code);
+    else
+      this.msg.text = this.text.text();
+
     // Size the shape to the content
     const textRect = this.boardView.svgRect(this.text.node());
     var width = Math.max(textRect.width * MAGIC_DIV_SCALE, MIN_MESSAGE_WIDTH),
@@ -40,16 +46,16 @@ export class MessageView extends GroupUI<Message> {
     setAttr(this.box, { width, height });
     setAttr(this.body, { width, height });
 
-    const outLinks = this.msg.linkTo;
     // Re-draw outbound link-lines
+    const outLinks = this.msg.linkTo;
     outLinks.forEach(thatId => this.withThat(thatId, that => this.updateLink(that)));
     // Remove non-existent outbound link-lines
     this.allOutLinkLines()
       .filter(idNotInFilter(outLinks.map(thatId => MessageView.linkId(this.msg['@id'], thatId))))
       .remove();
 
-    const inLinks = this.boardView.board.linksTo(this.msg['@id']);
     // Re-draw inbound link-lines
+    const inLinks = this.boardView.board.linksTo(this.msg['@id']);
     inLinks.forEach(thatId => this.withThat(thatId, that => that.updateLink(this)));
     // Remove non-existent inbound link-lines
     this.allInLinkLines()
@@ -62,6 +68,28 @@ export class MessageView extends GroupUI<Message> {
     // Remove all link-lines from and to the removed messsage
     this.allOutLinkLines().remove();
     this.allInLinkLines().remove();
+  }
+
+  toggleCode() {
+    const codeMode = this.codeMode;
+    this.text.node().innerHTML = '';
+    if (codeMode) {
+      this.text.text(this.msg.text);
+    } else {
+      this.text.append('pre').text(this.code);
+    }
+    this.text.attr('contenteditable', !this.codeMode);
+    this.box.classed('code-mode', this.codeMode);
+    this.group.raise();
+    this.update();
+  }
+
+  get code(): string {
+    return JSON.stringify(this.msg, null, 2);
+  }
+
+  get codeMode(): boolean {
+    return !this.text.select('pre').empty();
   }
 
   private allOutLinkLines() {
