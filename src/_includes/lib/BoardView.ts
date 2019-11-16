@@ -1,6 +1,6 @@
 import * as d3 from 'd3';
 import { Message } from './Message';
-import { setAttr, shortId, getAttr, svgPoint, svgParent } from './util';
+import { shortId, svgParent } from './util';
 import { Board } from './Board';
 import { InfiniteView } from './InfiniteView';
 import { MessageView } from './MessageView';
@@ -136,7 +136,7 @@ export class BoardView extends InfiniteView {
     if (drag.target) {
       drag.target.box.classed(targetClass, false);
       commit(drag.target.msg['@id']);
-      mv.update();
+      mv.update(); // TODO Will not be needed with update notifications
     }
     drag.button.position = drag.startPos;
     mv.group.classed('active', false);
