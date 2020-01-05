@@ -6,3 +6,4 @@ m-ld.org
 * https://bulma.io/documentation/
 * https://fontawesome.com/icons
 * https://github.com/d3/d3/blob/master/API.md
+* https://webkul.github.io/myscale/
