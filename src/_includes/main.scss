@@ -1,0 +1,67 @@
+@charset "utf-8";
+
+@import "../../node_modules/bulma/bulma";
+
+$fa-font-path: "/webfonts";
+
+@import "../../node_modules/@fortawesome/fontawesome-free/scss/fontawesome.scss";
+@import "../../node_modules/@fortawesome/fontawesome-free/scss/brands.scss";
+@import "../../node_modules/@fortawesome/fontawesome-free/scss/solid.scss";
+
+.board-message-box {
+  fill: $light;
+  stroke: none;
+  stroke-width: 3;
+
+  &.link-target {
+    stroke: $link;
+  }
+
+  &.unlink-target {
+    stroke: $danger;
+  }
+}
+
+.board-message-button {
+  visibility: hidden;
+
+  text {
+    @extend .fas;
+    fill: $white;
+    pointer-events: none;
+    font-size: 0.8em;
+  }
+}
+
+.board-message:hover,
+.board-message.active {
+  .board-message-button {
+    visibility: visible;
+  }
+}
+
+.board-message-close {
+  fill: $danger;
+}
+
+.board-message-add {
+  fill: $link;
+}
+
+.board-message-move {
+  fill: $warning;
+}
+
+.board-message-code {
+  fill: $primary;
+}
+
+.link-line {
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke: $link;
+}
+
+#link-arrowhead {
+  fill: $link;
+}

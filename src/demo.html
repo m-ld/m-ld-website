@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>m-ld</title>
+  <link rel="stylesheet" href="/main.css">
+  <script src="demo.js"></script>
+</head>
+
+<body style="overflow: hidden;">
+  <svg id="board">
+    <defs>
+      <g id="board-message-template">
+        <rect class="board-message-box" rx="10" />
+        <foreignObject class="board-message-body">
+          <div xmlns="http://www.w3.org/1999/xhtml" contenteditable="true"
+            style="display: inline-block; padding: 15px; white-space: nowrap; outline: none">
+          </div>
+        </foreignObject>
+        <g transform="translate(10, -10)">
+          <g transform="translate(0, 0)" class="board-message-button board-message-close">
+            <circle r="10" cx="10" cy="10" />
+            <text x="5.5" y="15">&#xf00d;</text>
+          </g>
+          <g transform="translate(25, 0)" class="board-message-button board-message-add">
+            <circle r="10" cx="10" cy="10" cursor="alias" />
+            <text x="4.5" y="15">&#xf067;</text>
+          </g>
+          <g transform="translate(50, 0)" class="board-message-button board-message-move">
+            <circle r="10" cx="10" cy="10" cursor="grab" />
+            <text x="3.5" y="15">&#xf0b2;</text>
+          </g>
+          <g transform="translate(75, 0)" class="board-message-button board-message-code">
+            <circle r="10" cx="10" cy="10" />
+            <text x="2" y="15">&#xf121;</text>
+          </g>
+        </g>
+      </g>
+      <line id="link-line-template" marker-end="url(#link-arrowhead)" />
+      <marker id="link-arrowhead" viewBox="0 0 4 4" refX="2" refY="2" markerWidth="4"
+        markerHeight="4" orient="auto">
+        <path d="M 0 0 L 4 2 L 0 4 z"></path>
+      </marker>
+    </defs>
+    <g id="link-lines"></g>
+  </svg>
+</body>
+
+</html>

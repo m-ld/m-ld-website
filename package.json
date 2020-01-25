@@ -3,11 +3,9 @@
   "version": "0.0.1",
   "description": "m-ld.org website",
   "scripts": {
-    "clean": "rm -rf public",
-    "build": "npm run build:dev && npm run postcss && npx eleventy",
-    "build:dev": "node-sass src/main.scss public/main.css",
-    "postcss": "postcss --use autoprefixer --output public/main.css public/main.css",
-    "dev": "npm run build:dev && npx eleventy --serve"
+    "clean": "rm -rf _site",
+    "build": "npx eleventy",
+    "dev": "npx eleventy --serve"
   },
   "repository": {
     "type": "git",
@@ -21,9 +19,18 @@
   "homepage": "https://github.com/gsvarovsky/m-ld-website#readme",
   "devDependencies": {
     "@11ty/eleventy": "^0.9.0",
+    "@fortawesome/fontawesome-free": "^5.11.2",
     "autoprefixer": "^9.6.1",
+    "browserify": "^16.5.0",
     "bulma": "^0.7.5",
     "node-sass": "^4.12.0",
-    "postcss-cli": "^6.1.3"
+    "postcss-cli": "^6.1.3",
+    "tsify": "^4.0.1"
+  },
+  "dependencies": {
+    "@types/d3": "^5.7.2",
+    "d3": "^5.12.0",
+    "line-intersect": "^2.2.3",
+    "strict-event-emitter-types": "^2.0.0"
   }
 }
