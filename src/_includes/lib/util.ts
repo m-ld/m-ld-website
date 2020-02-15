@@ -18,7 +18,7 @@ export function shortId() {
   });
 }
 
-export function svgPoint(el: SVGElement, [x, y]: number[]): SVGPoint {
+export function svgPoint(el: SVGElement, [x, y]: [number, number]): SVGPoint {
   const svg = el instanceof SVGSVGElement ? el : el.ownerSVGElement;
   const pt = svg.createSVGPoint();
   pt.x = x;

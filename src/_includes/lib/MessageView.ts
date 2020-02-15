@@ -139,7 +139,7 @@ export class MessageView extends GroupUI<Message> {
     return new Rectangle(this.position, this.size);
   }
 
-  get size(): number[] {
+  get size(): [number, number] {
     return [Number(this.box.attr('width')), Number(this.box.attr('height'))];
   }
 

@@ -8,13 +8,14 @@ export class GroupUI<D = any> {
     this.group = d3.select(node);
   }
 
-  get position(): number[] {
-    return this.group.attr('transform')
+  get position(): [number, number] {
+    const pos = this.group.attr('transform')
       .match(/translate\(([-0-9\.]+),\s+([-0-9\.]+)\)/)
       .slice(1).map(Number);
+    return [pos[0], pos[1]];
   }
 
-  set position([x, y]: number[]) {
+  set position([x, y]: [number, number]) {
     this.group.attr('transform', `translate(${x}, ${y})`);
   }
 }
