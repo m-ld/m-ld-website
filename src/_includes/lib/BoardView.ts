@@ -35,7 +35,7 @@ export class BoardView extends InfiniteView {
     return this.meld
       .transact({
         '@select': '?s',
-        '@where': { '@id': '?s', linkTo: id }
+        '@where': { '@id': '?s', linkTo: { '@id': id } }
       } as Select)
       .pipe(map(selection => (selection['?s'] as Reference)['@id']), toArray()).toPromise();
   }
