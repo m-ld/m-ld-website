@@ -1,14 +1,15 @@
 import * as d3 from 'd3';
 import { setAttr, idNotInFilter } from './util';
-import { Message } from './Message';
 import { BoardView } from './BoardView';
 import { Line, Rectangle } from './Shapes';
 import { GroupUI } from './GroupUI';
+import { MeldApi } from 'm-ld';
+import { Message } from './Message';
 
 const MAGIC_DIV_SCALE: number = 10 / 9;
 const MIN_MESSAGE_WIDTH: number = 115; // Width of buttons + 20
 
-export class MessageView extends GroupUI<Message> {
+export class MessageView extends GroupUI<MeldApi.Node<Message>> {
   readonly boardView: BoardView;
 
   constructor(node: Element, boardView: BoardView) {
@@ -16,31 +17,45 @@ export class MessageView extends GroupUI<Message> {
     this.boardView = boardView;
   }
 
-  get msg(): Message {
+  get msg(): MeldApi.Node<Message> {
     return this.group.datum();
   }
 
-  get box(): d3.Selection<SVGRectElement, Message, HTMLElement, unknown> {
+  get box(): d3.Selection<SVGRectElement, MeldApi.Node<Message>, HTMLElement, unknown> {
     return this.group.select('.board-message-box');
   }
 
-  get body(): d3.Selection<SVGForeignObjectElement, Message, HTMLElement, unknown> {
+  get body(): d3.Selection<SVGForeignObjectElement, MeldApi.Node<Message>, HTMLElement, unknown> {
     return this.group.select('.board-message-body');
   }
 
-  get text(): d3.Selection<HTMLDivElement, Message, HTMLElement, unknown> {
+  get content(): d3.Selection<HTMLDivElement, MeldApi.Node<Message>, HTMLElement, unknown> {
     return this.body.select('div');
   }
 
+  get text(): string {
+    return this.content.text();
+  }
+
+  static mergeText(value: string | string[]): string {
+    return Array.isArray(value) ? value.join('\n') : value;
+  }
+
+  static mergePosition([xs, ys]: [number | number[], number | number[]]): [number, number] {
+    return [
+      Array.isArray(xs) ? Math.min(...xs) : xs,
+      Array.isArray(ys) ? Math.min(...ys) : ys
+    ];
+  }
+
   update() {
-    // If not in code mode, commit on update
     if (this.codeMode)
-      this.text.select('pre').text(this.code);
+      this.content.select('pre').text(this.code);
     else
-      this.msg.text = this.text.text();
+      this.content.text(MessageView.mergeText(this.msg.text));
 
     // Size the shape to the content
-    const textRect = this.boardView.svgRect(this.text.node());
+    const textRect = this.boardView.svgRect(this.content.node());
     var width = Math.max(textRect.width * MAGIC_DIV_SCALE, MIN_MESSAGE_WIDTH),
       height = textRect.height * MAGIC_DIV_SCALE;
     setAttr(this.box, { width, height });
@@ -48,19 +63,20 @@ export class MessageView extends GroupUI<Message> {
 
     // Re-draw outbound link-lines
     const outLinks = this.msg.linkTo;
-    outLinks.forEach(thatId => this.withThat(thatId, that => this.updateLink(that)));
+    outLinks.forEach(that => this.withThat(that['@id'], that => this.updateLink(that)));
     // Remove non-existent outbound link-lines
     this.allOutLinkLines()
-      .filter(idNotInFilter(outLinks.map(thatId => MessageView.linkId(this.msg['@id'], thatId))))
+      .filter(idNotInFilter(outLinks.map(that => MessageView.linkId(this.msg['@id'], that['@id']))))
       .remove();
 
     // Re-draw inbound link-lines
-    const inLinks = this.boardView.board.linksTo(this.msg['@id']);
-    inLinks.forEach(thatId => this.withThat(thatId, that => that.updateLink(this)));
-    // Remove non-existent inbound link-lines
-    this.allInLinkLines()
-      .filter(idNotInFilter(inLinks.map(thatId => MessageView.linkId(thatId, this.msg['@id']))))
-      .remove();
+    this.boardView.linksTo(this.msg['@id']).then(inLinks => {
+      inLinks.forEach(thatId => this.withThat(thatId, that => that.updateLink(this)));
+      // Remove non-existent inbound link-lines
+      this.allInLinkLines()
+        .filter(idNotInFilter(inLinks.map(thatId => MessageView.linkId(thatId, this.msg['@id']))))
+        .remove();
+    });
   }
 
   remove() {
@@ -71,14 +87,14 @@ export class MessageView extends GroupUI<Message> {
   }
 
   toggleCode() {
-    const codeMode = this.codeMode;
-    this.text.node().innerHTML = '';
-    if (codeMode) {
-      this.text.text(this.msg.text);
+    const wasCodeMode = this.codeMode;
+    this.content.node().innerHTML = '';
+    if (wasCodeMode) {
+      this.content.text(MessageView.mergeText(this.msg.text));
     } else {
-      this.text.append('pre').text(this.code);
+      this.content.append('pre').text(this.code);
     }
-    this.text.attr('contenteditable', !this.codeMode);
+    this.content.attr('contenteditable', !this.codeMode);
     this.box.classed('code-mode', this.codeMode);
     this.group.raise();
     this.update();
@@ -89,7 +105,7 @@ export class MessageView extends GroupUI<Message> {
   }
 
   get codeMode(): boolean {
-    return !this.text.select('pre').empty();
+    return !this.content.select('pre').empty();
   }
 
   private allOutLinkLines() {

@@ -1,7 +1,6 @@
 import * as d3 from 'd3';
-import { svgPoint, svgRound } from './util';
 
-export class GroupUI<D = any> {
+export class GroupUI<D = unknown> {
   readonly group: d3.Selection<SVGGElement, D, HTMLElement, unknown>;
 
   constructor(node: SVGGElement) {
