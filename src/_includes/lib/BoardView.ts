@@ -8,8 +8,8 @@ import { Rectangle } from './Shapes';
 import { map, toArray } from 'rxjs/operators';
 import { MeldApi } from 'm-ld';
 // FIXME: Tidy up m-ld utility exports
-import { shortId, toArray as array } from 'm-ld/dist/util';
-import { Subject, Select, Describe, asSubjects, DeleteInsert, Update, Reference } from 'm-ld/dist/m-ld/jsonrql';
+import { shortId } from 'm-ld/dist/util';
+import { Subject, Select, Describe, Update, Reference } from 'm-ld/dist/m-ld/jsonrql';
 
 export class BoardView extends InfiniteView {
   constructor(

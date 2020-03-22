@@ -29,7 +29,8 @@ aedes.on('connectionError', function (client, err) {
 
 aedes.on('publish', function (packet, client) {
   if (client) {
-    console.log('message from client', client.id)
+    const { topic, qos, retain } = packet;
+    console.log('message from client', client.id, { topic, qos, retain }, packet.payload.toString())
   }
 });
 

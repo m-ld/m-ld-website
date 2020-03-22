@@ -10,7 +10,7 @@ window.onload = function () {
     throw new Error('No domain specified');
 
   clone(Level(domain), {
-    domain, mqttOpts: { host: 'localhost', port: 8888, protocol: 'ws' }
+    '@domain': domain, mqttOpts: { host: 'localhost', port: 8888, protocol: 'ws' }
   }).then(async meld => {
     new BoardView('#board', meld);
 
@@ -59,5 +59,7 @@ window.onload = function () {
         }, 2000);
       }, 2000);
     }
+
+    window.addEventListener('unload', () => meld.close());
   });
 }
