@@ -41,6 +41,10 @@ export class MessageView extends GroupUI<MeldApi.Node<Message>> {
     return Array.isArray(value) ? value.join('\n') : value;
   }
 
+  get msgText(): string {
+    return MessageView.mergeText(this.msg.text);
+  }
+
   static mergePosition([xs, ys]: [number | number[], number | number[]]): [number, number] {
     return [
       Array.isArray(xs) ? Math.min(...xs) : xs,
@@ -48,11 +52,21 @@ export class MessageView extends GroupUI<MeldApi.Node<Message>> {
     ];
   }
 
-  update() {
-    if (this.codeMode)
-      this.content.select('pre').text(this.code);
-    else
-      this.content.text(MessageView.mergeText(this.msg.text));
+  get msgPosition(): [number, number] {
+    return MessageView.mergePosition([this.msg.x, this.msg.y]);
+  }
+
+  update(fromData?: 'fromData') {
+    if (fromData) {
+      // Update the visible text
+      if (this.codeMode)
+        this.content.select('pre').text(this.code);
+      else
+        this.content.text(this.msgText);
+
+      // Update the position
+      this.position = this.msgPosition;
+    }
 
     // Size the shape to the content
     const textRect = this.boardView.svgRect(this.content.node());
@@ -90,7 +104,7 @@ export class MessageView extends GroupUI<MeldApi.Node<Message>> {
     const wasCodeMode = this.codeMode;
     this.content.node().innerHTML = '';
     if (wasCodeMode) {
-      this.content.text(MessageView.mergeText(this.msg.text));
+      this.content.text(this.msgText);
     } else {
       this.content.append('pre').text(this.code);
     }

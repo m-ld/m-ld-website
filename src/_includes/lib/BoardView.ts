@@ -56,12 +56,11 @@ export class BoardView extends InfiniteView {
             .select(() => this.append(MessageView.createMessageViewNode()))
             .classed('board-message', true)
             .attr('id', msg => msg['@id'])
-            .each(this.withThisMessage(mv =>
-              mv.position = MessageView.mergePosition([mv.msg.x, mv.msg.y])));
+            .each(this.withThisMessage(mv => mv.position = mv.msgPosition));
           enter.select('.board-message-body > div')
             .text(msg => MessageView.mergeText(msg.text))
             .on('focus', this.withThisMessage(mv => mv.group.raise()))
-            .on('input', this.withThisMessage(mv => mv.update()));
+            .on('input', this.withThisMessage(mv => mv.update('fromData')));
           enter.select('.board-message-close circle')
             .on('click', this.withThisMessage(mv => this.meld.delete(mv.msg['@id'])))
             .call(this.setupBtnDrag(this.unlinkDragging, this.unlinkDragEnd));
@@ -81,7 +80,7 @@ export class BoardView extends InfiniteView {
         exit => exit.each(this.withThisMessage(mv => mv.remove()))
       )
       // Call update for everyone, including the new folks
-      .each(this.withThisMessage(mv => mv.update()));
+      .each(this.withThisMessage(mv => mv.update('fromData')));
   }
 
   private applyUpdates(updates: MeldApi.SubjectUpdates) {
@@ -134,7 +133,7 @@ export class BoardView extends InfiniteView {
     // Commit the change to the message
     const [x, y] = mv.position;
     this.meld.transact({
-      '@insert': { '@id': mv.msg['@id'], x: x, y: y },
+      '@insert': { '@id': mv.msg['@id'], x, y },
       '@delete': { '@id': mv.msg['@id'], x: mv.msg.x, y: mv.msg.y }
     } as Update);
   }
@@ -204,7 +203,7 @@ export class BoardView extends InfiniteView {
 
   private addNewMessage(mv: MessageView) {
     const id = shortId();
-    const [x, y] = MessageView.mergePosition([mv.msg.x, mv.msg.y]);
+    const [x, y] = mv.msgPosition;
     const newMessage: MeldApi.Node<Message> = {
       '@id': id, '@type': 'Message', text: '',
       // TODO: Prevent collisions
