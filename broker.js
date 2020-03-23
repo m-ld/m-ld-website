@@ -1,11 +1,28 @@
 'use strict'
 
-var aedes = require('aedes')();
-var server = require('net').createServer(aedes.handle);
-var httpServer = require('http').createServer();
-var ws = require('websocket-stream');
-var mqttPort = 1883;
-var httpPort = 8888;
+const persistence = require('aedes-persistence')();
+const aedes = require('aedes')({ persistence });
+const server = require('net').createServer(aedes.handle);
+const httpServer = require('http').createServer();
+const ws = require('websocket-stream');
+const mqttPort = 1883;
+const httpPort = 8888;
+var keypress = require('keypress');
+
+// make `process.stdin` begin emitting "keypress" events
+keypress(process.stdin);
+
+// listen for the "keypress" event
+process.stdin.on('keypress', function (_, key) {
+  if (key && key.name == 'd') {
+    console.log('Blanking persistence...');
+    // Hack, re-apply the constructor
+    require('aedes-persistence').apply(persistence);
+  }
+});
+if (process.stdin.isTTY)
+  process.stdin.setRawMode(true);
+process.stdin.resume();
 
 server.listen(mqttPort, function () {
   console.log('mqtt server listening on port', mqttPort)
