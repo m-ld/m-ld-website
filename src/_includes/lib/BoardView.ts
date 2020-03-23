@@ -60,7 +60,8 @@ export class BoardView extends InfiniteView {
           enter.select('.board-message-body > div')
             .text(msg => MessageView.mergeText(msg.text))
             .on('focus', this.withThisMessage(mv => mv.group.raise()))
-            .on('input', this.withThisMessage(mv => mv.update('fromData')));
+            .on('input', this.withThisMessage(mv => mv.update()))
+            .on('blur', this.withThisMessage(this.inputEnd));
           enter.select('.board-message-close circle')
             .on('click', this.withThisMessage(mv => this.meld.delete(mv.msg['@id'])))
             .call(this.setupBtnDrag(this.unlinkDragging, this.unlinkDragEnd));
@@ -79,7 +80,7 @@ export class BoardView extends InfiniteView {
         update => update, // will be updated in a mo
         exit => exit.each(this.withThisMessage(mv => mv.remove()))
       )
-      // Call update for everyone, including the new folks
+      // Update everyone from data, including the new folks
       .each(this.withThisMessage(mv => mv.update('fromData')));
   }
 
@@ -114,6 +115,16 @@ export class BoardView extends InfiniteView {
       .on('start', this.withThisMessage(this.btnDragStart))
       .on('drag', this.withThisMessage(dragging))
       .on('end', this.withThisMessage(dragEnd));
+  }
+
+  private inputEnd(mv: MessageView) {
+    // Commit the change to the message
+    if (mv.msgText !== mv.text) {
+      this.meld.transact({
+        '@insert': { '@id': mv.msg['@id'], text: mv.text },
+        '@delete': { '@id': mv.msg['@id'], text: mv.msg.text }
+      } as Update);
+    }
   }
 
   private moveDragStart(_: MessageView, dragged: SVGElement) {

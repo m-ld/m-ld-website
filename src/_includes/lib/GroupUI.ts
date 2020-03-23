@@ -15,6 +15,18 @@ export class GroupUI<D = unknown> {
   }
 
   set position([x, y]: [number, number]) {
-    this.group.attr('transform', `translate(${x}, ${y})`);
+    if (validCoordinate(x, y))
+      this.group.attr('transform', `translate(${x}, ${y})`);
   }
+}
+
+function validCoordinate(...cs: number[]): boolean {
+  return cs.every(c => {
+    const ok = Number.isFinite(c) && !Number.isNaN(c);
+    if (!ok) {
+      console.warn(`Coordinate ${c} is not valid`);
+      debugger;
+    }
+    return ok;
+  });
 }
