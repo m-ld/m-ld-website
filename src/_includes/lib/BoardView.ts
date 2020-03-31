@@ -6,10 +6,10 @@ import { MessageView } from './MessageView';
 import { GroupUI } from './GroupUI';
 import { Rectangle } from './Shapes';
 import { map, toArray } from 'rxjs/operators';
-import { MeldApi } from 'm-ld';
+import { MeldApi } from '@gsvarovsky/m-ld';
 // FIXME: Tidy up m-ld utility exports
-import { shortId } from 'm-ld/dist/util';
-import { Subject, Select, Describe, Update, Reference } from 'm-ld/dist/m-ld/jsonrql';
+import { shortId } from '@gsvarovsky/m-ld/dist/util';
+import { Subject, Select, Describe, Update, Reference } from '@gsvarovsky/m-ld/dist/m-ld/jsonrql';
 
 export class BoardView extends InfiniteView {
   constructor(

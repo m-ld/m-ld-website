@@ -1,8 +1,8 @@
 import { BoardView } from './lib/BoardView';
 import { Message } from './lib/Message';
-import { clone } from 'm-ld';
+import { clone } from '@gsvarovsky/m-ld';
 import * as Level from 'level-js';
-import { Update } from 'm-ld/dist/m-ld/jsonrql';
+import { Update } from '@gsvarovsky/m-ld/dist/m-ld/jsonrql';
 
 window.onload = function () {
   const domain = document.location.hash.slice(1);

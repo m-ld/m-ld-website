@@ -3,7 +3,7 @@ import { setAttr, idNotInFilter } from './util';
 import { BoardView } from './BoardView';
 import { Line, Rectangle } from './Shapes';
 import { GroupUI } from './GroupUI';
-import { MeldApi } from 'm-ld';
+import { MeldApi } from '@gsvarovsky/m-ld';
 import { Message } from './Message';
 
 const MAGIC_DIV_SCALE: number = 10 / 9;
