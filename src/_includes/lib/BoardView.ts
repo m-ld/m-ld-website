@@ -1,62 +1,113 @@
 import * as d3 from 'd3';
 import { Message } from './Message';
-import { shortId, svgParent } from './util';
-import { Board } from './Board';
+import { svgParent } from './util';
 import { InfiniteView } from './InfiniteView';
 import { MessageView } from './MessageView';
 import { GroupUI } from './GroupUI';
 import { Rectangle } from './Shapes';
+import { map, toArray } from 'rxjs/operators';
+import { MeldApi } from '@gsvarovsky/m-ld';
+// FIXME: Tidy up m-ld utility exports
+import { shortId } from '@gsvarovsky/m-ld/dist/util';
+import { Subject, Select, Describe, Update, Reference } from '@gsvarovsky/m-ld/dist/m-ld/jsonrql';
 
 export class BoardView extends InfiniteView {
-  readonly board: Board;
-
-  constructor(selectSvg: string, board: Board) {
+  constructor(
+    selectSvg: string,
+    private readonly meld: MeldApi) {
     super(selectSvg);
-    this.board = board;
 
     // Sync all the messages in the given board now
-    this.sync(board.messages);
+    meld.transact({
+      '@describe': '?s', '@where': { '@id': '?s', '@type': 'Message' }
+    } as Describe).pipe(toArray()).subscribe(subjects => this.sync(MeldApi.asSubjectUpdates({
+      '@insert': { '@graph': subjects }, '@delete': { '@graph': [] }
+    })));
 
-    this.board.events.on('add', msg => this.sync([msg]));
-    this.board.events.on('remove', msg => this.withThatMessage(msg['@id'], mv => mv.remove()));
+    // Follow changes to messages
+    meld.follow().subscribe(update => {
+      // Construct subject updates from the group updates
+      this.sync(MeldApi.asSubjectUpdates(update));
+    });
   }
 
-  private sync(messages: Message[]) {
-    const selection = this.svg.selectAll('.board-message')
-      .data(messages, function (this: Element, msg: Message) {
+  async linksTo(id: string): Promise<string[]> {
+    return this.meld
+      .transact({
+        '@select': '?s',
+        '@where': { '@id': '?s', linkTo: { '@id': id } }
+      } as Select)
+      .pipe(map(selection => (selection['?s'] as Reference)['@id']), toArray()).toPromise();
+  }
+
+  get messages(): MeldApi.Node<Message>[] {
+    return this.svg.selectAll('.board-message').data() as MeldApi.Node<Message>[];
+  }
+
+  private sync(updates: MeldApi.SubjectUpdates) {
+    this.svg.selectAll('.board-message')
+      // Apply the given updates to the board messages
+      .data(this.applyUpdates(updates), function (this: Element, msg: MeldApi.Node<Message>) {
         return msg ? msg['@id'] : this.id;
-      });
+      })
+      .join(
+        enter => {
+          enter = enter
+            .select(() => this.append(MessageView.createMessageViewNode()))
+            .classed('board-message', true)
+            .attr('id', msg => msg['@id'])
+            .each(this.withThisMessage(mv => mv.position = mv.msgPosition));
+          enter.select('.board-message-body > div')
+            .text(msg => MessageView.mergeText(msg.text))
+            .on('focus', this.withThisMessage(mv => mv.group.raise()))
+            .on('input', this.withThisMessage(mv => mv.update()))
+            .on('blur', this.withThisMessage(this.inputEnd));
+          enter.select('.board-message-close circle')
+            .on('click', this.withThisMessage(mv => this.meld.delete(mv.msg['@id'])))
+            .call(this.setupBtnDrag(this.unlinkDragging, this.unlinkDragEnd));
+          enter.select('.board-message-add circle')
+            .on('click', this.withThisMessage(this.addNewMessage))
+            .call(this.setupBtnDrag(this.linkDragging, this.linkDragEnd));
+          enter.selectAll('.board-message-move circle').call(d3.drag()
+            .container(this.svg.node())
+            .on('start', this.withThisMessage(this.moveDragStart))
+            .on('drag', this.withThisMessage(this.moveDragging))
+            .on('end', this.withThisMessage(this.moveDragEnd)));
+          enter.select('.board-message-code circle')
+            .on('click', this.withThisMessage(mv => mv.toggleCode()));
+          return enter;
+        },
+        update => update, // will be updated in a mo
+        exit => exit.each(this.withThisMessage(mv => mv.remove()))
+      )
+      // Update everyone from data, including the new folks
+      .each(this.withThisMessage(mv => mv.update('fromData')));
+  }
 
-    const enter = selection.enter()
-      .select(() => this.append(MessageView.createMessageViewNode()))
-      .classed('board-message', true)
-      .attr('id', msg => msg['@id'])
-      .each(this.withThisMessage(mv => mv.position = [mv.msg.x, mv.msg.y]));
-    enter.select('.board-message-body > div')
-      .text(msg => msg.text)
-      .on('focus', this.withThisMessage(mv => mv.group.raise()))
-      .on('input', this.withThisMessage(mv => mv.update()));
-    enter.select('.board-message-close circle')
-      .on('click', this.withThisMessage(mv => this.board.remove(mv.msg['@id'])))
-      .call(this.setupBtnDrag(this.unlinkDragging, this.unlinkDragEnd));
-    enter.select('.board-message-add circle')
-      .on('click', this.withThisMessage(this.addNewMessage))
-      .call(this.setupBtnDrag(this.linkDragging, this.linkDragEnd));
-    enter.selectAll('.board-message-move circle').call(d3.drag()
-      .container(this.svg.node())
-      .on('start', this.withThisMessage(this.moveDragStart))
-      .on('drag', this.withThisMessage(this.moveDragging))
-      .on('end', this.withThisMessage(this.moveDragEnd)));
-    enter.select('.board-message-code circle')
-      .on('click', this.withThisMessage(mv => mv.toggleCode()));
-
-    // Call update for everyone, including the new folks
-    selection.merge(enter).each(this.withThisMessage(mv => mv.update()));
+  private applyUpdates(updates: MeldApi.SubjectUpdates) {
+    return this.messages
+      .map(msg => {
+        if (updates[msg['@id']]) {
+          // Update this message
+          MeldApi.update(msg, updates[msg['@id']]);
+          delete updates[msg['@id']]; // Side-effect: consumed the update
+        }
+        return msg;
+      })
+      .concat(Object.entries(updates).map(([id, update]) => {
+        // Any remaining updates are new messages
+        const msg: MeldApi.Node<Message> =
+          { '@id': id, '@type': 'Message', text: [], x: [], y: [], linkTo: [] };
+        MeldApi.update(msg, update);
+        return msg;
+      }))
+      // Remove any messages that have become invalid (deleted)
+      .filter(msg => msg.text.length || msg.text === '');
   }
 
   private setupBtnDrag(dragging: (mv: MessageView) => void,
     dragEnd: (mv: MessageView, dragged: SVGElement) => void):
-    (selection: d3.Selection<d3.BaseType, unknown, Element, Message>) => void {
+    (selection: d3.Selection<d3.BaseType, unknown, Element, unknown>) => void {
     return d3.drag() // Set up drag-to-link behaviour
       .container(this.svg.node())
       .clickDistance(3) // Ensure that single-click hits click handler
@@ -64,6 +115,16 @@ export class BoardView extends InfiniteView {
       .on('start', this.withThisMessage(this.btnDragStart))
       .on('drag', this.withThisMessage(dragging))
       .on('end', this.withThisMessage(dragEnd));
+  }
+
+  private inputEnd(mv: MessageView) {
+    // Commit the change to the message
+    if (mv.msgText !== mv.text) {
+      this.meld.transact({
+        '@insert': { '@id': mv.msg['@id'], text: mv.text },
+        '@delete': { '@id': mv.msg['@id'], text: mv.msg.text }
+      } as Update);
+    }
   }
 
   private moveDragStart(_: MessageView, dragged: SVGElement) {
@@ -75,16 +136,17 @@ export class BoardView extends InfiniteView {
     const [x, y] = mv.position;
     mv.group.raise();
     mv.position = [x + d3.event.dx, y + d3.event.dy];
-    mv.update();
+    mv.update(); // To keep the lines attached
   }
 
   private moveDragEnd(mv: MessageView, dragged: SVGElement) {
     d3.select(dragged).attr('cursor', 'grab');
     // Commit the change to the message
     const [x, y] = mv.position;
-    mv.msg.x = x;
-    mv.msg.y = y;
-    mv.update();
+    this.meld.transact({
+      '@insert': { '@id': mv.msg['@id'], x, y },
+      '@delete': { '@id': mv.msg['@id'], x: mv.msg.x, y: mv.msg.y }
+    } as Update);
   }
 
   private btnDragSubject(_: MessageView, dragged: SVGElement) {
@@ -99,21 +161,30 @@ export class BoardView extends InfiniteView {
 
   private linkDragging(mv: MessageView) {
     this.btnDragging(
-      mv, thatId => thatId != mv.msg['@id'] && !mv.msg.linkTo.includes(thatId), 'link-target');
+      mv, thatId => thatId != mv.msg['@id'] &&
+        !MeldApi.includesValue(mv.msg.linkTo, { '@id': thatId }), 'link-target');
   }
 
   private linkDragEnd(mv: MessageView, dragged: SVGElement) {
-    this.btnDragEnd(dragged, mv, thatId => mv.msg.linkTo.push(thatId), 'link-target');
+    this.btnDragEnd(dragged, mv, thatId => {
+      this.meld.transact({
+        '@insert': { '@id': mv.msg['@id'], linkTo: { '@id': thatId } }
+      } as Update);
+    }, 'link-target');
   }
 
   private unlinkDragging(mv: MessageView) {
     this.btnDragging(
-      mv, thatId => thatId != mv.msg['@id'] && mv.msg.linkTo.includes(thatId), 'unlink-target');
+      mv, thatId => thatId != mv.msg['@id'] &&
+        MeldApi.includesValue(mv.msg.linkTo, { '@id': thatId }), 'unlink-target');
   }
 
   private unlinkDragEnd(mv: MessageView, dragged: SVGElement) {
-    this.btnDragEnd(dragged, mv,
-      thatId => mv.msg.linkTo = mv.msg.linkTo.filter(thisId => thatId != thisId), 'unlink-target');
+    this.btnDragEnd(dragged, mv, thatId => {
+      this.meld.transact({
+        '@delete': { '@id': mv.msg['@id'], linkTo: { '@id': thatId } }
+      } as Update);
+    }, 'unlink-target');
   }
 
   private btnDragging(mv: MessageView, filter: (thatId: string) => boolean, targetClass: string) {
@@ -136,7 +207,6 @@ export class BoardView extends InfiniteView {
     if (drag.target) {
       drag.target.box.classed(targetClass, false);
       commit(drag.target.msg['@id']);
-      mv.update(); // TODO Will not be needed with update notifications
     }
     drag.button.position = drag.startPos;
     mv.group.classed('active', false);
@@ -144,10 +214,19 @@ export class BoardView extends InfiniteView {
 
   private addNewMessage(mv: MessageView) {
     const id = shortId();
-    mv.msg.linkTo.push(id);
-    // TODO: Prevent collisions
-    this.board.add({ '@id': id, text: '', x: mv.msg.x + 50, y: mv.msg.y + 100, linkTo: [] });
-    this.withThatMessage(id, mv => mv.text.node().focus());
+    const [x, y] = mv.msgPosition;
+    const newMessage: MeldApi.Node<Message> = {
+      '@id': id, '@type': 'Message', text: '',
+      // TODO: Prevent collisions
+      x: x + 50, y: y + 100,
+      linkTo: []
+    };
+    const newLink: Subject = {
+      '@id': mv.msg['@id'],
+      linkTo: [{ '@id': id }]
+    };
+    this.meld.transact({ '@insert': [newMessage, newLink] } as Update)
+      .toPromise().then(() => this.withThatMessage(id, mv => mv.content.node().focus()));
   }
 
   hitTest(test: Rectangle, filter: (id: string) => boolean): MessageView {

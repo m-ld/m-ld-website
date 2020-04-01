@@ -5,7 +5,7 @@
   "scripts": {
     "clean": "rm -rf _site",
     "build": "npx eleventy",
-    "dev": "npx eleventy --serve"
+    "dev": "concurrently -i -n mqtt,web \"node broker.js\" \"npx eleventy --serve\""
   },
   "repository": {
     "type": "git",
@@ -20,17 +20,24 @@
   "devDependencies": {
     "@11ty/eleventy": "^0.9.0",
     "@fortawesome/fontawesome-free": "^5.11.2",
+    "aedes": "^0.40.1",
     "autoprefixer": "^9.6.1",
     "browserify": "^16.5.0",
     "bulma": "^0.7.5",
+    "concurrently": "^5.1.0",
+    "keypress": "^0.2.1",
     "node-sass": "^4.12.0",
     "postcss-cli": "^6.1.3",
-    "tsify": "^4.0.1"
+    "tsify": "^4.0.1",
+    "websocket-stream": "^5.5.0"
   },
   "dependencies": {
+    "@gsvarovsky/m-ld": "0.0.1",
     "@types/d3": "^5.7.2",
+    "@types/level-js": "^4.0.1",
     "d3": "^5.12.0",
+    "level-js": "^5.0.1",
     "line-intersect": "^2.2.3",
-    "strict-event-emitter-types": "^2.0.0"
+    "rxjs": "^6.5.4"
   }
 }

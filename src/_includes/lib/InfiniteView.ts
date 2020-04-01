@@ -1,10 +1,9 @@
 import * as d3 from 'd3';
-import { Message } from './Message';
-import { setAttr, svgPoint, svgRound } from './util';
+import { setAttr, svgPoint } from './util';
 import { Rectangle } from './Shapes';
 
 export class InfiniteView {
-  readonly svg: d3.Selection<SVGSVGElement, Message, HTMLElement, unknown>;
+  readonly svg: d3.Selection<SVGSVGElement, unknown, HTMLElement, unknown>;
 
   constructor(selectSvg: string) {
     this.svg = d3.select(selectSvg);
@@ -41,7 +40,7 @@ export class InfiniteView {
     }));
   }
 
-  clientToSvg([x, y]: number[]): number[] {
+  clientToSvg([x, y]: [number, number]): [number, number] {
     const pt = svgPoint(this.svg.node(), [x, y]).matrixTransform(this.svg.node().getScreenCTM().inverse());
     return [pt.x, pt.y];
   }
@@ -57,12 +56,12 @@ export class InfiniteView {
     return this.svg.attr('viewBox').split(/[\s,]+/).map(Number);
   }
 
-  private setViewBox([x, y]: number[], [width, height]: number[]) {
+  private setViewBox([x, y]: [number, number], [width, height]: [number, number]) {
     if (width > 0 && height > 0)
       this.svg.attr('viewBox', [x, y, width, height].join(' '));
   }
 
-  private static windowSize(): number[] {
+  private static windowSize(): [number, number] {
     return [window.innerWidth, window.innerHeight];
   }
 }

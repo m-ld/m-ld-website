@@ -11,14 +11,7 @@ export function getAttr<T>(selection: d3.Selection<d3.BaseType, unknown, d3.Base
   return names.map(name => selection.attr(name)).map(coerce);
 }
 
-export function shortId() {
-  var d = new Date().getTime();
-  return 'axxxxxxx'.replace(/[ax]/g, function (c) {
-    return ((d + Math.random() * 16) % (c == 'a' ? 6 : 16) + (c == 'a' ? 10 : 0) | 0).toString(16);
-  });
-}
-
-export function svgPoint(el: SVGElement, [x, y]: number[]): SVGPoint {
+export function svgPoint(el: SVGElement, [x, y]: [number, number]): SVGPoint {
   const svg = el instanceof SVGSVGElement ? el : el.ownerSVGElement;
   const pt = svg.createSVGPoint();
   pt.x = x;

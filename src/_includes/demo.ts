@@ -1,36 +1,65 @@
 import { BoardView } from './lib/BoardView';
-import { Board } from './lib/Board';
-import { shortId } from './lib/util';
 import { Message } from './lib/Message';
+import { clone } from '@gsvarovsky/m-ld';
+import * as Level from 'level-js';
+import { Update } from '@gsvarovsky/m-ld/dist/m-ld/jsonrql';
 
 window.onload = function () {
-  const hello: Message = {
-    '@id': shortId(),
-    text: 'Hello!',
-    x: 200, y: 100,
-    linkTo: []
-  };
-  const board = new Board(hello);
-  new BoardView('#board', board);
-  setTimeout(() => {
-    const msg1: Message = {
-      '@id': shortId(), text:
-        'This is your new collaborative message board.',
-      x: 250, y: 200,
-      linkTo: []
-    };
-    hello.linkTo.push(msg1['@id']);
-    board.add(msg1);
+  const domain = document.location.hash.slice(1);
+  if (!domain)
+    throw new Error('No domain specified');
 
-    setTimeout(() => {
-      const msg2: Message = {
-        '@id': shortId(),
-        text: "We'll use it to demonstrate how m-ld works.",
-        x: 300, y: 300,
+  clone(Level(domain), {
+    '@domain': domain, mqttOpts: { host: 'localhost', port: 8888, protocol: 'ws' }
+  }).then(async meld => {
+    new BoardView('#board', meld);
+
+    // Check if we've already said hello
+    const hello = await meld.get('hello').toPromise();
+    if (!hello) {
+      meld.transact({
+        '@id': 'hello',
+        '@type': 'Message',
+        text: 'Hello!',
+        x: 200, y: 100,
         linkTo: []
-      };
-      msg1.linkTo.push(msg2['@id']);
-      board.add(msg2);
-    }, 2000);
-  }, 2000);
+      } as Message);
+
+      setTimeout(() => {
+        meld.transact({
+          '@insert': [
+            {
+              '@id': 'thisIs',
+              '@type': 'Message',
+              text: 'This is your new collaborative message board.',
+              x: 250, y: 200,
+              linkTo: []
+            } as Message,
+            {
+              '@id': 'hello', linkTo: [{ '@id': 'thisIs' }]
+            } as Partial<Message>
+          ]
+        } as Update);
+
+        setTimeout(() => {
+          meld.transact({
+            '@insert': [
+              {
+                '@id': 'weUse',
+                '@type': 'Message',
+                text: "We'll use it to demonstrate how m-ld works.",
+                x: 300, y: 300,
+                linkTo: []
+              } as Message,
+              {
+                '@id': 'thisIs', linkTo: [{ '@id': 'weUse' }]
+              } as Partial<Message>
+            ]
+          } as Update);
+        }, 2000);
+      }, 2000);
+    }
+
+    window.addEventListener('unload', () => meld.close());
+  });
 }
