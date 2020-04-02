@@ -19,7 +19,7 @@ module.exports = class {
     }).plugin("tsify", {
       noImplicitAny: true,
       target: 'es5'
-    });
+    }).transform(require('envify'));
     return promisify(b.bundle.bind(b))();
   }
 }

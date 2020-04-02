@@ -4,8 +4,8 @@
   "description": "m-ld.org website",
   "scripts": {
     "clean": "rm -rf _site",
-    "build": "npx eleventy",
-    "dev": "concurrently -i -n mqtt,web \"node broker.js\" \"npx eleventy --serve\""
+    "build": "NODE_ENV=test npx eleventy",
+    "local": "NODE_ENV=local concurrently -i -n mqtt,now \"node broker.js\" \"now dev\""
   },
   "repository": {
     "type": "git",
@@ -25,6 +25,7 @@
     "browserify": "^16.5.0",
     "bulma": "^0.7.5",
     "concurrently": "^5.1.0",
+    "envify": "^4.1.0",
     "keypress": "^0.2.1",
     "node-sass": "^4.12.0",
     "postcss-cli": "^6.1.3",
