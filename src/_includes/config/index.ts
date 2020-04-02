@@ -1,7 +1,14 @@
-export default (function () {
-  // Browserify does not support dynamic require
-  switch (process.env.NODE_ENV) {
-    case 'local': return require('./local.json');
-    case 'test': return require('./test.json');
+import { MeldConfig } from '@gsvarovsky/m-ld';
+
+export namespace Config {
+  export interface Client {
+    recaptcha: { site: string };
   }
-})();
+
+  export interface Request {
+    '@domain'?: string;
+    token: string;
+  }
+
+  export type Response = MeldConfig;
+}

@@ -4,8 +4,8 @@
   "description": "m-ld.org website",
   "scripts": {
     "clean": "rm -rf _site",
-    "build": "NODE_ENV=test npx eleventy",
-    "local": "NODE_ENV=local concurrently -i -n mqtt,now \"node broker.js\" \"now dev\""
+    "build": "npx eleventy",
+    "local": "concurrently -i -n mqtt,now \"node broker.js\" \"now dev\""
   },
   "repository": {
     "type": "git",
@@ -34,11 +34,17 @@
   },
   "dependencies": {
     "@gsvarovsky/m-ld": "0.0.1",
+    "@now/node": "^1.5.0",
     "@types/d3": "^5.7.2",
+    "@types/grecaptcha": "^3.0.1",
     "@types/level-js": "^4.0.1",
+    "@types/node-fetch": "^2.5.5",
+    "@zeit/fetch": "^6.0.0",
     "d3": "^5.12.0",
+    "grecaptcha": "^1.0.3",
     "level-js": "^5.0.1",
     "line-intersect": "^2.2.3",
+    "node-fetch": "^2.6.0",
     "rxjs": "^6.5.4"
   }
 }

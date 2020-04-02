@@ -1,7 +1,12 @@
 {
   "build": {
     "env": {
-      "NPM_TOKEN": "@m-ld-website-build"
+      "NPM_TOKEN": "@m-ld-website-build",
+      "RECAPTCHA_SITE": "6LcIIuYUAAAAAKumdAXtlc43-xu6rQaACEpdj19T"
     }
+  },
+  "env": {
+    "RECAPTCHA_SECRET": "@recaptcha-secret",
+    "WORDNIK_API_KEY": "@wordnik-api-key"
   }
 }

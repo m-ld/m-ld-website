@@ -3,14 +3,27 @@ import { Message } from './lib/Message';
 import { clone } from '@gsvarovsky/m-ld';
 import * as Level from 'level-js';
 import { Update } from '@gsvarovsky/m-ld/dist/m-ld/jsonrql';
-import config from './config';
+import { Config } from './config';
+import * as d3 from 'd3';
 
 window.onload = function () {
-  const domain = document.location.hash.slice(1);
-  if (!domain)
-    throw new Error('No domain specified');
+  grecaptcha.ready(async () => {
+    const token = await grecaptcha.execute(process.env.RECAPTCHA_SITE, { action: 'config' });
+    
+    // Get the configuration for this domain
+    const meldConfig = await d3.json('/api/config', {
+      method: 'post',
+      headers: { 'Content-type': 'application/json; charset=UTF-8' },
+      body: JSON.stringify({
+        '@domain': document.location.hash.slice(1), token
+      } as Config.Request)
+    }) as Config.Response;
+    history.replaceState(null, null, '#' + meldConfig['@domain']);
 
-  clone(Level(domain), { '@domain': domain, mqttOpts: config.mqtt }).then(async meld => {
+    // Initialise the m-ld clone
+    const meld = await clone(Level(meldConfig['@domain']), meldConfig);
+
+    // Create the board UI View
     new BoardView('#board', meld);
 
     // Check if we've already said hello

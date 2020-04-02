@@ -1,7 +1,0 @@
-{
-  "mqtt": {
-    "host": "localhost",
-    "port": 8888,
-    "protocol": "ws"
-  }
-}
