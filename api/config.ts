@@ -1,7 +1,6 @@
 import { NowRequest, NowResponse } from '@now/node'
 import { Config } from '../src/_includes/config';
 import SetupFetch from '@zeit/fetch';
-import { Response } from 'node-fetch';
 import { URL } from 'url';
 const fetch = SetupFetch();
 
@@ -11,7 +10,7 @@ export default async (req: NowRequest, res: NowResponse) => {
     return res.status(400).send('No token in request!');
 
   // Validate the token, see https://developers.google.com/recaptcha/docs/v3
-  const siteverify = await fetchJson<{ success: boolean, action: string }>(
+  const siteverify = await fetchJson<{ success: boolean, action: string, score: number }>(
     'https://www.google.com/recaptcha/api/siteverify', {
     secret: process.env.RECAPTCHA_SECRET,
     response: configReq.token
@@ -25,11 +24,11 @@ export default async (req: NowRequest, res: NowResponse) => {
 
   if (siteverify.action != 'config')
     return res.status(400).send(`reCAPTCHA action mismatch, received '${siteverify.action}'`);
-
-  console.log(`reCAPTCHA: ${JSON.stringify(siteverify)}`);
+  
+  if (siteverify.score < 0.5)
+    return res.status(403).send(`reCAPTCHA check failed`);
 
   // Get a new domain name if none is specified
-  console.log(process.env.RECAPTCHA_SECRET);
   let domain = configReq['@domain'];
   if (!domain) {
     const part1 = await fetchWord('adjective'), part2 = await fetchWord('noun');
@@ -39,36 +38,34 @@ export default async (req: NowRequest, res: NowResponse) => {
     domain = `${part1.word}-${part2.word}.m-ld.org`;
   }
 
-  // TODO Get a new broker username if required
+  // Get MQTT connection settings
+  const { protocol, username, password, hostname: host, port } = new URL(process.env.MQTT_URL);
+  const mqttOpts = { protocol: protocol.replace(/:$/, ''), username, password, host, port: Number(port) };
+  Object.keys(mqttOpts).forEach(key => mqttOpts[key] || delete mqttOpts[key]);
 
-  res.json({
-    '@domain': domain,
-    mqttOpts: {
-      host: 'localhost',
-      port: 8888,
-      protocol: 'ws'
-    }
-  } as Config.Response);
+  res.json({ '@domain': domain, mqttOpts } as Config.Response);
 }
 
 async function fetchWord(part: 'noun' | 'adjective') {
-  return await fetchJson<{
+  const rtn = await fetchJson<{
     word: string;
   }>('http://api.wordnik.com/v4/words.json/randomWord', {
     api_key: process.env.WORDNIK_API_KEY,
     includePartOfSpeech: part
   });
+  return typeof rtn === 'string' ? rtn :
+    // Only accept alphabet and hyphen characters
+    /^[a-z\-]+$/.test(rtn.word) ? rtn : fetchWord(part);
 }
 
-async function fetchJson<T extends object>(url: string, params: { [name: string]: string }, method: string = 'GET'): Promise<T | string> {
-  const req: { url: URL, res?: Response, json?: any } = { url: new URL(url) };
-  Object.entries(params).forEach(([name, value]) => req.url.searchParams.append(name, value));
-  req.res = await fetch(req.url.toString(), { method });
-  if (req.res.status !== 200) {
-    console.debug(`Fetch from ${url} failed with ${req.res.statusText}`);
-    return req.res.statusText;
+async function fetchJson<T extends object>(urlString: string, params: { [name: string]: string }, method: string = 'GET'): Promise<T | string> {
+  const url = new URL(urlString);
+  Object.entries(params).forEach(([name, value]) => url.searchParams.append(name, value));
+  const res = await fetch(url.toString(), { method });
+  if (res.status !== 200) {
+    console.debug(`Fetch from ${url} failed with ${res.statusText}`);
+    return res.statusText;
   } else {
-    req.json = await req.res.json();
-    return req.json || 'No JSON returned';
+    return (await res.json()) || 'No JSON returned';
   }
 }

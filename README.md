@@ -13,7 +13,7 @@ Currently, this project requires a link to the private m-ld(-js) library, e.g.:
 
 To run locally:
 1. Install [now](https://zeit.co/download)
-1. Create a local file ".env" in the root and add any secret env vars found under `env` in [now.json](now.json).
+1. Create a local file ".env" in the root and add any vars found under `env` in [now.json](now.json).
 1. `npm run local`
 
 Note that `NPM_TOKEN` in [.env.build](./.env.build) is empty to pass through to your global npm token.
