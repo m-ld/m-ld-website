@@ -33,7 +33,7 @@
     "websocket-stream": "^5.5.0"
   },
   "dependencies": {
-    "@gsvarovsky/m-ld": "0.0",
+    "@gsvarovsky/m-ld": "0.0.4",
     "@now/node": "^1.5.0",
     "@types/d3": "^5.7.2",
     "@types/grecaptcha": "^3.0.1",
