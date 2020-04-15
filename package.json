@@ -6,6 +6,7 @@
     "link-local-m-ld": "sudo npm link ../m-ld-js",
     "clean": "rm -rf _site",
     "build": "npx eleventy",
+    "nodemo": "npx eleventy --serve",
     "local": "LIVE_DEMO=YES concurrently -i -n mqtt,now \"node broker.js\" \"now dev\""
   },
   "repository": {

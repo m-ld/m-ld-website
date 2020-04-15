@@ -6,13 +6,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>m-ld</title>
   <link rel="stylesheet" href="/main.css">
-  {% if LIVE_DEMO %}
-  <script src="https://www.google.com/recaptcha/api.js?render={{ RECAPTCHA_SITE }}"></script>
+  {% if env.LIVE_DEMO %}
+  <script src="https://www.google.com/recaptcha/api.js?render={{ env.RECAPTCHA_SITE }}"></script>
   <script src="demo.js"></script>
   {% endif %}
 </head>
 
-{% if LIVE_DEMO %}
+{% if env.LIVE_DEMO %}
 <body style="overflow: hidden;">
   <svg id="board">
     <defs>
@@ -66,7 +66,7 @@
         <div class="media-content">
           <div class="content">
             <p>
-              Demo coming soon! Please email
+              More info coming soon! Please email
               <a target="_blank" href="mailto:info@m-ld.io?subject=Demo%20please!">info@m-ld.io</a>
               to get the latest.
             </p>

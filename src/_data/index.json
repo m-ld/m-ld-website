@@ -2,12 +2,12 @@
   "tagline": "decentralised shared state",
   "platforms": [
     {
-      "name": "java",
-      "icon": "fab fa-java"
-    },
-    {
       "name": "javascript",
       "icon": "fab fa-js"
+    },
+    {
+      "name": "java",
+      "icon": "fab fa-java"
     },
     {
       "name": "xamarin",

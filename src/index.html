@@ -32,13 +32,13 @@
   <section id="streams" class="section">
     <div class="columns has-text-centered">
       <div class="column">
-        <a class="box" style="height: 100%">
+        <div class="box" style="height: 100%">
           <h1 class="title is-4">architecture</h1>
           <img src="narrative.svg#svgView(viewBox(360, 50, 400, 570))" />
-        </a>
+        </div>
       </div>
       <div class="column">
-        <a class="box" style="height: 100%">
+        <div class="box" style="height: 100%">
           <h1 class="title is-4">api</h1>
           <div class="content has-text-left">
             <pre>{% include api-example-1.json %}</pre>
@@ -46,16 +46,16 @@
           <div class="content has-text-left">
             <pre>{% include api-example-2.json %}</pre>
           </div>
-        </a>
+        </div>
       </div>
       <div class="column">
         <div class="box" style="height: 100%">
           <h1 class="title is-4">platforms</h1>
           <div class="buttons are-medium">
             {%- for platform in index.platforms -%}
-            <a class="button is-light is-fullwidth">
+            <a class="button is-static is-light is-fullwidth">
               <span class="icon"><i class="{{platform.icon}}"></i></span>
-              <span>{{platform.name}}</span>
+              <span class="has-text-dark">{{platform.name}}</span>
               {% if platform.soon %}
               <span class="tag is-primary" style="margin-left: 1em;">Soon!</span>
               {% endif %}
