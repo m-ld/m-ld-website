@@ -6,10 +6,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>m-ld</title>
   <link rel="stylesheet" href="/main.css">
+  {% if LIVE_DEMO %}
   <script src="https://www.google.com/recaptcha/api.js?render={{ RECAPTCHA_SITE }}"></script>
   <script src="demo.js"></script>
+  {% endif %}
 </head>
 
+{% if LIVE_DEMO %}
 <body style="overflow: hidden;">
   <svg id="board">
     <defs>
@@ -48,5 +51,32 @@
     <g id="link-lines"></g>
   </svg>
 </body>
+{% else %}
+<body>
+<div id="modal" class="modal is-active">
+  <div class="modal-background"></div>
+  <div class="modal-content">
+    <div class="box">
+      <article class="media">
+        <div class="media-left">
+          <figure class="image is-64x64">
+            <img src="/m-ld-avatar.png" alt="Image">
+          </figure>
+        </div>
+        <div class="media-content">
+          <div class="content">
+            <p>
+              Demo coming soon! Please email
+              <a target="_blank" href="mailto:info@m-ld.org?subject=Demo%20please!">info@m-ld.org</a>
+              to get the latest.
+            </p>
+          </div>
+        </div>
+      </article>
+    </div>
+  </div>
+</div>
+</body>
+{% endif %}
 
 </html>

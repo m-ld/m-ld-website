@@ -3,9 +3,10 @@
   "version": "0.0.1",
   "description": "m-ld.org website",
   "scripts": {
+    "link-local-m-ld": "sudo npm link ../m-ld-js",
     "clean": "rm -rf _site",
     "build": "npx eleventy",
-    "local": "concurrently -i -n mqtt,now \"node broker.js\" \"now dev\""
+    "local": "LIVE_DEMO=YES concurrently -i -n mqtt,now \"node broker.js\" \"now dev\""
   },
   "repository": {
     "type": "git",
@@ -33,7 +34,7 @@
     "websocket-stream": "^5.5.0"
   },
   "dependencies": {
-    "@gsvarovsky/m-ld": "0.0.4",
+    "@gsvarovsky/m-ld": "0.0.5",
     "@now/node": "^1.5.0",
     "@types/d3": "^5.7.2",
     "@types/grecaptcha": "^3.0.1",

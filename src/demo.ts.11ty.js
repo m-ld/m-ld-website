@@ -14,12 +14,14 @@ module.exports = class {
   };
 
   async render({ tsPath }) {
-    var b = browserify(tsPath, {
-      debug: true // TODO: Remove for production
-    }).plugin("tsify", {
-      noImplicitAny: true,
-      target: 'es5'
-    }).transform(require('envify'));
-    return promisify(b.bundle.bind(b))();
+    if (process.env.LIVE_DEMO) {
+      var b = browserify(tsPath, {
+        debug: true // TODO: Remove for production
+      }).plugin("tsify", {
+        noImplicitAny: true,
+        target: 'es5'
+      }).transform(require('envify'));
+      return promisify(b.bundle.bind(b))();
+    }
   }
 }

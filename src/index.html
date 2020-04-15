@@ -56,6 +56,9 @@
             <a class="button is-light is-fullwidth">
               <span class="icon"><i class="{{platform.icon}}"></i></span>
               <span>{{platform.name}}</span>
+              {% if platform.soon %}
+              <span class="tag is-primary" style="margin-left: 1em;">Soon!</span>
+              {% endif %}
             </a>
             {%- endfor -%}
           </div>
@@ -85,9 +88,6 @@
         <a href="http://opensource.org/licenses/mit-license.php">MIT</a>, website content
         licensed <a href="http://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY NC SA 4.0</a>.
       </p>
-    </div>
-    <div class="level-right is-large content">
-      <a href="https://github.com/gsvarovsky/m-ld"><i class="fab fa-github"></i></a>
     </div>
   </footer>
 </body>
