@@ -23,6 +23,10 @@ window.onload = function () {
     // Initialise the m-ld clone
     const meld = await clone(Level(meldConfig['@domain']), meldConfig);
 
+    // Wait for the latest state from the clone
+    // (Remove this line to see rev-ups as they happen)
+    await meld.latest();
+
     // Create the board UI View
     new BoardView('#board', meld);
 
