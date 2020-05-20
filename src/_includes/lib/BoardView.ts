@@ -20,9 +20,11 @@ export class BoardView extends InfiniteView {
     // Sync all the messages in the given board now
     meld.transact({
       '@describe': '?s', '@where': { '@id': '?s', '@type': 'Message' }
-    } as Describe).pipe(toArray()).subscribe(subjects => this.sync(MeldApi.asSubjectUpdates({
-      '@insert': { '@graph': subjects }, '@delete': { '@graph': [] }
-    })));
+    } as Describe).pipe(toArray()).subscribe(
+      subjects => this.sync(MeldApi.asSubjectUpdates({
+        '@insert': { '@graph': subjects }, '@delete': { '@graph': [] }
+      })),
+      this.warnError);
 
     // Follow changes to messages
     meld.follow().subscribe(update => {
@@ -32,12 +34,12 @@ export class BoardView extends InfiniteView {
   }
 
   async linksTo(id: string): Promise<string[]> {
-    return this.meld
-      .transact({
-        '@select': '?s',
-        '@where': { '@id': '?s', linkTo: { '@id': id } }
-      } as Select)
-      .pipe(map(selection => (selection['?s'] as Reference)['@id']), toArray()).toPromise();
+    return this.meld.transact({
+      '@select': '?s',
+      '@where': { '@id': '?s', linkTo: { '@id': id } }
+    } as Select).pipe(
+      map(selection => (selection['?s'] as Reference)['@id']),
+      toArray()).toPromise();
   }
 
   get messages(): MeldApi.Node<Message>[] {
@@ -123,7 +125,7 @@ export class BoardView extends InfiniteView {
       this.meld.transact({
         '@insert': { '@id': mv.msg['@id'], text: mv.text },
         '@delete': { '@id': mv.msg['@id'], text: mv.msg.text }
-      } as Update);
+      } as Update).toPromise().catch(this.warnError);
     }
   }
 
@@ -146,7 +148,7 @@ export class BoardView extends InfiniteView {
     this.meld.transact({
       '@insert': { '@id': mv.msg['@id'], x, y },
       '@delete': { '@id': mv.msg['@id'], x: mv.msg.x, y: mv.msg.y }
-    } as Update);
+    } as Update).toPromise().catch(this.warnError);
   }
 
   private btnDragSubject(_: MessageView, dragged: SVGElement) {
@@ -169,7 +171,7 @@ export class BoardView extends InfiniteView {
     this.btnDragEnd(dragged, mv, thatId => {
       this.meld.transact({
         '@insert': { '@id': mv.msg['@id'], linkTo: { '@id': thatId } }
-      } as Update);
+      } as Update).toPromise().catch(this.warnError);
     }, 'link-target');
   }
 
@@ -183,7 +185,7 @@ export class BoardView extends InfiniteView {
     this.btnDragEnd(dragged, mv, thatId => {
       this.meld.transact({
         '@delete': { '@id': mv.msg['@id'], linkTo: { '@id': thatId } }
-      } as Update);
+      } as Update).toPromise().catch(this.warnError);
     }, 'unlink-target');
   }
 
@@ -225,8 +227,8 @@ export class BoardView extends InfiniteView {
       '@id': mv.msg['@id'],
       linkTo: [{ '@id': id }]
     };
-    this.meld.transact({ '@insert': [newMessage, newLink] } as Update)
-      .toPromise().then(() => this.withThatMessage(id, mv => mv.content.node().focus()));
+    this.meld.transact({ '@insert': [newMessage, newLink] } as Update).toPromise()
+      .then(() => this.withThatMessage(id, mv => mv.content.node().focus()), this.warnError);
   }
 
   hitTest(test: Rectangle, filter: (id: string) => boolean): MessageView {
@@ -251,4 +253,8 @@ export class BoardView extends InfiniteView {
   append(el: Element): Element {
     return this.svg.node().insertAdjacentElement('beforeend', el);
   }
+
+  warnError = (err: any) => d3.select('#warning')
+    .classed('is-hidden', false)
+    .select('.warning-text').text(`${err}`);
 }

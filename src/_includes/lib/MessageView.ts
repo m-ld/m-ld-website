@@ -90,7 +90,7 @@ export class MessageView extends GroupUI<MeldApi.Node<Message>> {
       this.allInLinkLines()
         .filter(idNotInFilter(inLinks.map(thatId => MessageView.linkId(thatId, this.msg['@id']))))
         .remove();
-    });
+    }, this.boardView.warnError);
   }
 
   remove() {

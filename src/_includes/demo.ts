@@ -8,40 +8,46 @@ import * as d3 from 'd3';
 
 window.onload = function () {
   grecaptcha.ready(async () => {
-    const token = await grecaptcha.execute(process.env.RECAPTCHA_SITE, { action: 'config' });
-    
-    // Get the configuration for this domain
-    const meldConfig = await d3.json('/api/config', {
-      method: 'post',
-      headers: { 'Content-type': 'application/json; charset=UTF-8' },
-      body: JSON.stringify({
-        '@domain': document.location.hash.slice(1), token
-      } as Config.Request)
-    }) as Config.Response;
-    history.replaceState(null, null, '#' + meldConfig['@domain']);
+    try {
+      const token = await grecaptcha.execute(process.env.RECAPTCHA_SITE, { action: 'config' });
 
-    // Initialise the m-ld clone
-    const meld = await clone(Level(meldConfig['@domain']), meldConfig);
+      // Get the configuration for this domain
+      const meldConfig = await d3.json('/api/config', {
+        method: 'post',
+        headers: { 'Content-type': 'application/json; charset=UTF-8' },
+        body: JSON.stringify({
+          '@domain': document.location.hash.slice(1), token
+        } as Config.Request)
+      }) as Config.Response;
+      history.replaceState(null, null, '#' + meldConfig['@domain']);
 
-    // Wait for the latest state from the clone
-    // (Remove this line to see rev-ups as they happen)
-    await meld.latest();
+      // Initialise the m-ld clone
+      const meld = await clone(Level(meldConfig['@domain']), meldConfig);
+      window.addEventListener('unload', () => meld.close());
 
-    // Create the board UI View
-    new BoardView('#board', meld);
+      // Wait for the latest state from the clone
+      // (Remove this line to see rev-ups as they happen)
+      await meld.latest();
 
-    // Check if we've already said hello
-    const hello = await meld.get('hello').toPromise();
-    if (!hello) {
-      meld.transact({
-        '@id': 'hello',
-        '@type': 'Message',
-        text: 'Hello!',
-        x: 200, y: 100,
-        linkTo: []
-      } as Message);
+      // Unshow the loading progress
+      d3.select('#loading').classed('is-active', false);
 
-      setTimeout(() => {
+      // Create the board UI View
+      new BoardView('#board', meld);
+
+      // Check if we've already said hello
+      const hello = await meld.get('hello').toPromise();
+      if (!hello) {
+        meld.transact({
+          '@id': 'hello',
+          '@type': 'Message',
+          text: 'Hello!',
+          x: 200, y: 100,
+          linkTo: []
+        } as Message);
+
+        await new Promise(res => setTimeout(res, 2000));
+
         meld.transact({
           '@insert': [{
             '@id': 'thisIs',
@@ -54,22 +60,28 @@ window.onload = function () {
           } as Partial<Message>]
         } as Update);
 
-        setTimeout(() => {
-          meld.transact({
-            '@insert': [{
-              '@id': 'weUse',
-              '@type': 'Message',
-              text: "We'll use it to demonstrate how m-ld works.",
-              x: 300, y: 300,
-              linkTo: []
-            } as Message, {
-              '@id': 'thisIs', linkTo: [{ '@id': 'weUse' }]
-            } as Partial<Message>]
-          } as Update);
-        }, 2000);
-      }, 2000);
-    }
+        await new Promise(res => setTimeout(res, 2000));
 
-    window.addEventListener('unload', () => meld.close());
+        meld.transact({
+          '@insert': [{
+            '@id': 'weUse',
+            '@type': 'Message',
+            text: "We'll use it to demonstrate how m-ld works.",
+            x: 300, y: 300,
+            linkTo: []
+          } as Message, {
+            '@id': 'thisIs', linkTo: [{ '@id': 'weUse' }]
+          } as Partial<Message>]
+        } as Update);
+      }
+    } catch (err) {
+      d3.select('#error')
+        .classed('is-active', true)
+        .select('.error-text').text(`${err}`);
+    }
+  });
+  // Set up the warning notification delete button
+  d3.select('#warning .delete').on('click', function (this: Element) {
+    d3.select('#warning').classed('is-hidden', true);
   });
 }

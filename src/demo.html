@@ -14,6 +14,12 @@
 
 {% if env.LIVE_DEMO %}
 <body style="overflow: hidden;">
+  <div id="loading" class="modal is-active">
+    <div class="modal-background"></div>
+    <div class="modal-content">
+      <progress class="progress" max="100">Loading...</progress>
+    </div>
+  </div>
   <svg id="board">
     <defs>
       <g id="board-message-template">
@@ -50,32 +56,15 @@
     </defs>
     <g id="link-lines"></g>
   </svg>
+  {% include 'popup.html', id: 'error', content: 'error.html' %}
+  <div id="warning" class="notification is-warning is-hidden">
+    <button class="delete"></button>
+    <span class="warning-text">Something went wrong</span>
+  </div>
 </body>
 {% else %}
 <body>
-<div id="modal" class="modal is-active">
-  <div class="modal-background"></div>
-  <div class="modal-content">
-    <div class="box">
-      <article class="media">
-        <div class="media-left">
-          <figure class="image is-64x64">
-            <img src="/m-ld-avatar.png" alt="Image">
-          </figure>
-        </div>
-        <div class="media-content">
-          <div class="content">
-            <p>
-              More info coming soon! Please email
-              <a target="_blank" href="mailto:info@m-ld.io?subject=Demo%20please!">info@m-ld.io</a>
-              to get the latest.
-            </p>
-          </div>
-        </div>
-      </article>
-    </div>
-  </div>
-</div>
+  {% include 'popup.html', id: 'no-demo', classes: 'is-active', content: 'no-demo.html' %}
 </body>
 {% endif %}
 
