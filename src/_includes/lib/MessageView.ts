@@ -1,10 +1,11 @@
 import * as d3 from 'd3';
 import { setAttr, idNotInFilter } from './util';
 import { BoardView } from './BoardView';
-import { Line, Rectangle } from './Shapes';
+import { Rectangle } from './Shapes';
 import { GroupUI } from './GroupUI';
 import { MeldApi } from '@gsvarovsky/m-ld';
 import { Message } from './Message';
+import { LinkView } from './LinkView';
 
 const MAGIC_DIV_SCALE: number = 10 / 9;
 const MIN_MESSAGE_WIDTH: number = 115; // Width of buttons + 20
@@ -80,7 +81,7 @@ export class MessageView extends GroupUI<MeldApi.Node<Message>> {
     outLinks.forEach(that => this.withThat(that['@id'], that => this.updateLink(that)));
     // Remove non-existent outbound link-lines
     this.allOutLinkLines()
-      .filter(idNotInFilter(outLinks.map(that => MessageView.linkId(this.msg['@id'], that['@id']))))
+      .filter(idNotInFilter(outLinks.map(that => LinkView.linkId(this.msg['@id'], that['@id']))))
       .remove();
 
     // Re-draw inbound link-lines
@@ -88,7 +89,7 @@ export class MessageView extends GroupUI<MeldApi.Node<Message>> {
       inLinks.forEach(thatId => this.withThat(thatId, that => that.updateLink(this)));
       // Remove non-existent inbound link-lines
       this.allInLinkLines()
-        .filter(idNotInFilter(inLinks.map(thatId => MessageView.linkId(thatId, this.msg['@id']))))
+        .filter(idNotInFilter(inLinks.map(thatId => LinkView.linkId(thatId, this.msg['@id']))))
         .remove();
     }, this.boardView.warnError);
   }
@@ -130,35 +131,8 @@ export class MessageView extends GroupUI<MeldApi.Node<Message>> {
     return this.boardView.svg.selectAll(`.link-line[id$="-${this.msg['@id']}"]`);
   }
 
-  static linkId(fromId: string, toId: string) {
-    return `${fromId}-${toId}`;
-  }
-
   private updateLink(that: MessageView) {
-    if (that && this.rect.area && that.rect.area) {
-      const link = this.findOrCreateLink(that.msg['@id']);
-      const centreLine = new Line(this.rect.centre, that.rect.centre);
-      const begin = this.rect.intersect(centreLine),
-        end = that.rect.expand(5).intersect(centreLine);
-      if (begin.length && end.length) {
-        setAttr(link, new Line(begin[0], end[0]));
-      } else { // Messages overlap
-        link.remove();
-      }
-    }
-  }
-
-  private findOrCreateLink(thatId: string) {
-    const linkId = MessageView.linkId(this.msg['@id'], thatId);
-    const link = this.boardView.svg.select(`#${linkId}`);
-    if (link.empty()) {
-      return this.boardView.svg.selectAll('#link-lines')
-        .append(MessageView.createLinkLineNode)
-        .classed('link-line', true)
-        .attr('id', linkId);
-    } else {
-      return link;
-    }
+    new LinkView(this.boardView.svg, this.msg['@id'], that.msg['@id']).update(this.rect, that.rect);
   }
 
   private withThat(thatId: string, action: (mv: MessageView) => any) {
@@ -176,10 +150,6 @@ export class MessageView extends GroupUI<MeldApi.Node<Message>> {
   static createMessageViewNode(): Element {
     // Note that the template is found in /src/demo.html
     return <Element>(<Element>d3.select('#board-message-template').node()).cloneNode(true);
-  }
-
-  static createLinkLineNode(): Element {
-    return <Element>(<Element>d3.select('#link-line-template').node()).cloneNode(true);
   }
 
   static messageParent(node: Element): SVGGElement {

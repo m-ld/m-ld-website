@@ -1,9 +1,9 @@
 import * as d3 from 'd3';
-import { setAttr, svgPoint } from './util';
+import { setAttr, svgPoint, SVG } from './util';
 import { Rectangle } from './Shapes';
 
 export class InfiniteView {
-  readonly svg: d3.Selection<SVGSVGElement, unknown, HTMLElement, unknown>;
+  readonly svg: SVG;
 
   constructor(selectSvg: string) {
     this.svg = d3.select(selectSvg);

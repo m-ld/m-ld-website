@@ -1,6 +1,46 @@
-import { checkIntersection } from 'line-intersect';
+import { checkIntersection, colinearPointWithinSegment } from 'line-intersect';
+const InfiniteLine = require('line2');
 
-export class Rectangle {
+export interface Shape {
+  readonly centre: [number, number];
+  readonly area: number;
+  intersect(line: Line): [number, number][];
+  expand(pixels: number): Shape;
+}
+
+type vec2 = { x: number, y: number };
+
+export class Circle implements Shape {
+  readonly cx: number;
+  readonly cy: number;
+  readonly r: number;
+
+  constructor([cx, cy]: [number, number], r: number) {
+    this.cx = cx;
+    this.cy = cy;
+    this.r = r;
+  }
+
+  get centre(): [number, number] {
+    return [this.cx, this.cy];
+  }
+
+  get area(): number {
+    return Math.PI * this.r * this.r;
+  }
+
+  intersect(line: Line): [number, number][] {
+    return line.infinite.intersectCircle({ x: this.cx, y: this.cy }, this.r)
+      .filter(({ x, y }: vec2) => colinearPointWithinSegment(x, y, line.x1, line.y1, line.x2, line.y2))
+      .map(({ x, y }: vec2) => [x, y]);
+  }
+
+  expand(pixels: number): Shape {
+    return new Circle([this.cx, this.cy], this.r + pixels);
+  }
+}
+
+export class Rectangle implements Shape {
   readonly x: number;
   readonly y: number;
   readonly width: number;
@@ -12,6 +52,7 @@ export class Rectangle {
     this.width = width;
     this.height = height;
   }
+
   get size(): [number, number] {
     return [this.width, this.height];
   }
@@ -94,6 +135,10 @@ export class Line {
     this.y1 = y1;
     this.x2 = x2;
     this.y2 = y2;
+  }
+
+  get infinite() {
+    return new InfiniteLine(this.x1, this.y1, this.x2, this.y2);
   }
 
   intersect(that: Line): [number, number] {

@@ -12,14 +12,6 @@ $fa-font-path: "/webfonts";
   fill: $light;
   stroke: none;
   stroke-width: 3;
-
-  &.link-target {
-    stroke: $link;
-  }
-
-  &.unlink-target {
-    stroke: $danger;
-  }
 }
 
 .board-message-button {
@@ -60,6 +52,14 @@ $fa-font-path: "/webfonts";
   stroke-width: 3;
   stroke-linecap: round;
   stroke: $link;
+}
+
+.link-target {
+  stroke: $link;
+}
+
+.unlink-target {
+  stroke: $danger;
 }
 
 #link-arrowhead {

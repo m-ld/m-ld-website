@@ -1,15 +1,16 @@
 import * as d3 from 'd3';
 import { Message } from './Message';
-import { svgParent } from './util';
+import { svgParent, getAttr } from './util';
 import { InfiniteView } from './InfiniteView';
 import { MessageView } from './MessageView';
 import { GroupUI } from './GroupUI';
-import { Rectangle } from './Shapes';
+import { Rectangle, Circle, Shape } from './Shapes';
 import { map, toArray } from 'rxjs/operators';
 import { MeldApi } from '@gsvarovsky/m-ld';
 // FIXME: Tidy up m-ld utility exports
 import { shortId } from '@gsvarovsky/m-ld/dist/util';
 import { Subject, Select, Describe, Update, Reference } from '@gsvarovsky/m-ld/dist/m-ld/jsonrql';
+import { LinkView } from './LinkView';
 
 export class BoardView extends InfiniteView {
   constructor(
@@ -68,7 +69,7 @@ export class BoardView extends InfiniteView {
             .on('click', this.withThisMessage(mv => this.meld.delete(mv.msg['@id'])))
             .call(this.setupBtnDrag(this.unlinkDragging, this.unlinkDragEnd));
           enter.select('.board-message-add circle')
-            .on('click', this.withThisMessage(this.addNewMessage))
+            .on('click', this.withThisMessage(mv => this.addNewMessage(mv)))
             .call(this.setupBtnDrag(this.linkDragging, this.linkDragEnd));
           enter.selectAll('.board-message-move circle').call(d3.drag()
             .container(this.svg.node())
@@ -151,9 +152,12 @@ export class BoardView extends InfiniteView {
     } as Update).toPromise().catch(this.warnError);
   }
 
-  private btnDragSubject(_: MessageView, dragged: SVGElement) {
+  private btnDragSubject(mv: MessageView, dragged: SVGElement): DragSubject {
     const button = new GroupUI(<SVGGElement>svgParent(dragged)), startPos = button.position;
-    return { x: d3.event.x, y: d3.event.y, button, startPos, cursor: d3.select(dragged).attr('cursor') };
+    return {
+      button, startPos, cursor: d3.select(dragged).attr('cursor'),
+      link: new LinkView(this.svg, mv.msg['@id'], shortId())
+    };
   }
 
   private btnDragStart(mv: MessageView, dragged: SVGElement) {
@@ -168,10 +172,14 @@ export class BoardView extends InfiniteView {
   }
 
   private linkDragEnd(mv: MessageView, dragged: SVGElement) {
-    this.btnDragEnd(dragged, mv, thatId => {
-      this.meld.transact({
-        '@insert': { '@id': mv.msg['@id'], linkTo: { '@id': thatId } }
-      } as Update).toPromise().catch(this.warnError);
+    this.btnDragEnd(dragged, mv, (thatId, position) => {
+      if (thatId != null) {
+        this.meld.transact({
+          '@insert': { '@id': mv.msg['@id'], linkTo: { '@id': thatId } }
+        } as Update).toPromise().catch(this.warnError);
+      } else {
+        this.addNewMessage(mv, position);
+      }
     }, 'link-target');
   }
 
@@ -183,45 +191,70 @@ export class BoardView extends InfiniteView {
 
   private unlinkDragEnd(mv: MessageView, dragged: SVGElement) {
     this.btnDragEnd(dragged, mv, thatId => {
-      this.meld.transact({
-        '@delete': { '@id': mv.msg['@id'], linkTo: { '@id': thatId } }
-      } as Update).toPromise().catch(this.warnError);
+      if (thatId != null) {
+        this.meld.transact({
+          '@delete': { '@id': mv.msg['@id'], linkTo: { '@id': thatId } }
+        } as Update).toPromise().catch(this.warnError);
+      }
     }, 'unlink-target');
   }
 
   private btnDragging(mv: MessageView, filter: (thatId: string) => boolean, targetClass: string) {
     mv.group.raise(); // So that the button drags over other messages
-    const drag = d3.event.subject, [cx, cy] = drag.button.position;
+    const drag: DragSubject = d3.event.subject, [cx, cy] = drag.button.position;
     drag.button.position = [cx + d3.event.dx, cy + d3.event.dy];
     // Hit-test for other messages
     const target = this.hitTest(this.svgRect(drag.button.group.node()), filter);
+    this.updateDragLink(drag, mv, targetClass, target);
     if (!MessageView.same(drag.target, target)) {
-      target && target.box.classed(targetClass, true);
-      drag.target && drag.target.box.classed(targetClass, false);
+      if (target)
+        target.box.classed(targetClass, true);
+      if (drag.target)
+        drag.target.box.classed(targetClass, false);
     }
     drag.target = target;
   }
 
-  private btnDragEnd(
-    dragged: SVGElement, mv: MessageView, commit: (thatId: string) => void, targetClass: string) {
-    const drag = d3.event.subject;
-    d3.select(dragged).attr('cursor', drag.cursor);
-    if (drag.target) {
-      drag.target.box.classed(targetClass, false);
-      commit(drag.target.msg['@id']);
+  private updateDragLink(drag: DragSubject, mv: MessageView, targetClass: string, target: MessageView) {
+    let toShape: Shape;
+    if (target != null) {
+      toShape = target.rect;
+    } else {
+      const [x, y] = this.svgRect(drag.button.group.node()).topLeft;
+      const [r] = getAttr(drag.button.group.select('circle'), Number, 'r');
+      toShape = new Circle([x + r, y + r], r);
     }
+    drag.link.update(mv.rect, toShape);
+    drag.link.line.classed(targetClass, true);
+    drag.link.line.raise();
+  }
+
+  private btnDragEnd(
+    dragged: SVGElement,
+    mv: MessageView,
+    commit: (thatId: string | null, position: [number, number]) => void,
+    targetClass: string) {
+    const drag: DragSubject = d3.event.subject;
+    d3.select(dragged).attr('cursor', drag.cursor);
+    if (drag.target)
+      drag.target.box.classed(targetClass, false);
+    commit(drag.target ? drag.target.msg['@id'] : null,
+      this.svgRect(drag.button.group.node()).topLeft);
+    drag.link.line.remove();
     drag.button.position = drag.startPos;
     mv.group.classed('active', false);
   }
 
-  private addNewMessage(mv: MessageView) {
+  private addNewMessage(mv: MessageView, position?: [number, number]) {
     const id = shortId();
-    const [x, y] = mv.msgPosition;
-    const newMessage: MeldApi.Node<Message> = {
-      '@id': id, '@type': 'Message', text: '',
+    let [x, y] = position ?? mv.msgPosition;
+    if (position == null) {
       // TODO: Prevent collisions
-      x: x + 50, y: y + 100,
-      linkTo: []
+      x += 50;
+      y += 100;
+    }
+    const newMessage: MeldApi.Node<Message> = {
+      '@id': id, '@type': 'Message', text: '', x, y, linkTo: []
     };
     const newLink: Subject = {
       '@id': mv.msg['@id'],
@@ -257,4 +290,12 @@ export class BoardView extends InfiniteView {
   warnError = (err: any) => d3.select('#warning')
     .classed('is-hidden', false)
     .select('.warning-text').text(`${err}`);
+}
+
+interface DragSubject {
+  button: GroupUI;
+  startPos: [number, number];
+  cursor: string;
+  target?: MessageView;
+  link: LinkView;
 }
