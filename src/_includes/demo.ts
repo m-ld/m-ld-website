@@ -5,6 +5,7 @@ import * as Level from 'level-js';
 import { Update } from '@gsvarovsky/m-ld/dist/m-ld/jsonrql';
 import { Config } from './config';
 import * as d3 from 'd3';
+import { shortId } from '@gsvarovsky/m-ld/dist/util';
 
 window.onload = function () {
   grecaptcha.ready(async () => {
@@ -19,10 +20,11 @@ window.onload = function () {
           '@domain': document.location.hash.slice(1), token
         } as Config.Request)
       }) as Config.Response;
-      history.replaceState(null, null, '#' + meldConfig['@domain']);
+      const domain = meldConfig['@domain'];
+      history.replaceState(null, null, '#' + domain);
 
       // Initialise the m-ld clone
-      const meld = await clone(Level(meldConfig['@domain']), meldConfig);
+      const meld = await clone(Level(domain), meldConfig);
       window.addEventListener('unload', () => meld.close());
 
       // Wait for the latest state from the clone
@@ -32,16 +34,19 @@ window.onload = function () {
       // Unshow the loading progress
       d3.select('#loading').classed('is-active', false);
 
-      // Create the board UI View
-      new BoardView('#board', meld);
+      // The welcome message uses the id of the domain - it can't be deleted
+      const welcomeId = shortId(domain);
 
-      // Check if we've already said hello
-      const hello = await meld.get('hello').toPromise();
-      if (!hello) {
+      // Create the board UI View
+      new BoardView('#board', meld, welcomeId);
+
+      // Check if we've already said Hello
+      const welcome = await meld.get(welcomeId).toPromise();
+      if (!welcome) {
         meld.transact({
-          '@id': 'hello',
+          '@id': welcomeId,
           '@type': 'Message',
-          text: 'Hello!',
+          text: `Welcome to ${domain}!`,
           x: 200, y: 100,
           linkTo: []
         } as Message);
@@ -56,7 +61,7 @@ window.onload = function () {
             x: 250, y: 200,
             linkTo: []
           } as Message, {
-            '@id': 'hello', linkTo: [{ '@id': 'thisIs' }]
+              '@id': welcomeId, linkTo: [{ '@id': 'thisIs' }]
           } as Partial<Message>]
         } as Update);
 

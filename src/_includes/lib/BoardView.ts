@@ -4,7 +4,7 @@ import { svgParent, getAttr } from './util';
 import { InfiniteView } from './InfiniteView';
 import { MessageView } from './MessageView';
 import { GroupUI } from './GroupUI';
-import { Rectangle, Circle, Shape } from './Shapes';
+import { Rectangle, Circle, Shape, Line } from './Shapes';
 import { map, toArray } from 'rxjs/operators';
 import { MeldApi } from '@gsvarovsky/m-ld';
 // FIXME: Tidy up m-ld utility exports
@@ -12,10 +12,13 @@ import { shortId } from '@gsvarovsky/m-ld/dist/util';
 import { Subject, Select, Describe, Update, Reference } from '@gsvarovsky/m-ld/dist/m-ld/jsonrql';
 import { LinkView } from './LinkView';
 
+const CLICK_DRAG_DISTANCE = 3;
+
 export class BoardView extends InfiniteView {
   constructor(
     selectSvg: string,
-    private readonly meld: MeldApi) {
+    private readonly meld: MeldApi,
+    private readonly welcomeId: string) {
     super(selectSvg);
 
     // Sync all the messages in the given board now
@@ -66,7 +69,7 @@ export class BoardView extends InfiniteView {
             .on('input', this.withThisMessage(mv => mv.update()))
             .on('blur', this.withThisMessage(this.inputEnd));
           enter.select('.board-message-close circle')
-            .on('click', this.withThisMessage(mv => this.meld.delete(mv.msg['@id'])))
+            .on('click', this.withThisMessage(this.removeMessage))
             .call(this.setupBtnDrag(this.unlinkDragging, this.unlinkDragEnd));
           enter.select('.board-message-add circle')
             .on('click', this.withThisMessage(mv => this.addNewMessage(mv)))
@@ -113,7 +116,7 @@ export class BoardView extends InfiniteView {
     (selection: d3.Selection<d3.BaseType, unknown, Element, unknown>) => void {
     return d3.drag() // Set up drag-to-link behaviour
       .container(this.svg.node())
-      .clickDistance(3) // Ensure that single-click hits click handler
+      .clickDistance(CLICK_DRAG_DISTANCE) // Ensure that single-click hits click handler
       .subject(this.withThisMessage(this.btnDragSubject))
       .on('start', this.withThisMessage(this.btnDragStart))
       .on('drag', this.withThisMessage(dragging))
@@ -238,8 +241,9 @@ export class BoardView extends InfiniteView {
     d3.select(dragged).attr('cursor', drag.cursor);
     if (drag.target)
       drag.target.box.classed(targetClass, false);
-    commit(drag.target ? drag.target.msg['@id'] : null,
-      this.svgRect(drag.button.group.node()).topLeft);
+    if (new Line(drag.startPos, drag.button.position).length > CLICK_DRAG_DISTANCE)
+      commit(drag.target ? drag.target.msg['@id'] : null,
+        this.svgRect(drag.button.group.node()).topLeft);
     drag.link.line.remove();
     drag.button.position = drag.startPos;
     mv.group.classed('active', false);
@@ -262,6 +266,13 @@ export class BoardView extends InfiniteView {
     };
     this.meld.transact({ '@insert': [newMessage, newLink] } as Update).toPromise()
       .then(() => this.withThatMessage(id, mv => mv.content.node().focus()), this.warnError);
+  }
+
+  private removeMessage(mv: MessageView): any {
+    if (mv.msg['@id'] !== this.welcomeId)
+      return this.meld.delete(mv.msg['@id']);
+    else
+      this.warnError("Sorry, you can't delete the welcome message");
   }
 
   hitTest(test: Rectangle, filter: (id: string) => boolean): MessageView {

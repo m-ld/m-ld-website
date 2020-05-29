@@ -141,6 +141,10 @@ export class Line {
     return new InfiniteLine(this.x1, this.y1, this.x2, this.y2);
   }
 
+  get length() {
+    return Math.sqrt(Math.pow(this.x2 - this.x1, 2) + Math.pow(this.y2 - this.y1, 2));
+  }
+
   intersect(that: Line): [number, number] {
     let i = checkIntersection(this.x1, this.y1, this.x2, this.y2, that.x1, that.y1, that.x2, that.y2);
     return i.type == 'intersecting' ? [i.point.x, i.point.y] : null;
