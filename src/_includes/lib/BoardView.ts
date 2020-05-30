@@ -1,6 +1,6 @@
 import * as d3 from 'd3';
 import { Message } from './Message';
-import { svgParent, getAttr } from './util';
+import { svgParent, getAttr, d3Selection } from './util';
 import { InfiniteView } from './InfiniteView';
 import { MessageView } from './MessageView';
 import { GroupUI } from './GroupUI';
@@ -112,8 +112,7 @@ export class BoardView extends InfiniteView {
   }
 
   private setupBtnDrag(dragging: (mv: MessageView) => void,
-    dragEnd: (mv: MessageView, dragged: SVGElement) => void):
-    (selection: d3.Selection<d3.BaseType, unknown, Element, unknown>) => void {
+    dragEnd: (mv: MessageView, dragged: SVGElement) => void): (selection: d3Selection) => void {
     return d3.drag() // Set up drag-to-link behaviour
       .container(this.svg.node())
       .clickDistance(CLICK_DRAG_DISTANCE) // Ensure that single-click hits click handler

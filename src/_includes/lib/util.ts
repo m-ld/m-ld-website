@@ -2,13 +2,15 @@ import * as d3 from 'd3';
 
 export type SVG = d3.Selection<SVGSVGElement, unknown, HTMLElement, unknown>;
 
-export function setAttr(selection: d3.Selection<d3.BaseType, unknown, d3.BaseType, unknown>, attrs: object) {
+export type d3Selection = d3.Selection<d3.BaseType, unknown, d3.BaseType, unknown>;
+
+export function setAttr(selection: d3Selection, attrs: object) {
   Object.entries(attrs).forEach(([key, value]) => {
     selection.attr(key, value);
   });
 }
 
-export function getAttr<T>(selection: d3.Selection<d3.BaseType, unknown, d3.BaseType, unknown>,
+export function getAttr<T>(selection: d3Selection,
   coerce: (attr: string) => T, ...names: string[]): T[] {
   return names.map(name => selection.attr(name)).map(coerce);
 }

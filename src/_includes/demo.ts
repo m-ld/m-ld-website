@@ -96,9 +96,7 @@ window.onload = function () {
         } as Update);
       }
     } catch (err) {
-      d3.select('#error')
-        .classed('is-active', true)
-        .select('.error-text').text(`${err}`);
+      showError(err);
     }
   });
   // Warning notification delete button
@@ -110,23 +108,51 @@ window.onload = function () {
     location.reload();
   }
   // Board picker dropdown
+  const boardPicker = d3.select('#board-picker');
   d3.select('#board-picker button')
     .on('click', () => {
-      const boardPicker = d3.select('#board-picker');
       const show = !boardPicker.classed('is-active');
-      if (show) {
-        const localDomains = local.get<string[]>('m-ld.domains') ?? [];
-        boardPicker.select('#boards')
-          .selectAll('.pick-board')
-          .data(localDomains)
-          .join('a')
-          .classed('pick-board dropdown-item', true)
-          .classed('is-active', (_, i) => i == 0)
-          .text(domain => domain)
-          .on('mousedown', pickBoard);
-      }
+      if (show)
+        updateBoardPicks();
       boardPicker.classed('is-active', show);
     })
     .on('blur', () => d3.select('#board-picker').classed('is-active', false));
   d3.select('#new-board').on('mousedown', () => pickBoard('new'));
+
+  function showError(err: any) {
+    d3.select('#error')
+      .classed('is-active', true)
+      .select('.error-text').text(`${err}`);
+  }
+
+  function updateBoardPicks() {
+    const localDomains = local.get<string[]>('m-ld.domains') ?? [];
+    const boardPicks = boardPicker.select('#boards')
+      .selectAll('.pick-board').data(localDomains)
+      .join('tr').classed('pick-board', true)
+      .html(''); // Remove previous content
+    boardPicks
+      .append('td').append('a').classed('dropdown-item', true)
+      .classed('is-active', (_, i) => i == 0)
+      .text(domain => domain)
+      .on('mousedown', pickBoard);
+    boardPicks.filter((_, i) => i > 0)
+      .append('td').append('a').classed('tag is-delete is-danger', true)
+      .attr('title', 'Remove this board')
+      .on('mousedown', deleteDomain);
+  }
+
+  function deleteDomain(domain: string) {
+    const localDomains = local.get<string[]>('m-ld.domains') ?? [];
+    // Level typing is wrong - destroy is a static method
+    (<any>Level).destroy(domain, (err: any) => {
+      if (err) {
+        showError(err);
+      } else {
+        local.set<string[]>('m-ld.domains', localDomains.filter(d => d !== domain));
+        updateBoardPicks();
+      }
+    });
+  }
 }
+
