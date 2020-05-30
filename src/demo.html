@@ -61,6 +61,31 @@
     <button class="delete"></button>
     <span class="warning-text">Something went wrong</span>
   </div>
+  <div id="board-picker" class="dropdown">
+    <div class="dropdown-trigger">
+      <button class="button" aria-haspopup="true" aria-controls="dropdown-menu">
+        <span class="icon">
+          <i class="fas fa-bars" aria-hidden="true"></i>
+        </span>
+      </button>
+    </div>
+    <div class="dropdown-menu" id="dropdown-menu" role="menu">
+      <div class="dropdown-content">
+        <div class="dropdown-item">
+          <i>Boards you have visited from this browser:</i>
+        </div>
+        <div id="boards">
+          <a id="pick-board-0" class="pick-board dropdown-item is-active">this-domain.m-ld.org</a>
+          <a id="pick-board-1" class="pick-board dropdown-item">
+            that-domain.m-ld.org
+            <button class="delete"></button>
+          </a>
+        </div>
+        <hr class="dropdown-divider">
+        <a id="new-board" class="dropdown-item">New...</a>
+      </div>
+    </div>
+  </div>
 </body>
 {% else %}
 <body>

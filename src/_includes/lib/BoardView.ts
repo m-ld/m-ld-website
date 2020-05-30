@@ -9,7 +9,7 @@ import { map, toArray } from 'rxjs/operators';
 import { MeldApi } from '@gsvarovsky/m-ld';
 // FIXME: Tidy up m-ld utility exports
 import { shortId } from '@gsvarovsky/m-ld/dist/util';
-import { Subject, Select, Describe, Update, Reference } from '@gsvarovsky/m-ld/dist/m-ld/jsonrql';
+import { Subject, Select, Describe, Update, Reference, Resource } from '@gsvarovsky/m-ld/dist/m-ld/jsonrql';
 import { LinkView } from './LinkView';
 
 const CLICK_DRAG_DISTANCE = 3;
@@ -46,14 +46,14 @@ export class BoardView extends InfiniteView {
       toArray()).toPromise();
   }
 
-  get messages(): MeldApi.Node<Message>[] {
-    return this.svg.selectAll('.board-message').data() as MeldApi.Node<Message>[];
+  get messages(): Resource<Message>[] {
+    return this.svg.selectAll('.board-message').data() as Resource<Message>[];
   }
 
   private sync(updates: MeldApi.SubjectUpdates) {
     this.svg.selectAll('.board-message')
       // Apply the given updates to the board messages
-      .data(this.applyUpdates(updates), function (this: Element, msg: MeldApi.Node<Message>) {
+      .data(this.applyUpdates(updates), function (this: Element, msg: Resource<Message>) {
         return msg ? msg['@id'] : this.id;
       })
       .join(
@@ -102,7 +102,7 @@ export class BoardView extends InfiniteView {
       })
       .concat(Object.entries(updates).map(([id, update]) => {
         // Any remaining updates are new messages
-        const msg: MeldApi.Node<Message> =
+        const msg: Resource<Message> =
           { '@id': id, '@type': 'Message', text: [], x: [], y: [], linkTo: [] };
         MeldApi.update(msg, update);
         return msg;
@@ -257,7 +257,7 @@ export class BoardView extends InfiniteView {
       x += 50;
       y += 100;
     }
-    const newMessage: MeldApi.Node<Message> = {
+    const newMessage: Resource<Message> = {
       '@id': id, '@type': 'Message', text: '', x, y, linkTo: []
     };
     const newLink: Subject = {

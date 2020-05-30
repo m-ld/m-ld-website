@@ -3,14 +3,14 @@ import { setAttr, idNotInFilter } from './util';
 import { BoardView } from './BoardView';
 import { Rectangle } from './Shapes';
 import { GroupUI } from './GroupUI';
-import { MeldApi } from '@gsvarovsky/m-ld';
 import { Message } from './Message';
 import { LinkView } from './LinkView';
+import { Resource } from '@gsvarovsky/m-ld/dist/m-ld/jsonrql';
 
 const MAGIC_DIV_SCALE: number = 10 / 9;
 const MIN_MESSAGE_WIDTH: number = 115; // Width of buttons + 20
 
-export class MessageView extends GroupUI<MeldApi.Node<Message>> {
+export class MessageView extends GroupUI<Resource<Message>> {
   readonly boardView: BoardView;
 
   constructor(node: Element, boardView: BoardView) {
@@ -18,19 +18,19 @@ export class MessageView extends GroupUI<MeldApi.Node<Message>> {
     this.boardView = boardView;
   }
 
-  get msg(): MeldApi.Node<Message> {
+  get msg(): Resource<Message> {
     return this.group.datum();
   }
 
-  get box(): d3.Selection<SVGRectElement, MeldApi.Node<Message>, HTMLElement, unknown> {
+  get box(): d3.Selection<SVGRectElement, Resource<Message>, HTMLElement, unknown> {
     return this.group.select('.board-message-box');
   }
 
-  get body(): d3.Selection<SVGForeignObjectElement, MeldApi.Node<Message>, HTMLElement, unknown> {
+  get body(): d3.Selection<SVGForeignObjectElement, Resource<Message>, HTMLElement, unknown> {
     return this.group.select('.board-message-body');
   }
 
-  get content(): d3.Selection<HTMLDivElement, MeldApi.Node<Message>, HTMLElement, unknown> {
+  get content(): d3.Selection<HTMLDivElement, Resource<Message>, HTMLElement, unknown> {
     return this.body.select('div');
   }
 

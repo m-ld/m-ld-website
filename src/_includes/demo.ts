@@ -6,21 +6,32 @@ import { Update } from '@gsvarovsky/m-ld/dist/m-ld/jsonrql';
 import { Config } from './config';
 import * as d3 from 'd3';
 import { shortId } from '@gsvarovsky/m-ld/dist/util';
+import * as local from 'local-storage';
 
 window.onload = function () {
   grecaptcha.ready(async () => {
     try {
       const token = await grecaptcha.execute(process.env.RECAPTCHA_SITE, { action: 'config' });
 
-      // Get the configuration for this domain
+      let domain = document.location.hash.slice(1);
+      let localDomains = local.get<string[]>('m-ld.domains') ?? [];
+      if (domain === 'new' || !localDomains.length) {
+        // Create a new domain
+        domain = null;
+      } else if (!domain) {
+        // Return to the last domain visited
+        domain = localDomains[0];
+      }
+
+      // Get the configuration for the domain
       const meldConfig = await d3.json('/api/config', {
         method: 'post',
         headers: { 'Content-type': 'application/json; charset=UTF-8' },
         body: JSON.stringify({
-          '@domain': document.location.hash.slice(1), token
+          '@domain': domain, token
         } as Config.Request)
       }) as Config.Response;
-      const domain = meldConfig['@domain'];
+      domain = meldConfig['@domain'];
       history.replaceState(null, null, '#' + domain);
 
       // Initialise the m-ld clone
@@ -30,6 +41,11 @@ window.onload = function () {
       // Wait for the latest state from the clone
       // (Remove this line to see rev-ups as they happen)
       await meld.latest();
+
+      // Add the domain to the local list of domains
+      localDomains = localDomains.filter(d => d !== domain);
+      localDomains.unshift(domain);
+      local.set<string[]>('m-ld.domains', localDomains);
 
       // Unshow the loading progress
       d3.select('#loading').classed('is-active', false);
@@ -61,7 +77,7 @@ window.onload = function () {
             x: 250, y: 200,
             linkTo: []
           } as Message, {
-              '@id': welcomeId, linkTo: [{ '@id': 'thisIs' }]
+            '@id': welcomeId, linkTo: [{ '@id': 'thisIs' }]
           } as Partial<Message>]
         } as Update);
 
@@ -85,8 +101,32 @@ window.onload = function () {
         .select('.error-text').text(`${err}`);
     }
   });
-  // Set up the warning notification delete button
+  // Warning notification delete button
   d3.select('#warning .delete').on('click', function (this: Element) {
     d3.select('#warning').classed('is-hidden', true);
   });
+  function pickBoard(domain: string) {
+    location.hash = domain;
+    location.reload();
+  }
+  // Board picker dropdown
+  d3.select('#board-picker button')
+    .on('click', () => {
+      const boardPicker = d3.select('#board-picker');
+      const show = !boardPicker.classed('is-active');
+      if (show) {
+        const localDomains = local.get<string[]>('m-ld.domains') ?? [];
+        boardPicker.select('#boards')
+          .selectAll('.pick-board')
+          .data(localDomains)
+          .join('a')
+          .classed('pick-board dropdown-item', true)
+          .classed('is-active', (_, i) => i == 0)
+          .text(domain => domain)
+          .on('mousedown', pickBoard);
+      }
+      boardPicker.classed('is-active', show);
+    })
+    .on('blur', () => d3.select('#board-picker').classed('is-active', false));
+  d3.select('#new-board').on('mousedown', () => pickBoard('new'));
 }

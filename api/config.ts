@@ -30,7 +30,7 @@ export default async (req: NowRequest, res: NowResponse) => {
 
   // Get a new domain name if none is specified
   let domain = configReq['@domain'];
-  if (!domain) {
+  if (domain == null) {
     const part1 = await fetchWord('adjective'), part2 = await fetchWord('noun');
     if (typeof part1 === 'string' || typeof part2 === 'string')
       return res.status(500).send('Domain name generation failed');

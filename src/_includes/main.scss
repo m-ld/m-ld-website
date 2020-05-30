@@ -66,9 +66,19 @@ $fa-font-path: "/webfonts";
   fill: $link;
 }
 
-#warning {
+.corner-control {
   position: absolute;
+  margin: 1em;
+}
+
+#warning {
+  @extend .corner-control;
   top: 0;
   right: 0;
-  margin: 1em;
+}
+
+#board-picker {
+  @extend .corner-control;
+  top: 0;
+  left: 0;
 }
