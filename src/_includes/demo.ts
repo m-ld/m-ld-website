@@ -1,4 +1,4 @@
-import { BoardView } from './lib/BoardView';
+import { BoardView, showWarning } from './lib/BoardView';
 import { Message } from './lib/Message';
 import { clone } from '@gsvarovsky/m-ld';
 import * as Level from 'level-js';
@@ -15,7 +15,7 @@ window.onload = function () {
 
       let domain = document.location.hash.slice(1);
       let localDomains = local.get<string[]>('m-ld.domains') ?? [];
-      if (domain === 'new' || !localDomains.length) {
+      if (domain === 'new' || (!domain && !localDomains.length)) {
         // Create a new domain
         domain = null;
       } else if (!domain) {
@@ -150,6 +150,7 @@ window.onload = function () {
         showError(err);
       } else {
         local.set<string[]>('m-ld.domains', localDomains.filter(d => d !== domain));
+        showWarning(`Board ${domain} has been removed from this browser.`);
         updateBoardPicks();
       }
     });

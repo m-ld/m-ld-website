@@ -14,6 +14,12 @@ import { LinkView } from './LinkView';
 
 const CLICK_DRAG_DISTANCE = 3;
 
+export function showWarning(msg: any) {
+  d3.select('#warning')
+    .classed('is-hidden', false)
+    .select('.warning-text').text(`${msg}`);
+}
+
 export class BoardView extends InfiniteView {
   constructor(
     selectSvg: string,
@@ -28,7 +34,7 @@ export class BoardView extends InfiniteView {
       subjects => this.sync(MeldApi.asSubjectUpdates({
         '@insert': { '@graph': subjects }, '@delete': { '@graph': [] }
       })),
-      this.warnError);
+      showWarning);
 
     // Follow changes to messages
     meld.follow().subscribe(update => {
@@ -128,7 +134,7 @@ export class BoardView extends InfiniteView {
       this.meld.transact({
         '@insert': { '@id': mv.msg['@id'], text: mv.text },
         '@delete': { '@id': mv.msg['@id'], text: mv.msg.text }
-      } as Update).toPromise().catch(this.warnError);
+      } as Update).toPromise().catch(showWarning);
     }
   }
 
@@ -151,7 +157,7 @@ export class BoardView extends InfiniteView {
     this.meld.transact({
       '@insert': { '@id': mv.msg['@id'], x, y },
       '@delete': { '@id': mv.msg['@id'], x: mv.msg.x, y: mv.msg.y }
-    } as Update).toPromise().catch(this.warnError);
+    } as Update).toPromise().catch(showWarning);
   }
 
   private btnDragSubject(mv: MessageView, dragged: SVGElement): DragSubject {
@@ -178,7 +184,7 @@ export class BoardView extends InfiniteView {
       if (thatId != null) {
         this.meld.transact({
           '@insert': { '@id': mv.msg['@id'], linkTo: { '@id': thatId } }
-        } as Update).toPromise().catch(this.warnError);
+        } as Update).toPromise().catch(showWarning);
       } else {
         this.addNewMessage(mv, position);
       }
@@ -196,7 +202,7 @@ export class BoardView extends InfiniteView {
       if (thatId != null) {
         this.meld.transact({
           '@delete': { '@id': mv.msg['@id'], linkTo: { '@id': thatId } }
-        } as Update).toPromise().catch(this.warnError);
+        } as Update).toPromise().catch(showWarning);
       }
     }, 'unlink-target');
   }
@@ -264,14 +270,14 @@ export class BoardView extends InfiniteView {
       linkTo: [{ '@id': id }]
     };
     this.meld.transact({ '@insert': [newMessage, newLink] } as Update).toPromise()
-      .then(() => this.withThatMessage(id, mv => mv.content.node().focus()), this.warnError);
+      .then(() => this.withThatMessage(id, mv => mv.content.node().focus()), showWarning);
   }
 
   private removeMessage(mv: MessageView): any {
     if (mv.msg['@id'] !== this.welcomeId)
       return this.meld.delete(mv.msg['@id']);
     else
-      this.warnError("Sorry, you can't delete the welcome message");
+      showWarning("Sorry, you can't delete the welcome message");
   }
 
   hitTest(test: Rectangle, filter: (id: string) => boolean): MessageView {
@@ -296,10 +302,6 @@ export class BoardView extends InfiniteView {
   append(el: Element): Element {
     return this.svg.node().insertAdjacentElement('beforeend', el);
   }
-
-  warnError = (err: any) => d3.select('#warning')
-    .classed('is-hidden', false)
-    .select('.warning-text').text(`${err}`);
 }
 
 interface DragSubject {

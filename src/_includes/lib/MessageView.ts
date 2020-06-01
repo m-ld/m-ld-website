@@ -1,6 +1,6 @@
 import * as d3 from 'd3';
 import { setAttr, idNotInFilter } from './util';
-import { BoardView } from './BoardView';
+import { BoardView, showWarning } from './BoardView';
 import { Rectangle } from './Shapes';
 import { GroupUI } from './GroupUI';
 import { Message } from './Message';
@@ -91,7 +91,7 @@ export class MessageView extends GroupUI<Resource<Message>> {
       this.allInLinkLines()
         .filter(idNotInFilter(inLinks.map(thatId => LinkView.linkId(thatId, this.msg['@id']))))
         .remove();
-    }, this.boardView.warnError);
+    }, showWarning);
   }
 
   remove() {
