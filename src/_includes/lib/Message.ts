@@ -1,4 +1,4 @@
-import { Subject, Reference } from '@gsvarovsky/m-ld/dist/m-ld/jsonrql';
+import { Subject, Reference } from '@m-ld/m-ld';
 
 export interface Message extends Subject {
   '@id': string;

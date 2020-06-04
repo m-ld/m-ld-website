@@ -6,10 +6,9 @@ import { MessageView } from './MessageView';
 import { GroupUI } from './GroupUI';
 import { Rectangle, Circle, Shape, Line } from './Shapes';
 import { map, toArray } from 'rxjs/operators';
-import { MeldApi } from '@gsvarovsky/m-ld';
+import { MeldApi } from '@m-ld/m-ld';
 // FIXME: Tidy up m-ld utility exports
-import { shortId } from '@gsvarovsky/m-ld/dist/util';
-import { Subject, Select, Describe, Update, Reference, Resource } from '@gsvarovsky/m-ld/dist/m-ld/jsonrql';
+import { shortId, Subject, Select, Describe, Update, Reference, Resource } from '@m-ld/m-ld';
 import { LinkView } from './LinkView';
 
 const CLICK_DRAG_DISTANCE = 3;

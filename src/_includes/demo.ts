@@ -1,11 +1,9 @@
 import { BoardView, showWarning } from './lib/BoardView';
 import { Message } from './lib/Message';
-import { clone } from '@gsvarovsky/m-ld';
 import * as Level from 'level-js';
-import { Update } from '@gsvarovsky/m-ld/dist/m-ld/jsonrql';
+import { clone, Update, shortId } from '@m-ld/m-ld';
 import { Config } from './config';
 import * as d3 from 'd3';
-import { shortId } from '@gsvarovsky/m-ld/dist/util';
 import * as local from 'local-storage';
 
 window.onload = function () {

@@ -5,7 +5,7 @@ import { Rectangle } from './Shapes';
 import { GroupUI } from './GroupUI';
 import { Message } from './Message';
 import { LinkView } from './LinkView';
-import { Resource } from '@gsvarovsky/m-ld/dist/m-ld/jsonrql';
+import { Resource } from '@m-ld/m-ld';
 
 const MAGIC_DIV_SCALE: number = 10 / 9;
 const MIN_MESSAGE_WIDTH: number = 115; // Width of buttons + 20

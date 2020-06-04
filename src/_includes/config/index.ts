@@ -1,4 +1,4 @@
-import { MeldConfig } from '@gsvarovsky/m-ld';
+import { MeldConfig } from '@m-ld/m-ld';
 
 export namespace Config {
   export interface Client {
