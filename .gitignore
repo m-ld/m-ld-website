@@ -5,3 +5,4 @@ node_modules
 _site
 .now
 .env
+.vercel
