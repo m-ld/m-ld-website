@@ -11,14 +11,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/gsvarovsky/m-ld-website.git"
+    "url": "git+https://github.com/m-ld/m-ld-website.git"
   },
   "author": "George Svarovsky <gsvarovsky@gmail.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/gsvarovsky/m-ld-website/issues"
+    "url": "https://github.com/m-ld/m-ld-website/issues"
   },
-  "homepage": "https://github.com/gsvarovsky/m-ld-website#readme",
+  "homepage": "https://github.com/m-ld/m-ld-website#readme",
   "devDependencies": {
     "@11ty/eleventy": "^0.11.0",
     "@fortawesome/fontawesome-free": "^5.13.0",
