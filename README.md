@@ -2,9 +2,19 @@
 m-ld.org
 
 ## build
-The site is deployed using [Zeit Now](https://zeit.co/docs).
+The site is deployed using [Vercel Now](https://vercel.com/docs).
 
-The secrets used in [now.json](now.json) must be added using [now secrets](https://zeit.co/docs/now-cli#commands/secrets).
+The secrets used in [now.json](now.json) must be added using [now
+secrets](https://vercel.com/docs/cli#commands/secrets).
+
+## edge
+The `master` branch deploys to the live website, https://m-ld.org. This should
+only change by pull request. The `edge` branch is for live development and
+deploys to https://edge.m-ld.org.
+
+`edge` currently has the environment variable `LIVE_DEMO=YES`, and its domain is
+set in the [reCAPTCHA admin
+console](https://www.google.com/u/1/recaptcha/admin/site/350626045).
 
 ## dev
 Currently, this project requires a link to the private m-ld(-js) library, e.g.:
@@ -12,14 +22,26 @@ Currently, this project requires a link to the private m-ld(-js) library, e.g.:
 1. `npm link ../m-ld-js` (see [npm link docs](https://docs.npmjs.com/cli/link.html))
 
 To run locally:
-1. Install [now](https://zeit.co/download)
+1. Install [now](https://vercel.com/download)
 1. Create a local file ".env" in the root and add any vars found under `env` in [now.json](now.json) (MQTT_URL=ws://localhost:8888).
 1. `npm run local`
 
 Note that `NPM_TOKEN` in [.env.build](./.env.build) is empty to pass through to your global npm token.
 
+## assets
+This repository is the source of truth for the m-ld and m-ld.io logos.
+
+<img src="src/m-ld.svg" alt="m-ld" width="200"/>
+<img src="src/m-ld.io.svg" alt="m-ld.io" width="200"/>
+
+There is also a small png version, which is generated using
+[myScale](https://webkul.github.io/myscale/).
+
+<img src="src/m-ld.io.small.png" alt="m-ld.io small"/>
+
 ## links
-* https://zeit.co/docs
+* https://vercel.com/docs
+* https://www.google.com/u/1/recaptcha/admin/site/350626045
 * https://www.11ty.io/docs/
 * https://bulma.io/documentation/
 * https://fontawesome.com/icons
