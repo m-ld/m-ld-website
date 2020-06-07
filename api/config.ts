@@ -43,7 +43,7 @@ export default async (req: NowRequest, res: NowResponse) => {
   const mqttOpts = { protocol: protocol.replace(/:$/, ''), username, password, host, port: Number(port) };
   Object.keys(mqttOpts).forEach(key => mqttOpts[key] || delete mqttOpts[key]);
 
-  res.json({ '@domain': domain, mqttOpts } as Config.Response);
+  res.json({ '@domain': domain, mqttOpts, logLevel: process.env.LOG || 'warn' } as Config.Response);
 }
 
 async function fetchWord(part: 'noun' | 'adjective') {
