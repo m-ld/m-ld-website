@@ -12,6 +12,7 @@ $fa-font-path: "/webfonts";
   fill: $light;
   stroke: none;
   stroke-width: 3;
+  filter: url(#shadow);
 }
 
 .board-message-button {

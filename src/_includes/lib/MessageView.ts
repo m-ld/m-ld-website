@@ -34,12 +34,8 @@ export class MessageView extends GroupUI<Resource<Message>> {
     return this.body.select('div');
   }
 
-  get text(): string {
-    return this.content.text();
-  }
-
   static mergeText(value: string | string[]): string {
-    return Array.isArray(value) ? value.join('\n') : value;
+    return Array.isArray(value) ? value.join('<br>') : value;
   }
 
   get msgText(): string {
@@ -60,11 +56,7 @@ export class MessageView extends GroupUI<Resource<Message>> {
   update(fromData?: 'fromData') {
     if (fromData) {
       // Update the visible text
-      if (this.codeMode)
-        this.content.select('pre').text(this.code);
-      else
-        this.content.text(this.msgText);
-
+      this.updateText();
       // Update the position
       this.position = this.msgPosition;
     }
@@ -102,24 +94,26 @@ export class MessageView extends GroupUI<Resource<Message>> {
   }
 
   toggleCode() {
-    const wasCodeMode = this.codeMode;
-    this.content.node().innerHTML = '';
-    if (wasCodeMode) {
-      this.content.text(this.msgText);
-    } else {
-      this.content.append('pre').text(this.code);
-    }
+    this.updateText(!this.codeMode);
     this.content.attr('contenteditable', !this.codeMode);
     this.box.classed('code-mode', this.codeMode);
     this.group.raise();
     this.update();
   }
 
-  get code(): string {
+  get text(): string {
+    return this.content.node().innerHTML;
+  }
+
+  private updateText(codeMode: boolean = this.codeMode) {
+    this.content.node().innerHTML = codeMode ? `<pre>${this.msgCode}</pre>` : this.msgText;
+  }
+
+  private get msgCode(): string {
     return JSON.stringify(this.msg, null, 2);
   }
 
-  get codeMode(): boolean {
+  private get codeMode(): boolean {
     return !this.content.select('pre').empty();
   }
 
