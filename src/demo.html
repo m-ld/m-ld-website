@@ -31,22 +31,10 @@
           </div>
         </foreignObject>
         <g transform="translate(10, -10)">
-          <g transform="translate(0, 0)" class="board-message-button board-message-close">
-            <circle r="10" cx="10" cy="10" />
-            <text x="5.5" y="15">&#xf00d;</text>
-          </g>
-          <g transform="translate(25, 0)" class="board-message-button board-message-add">
-            <circle r="10" cx="10" cy="10" cursor="alias" />
-            <text x="4.5" y="15">&#xf067;</text>
-          </g>
-          <g transform="translate(50, 0)" class="board-message-button board-message-move">
-            <circle r="10" cx="10" cy="10" cursor="grab" />
-            <text x="3.5" y="15">&#xf0b2;</text>
-          </g>
-          <g transform="translate(75, 0)" class="board-message-button board-message-code">
-            <circle r="10" cx="10" cy="10" />
-            <text x="2" y="15">&#xf121;</text>
-          </g>
+          {% include 'buttons/close-button.svg', x: 0 %}
+          {% include 'buttons/add-button.svg', x: 25 %}
+          {% include 'buttons/move-button.svg', x: 50 %}
+          {% include 'buttons/code-button.svg', x: 75 %}
         </g>
       </g>
       <line id="link-line-template" marker-end="url(#link-arrowhead)" />
@@ -88,9 +76,48 @@
         </div>
         <hr class="dropdown-divider">
         <a id="new-board" class="dropdown-item">New...</a>
+        <hr class="dropdown-divider">
+        <a id="show-help" class="dropdown-item">Show Help...</a>
       </div>
     </div>
   </div>
+  <article id="help" class="message is-info is-hidden">
+    <div class="message-header">
+      <p>Help</p>
+      <button class="delete" aria-label="delete"></button>
+    </div>
+    <div class="message-body">
+      <div>Zoom in/out:
+        <span class="how">mouse-wheel</span>
+      </div>
+      <div>Pan board:
+        <span class="how">drag the background</span>
+      </div>
+      <div>Move a message:
+        <span class="how">drag the {% include 'buttons/button-ref.svg', button:
+        'buttons/move-button.svg' %} button</span>
+      </div>
+      <div>Add a message at a specific place:
+        <span class="how">drag and release the {% include
+        'buttons/button-ref.svg', button: 'buttons/add-button.svg' %}
+        button</span>
+      </div>
+      <div>Add a link to another message:
+        <span class="how">drag the {% include 'buttons/button-ref.svg', button:
+        'buttons/add-button.svg' %} button to it</span>
+      </div>
+      <div>Remove a link:
+        <span class="how">drag the {% include 'buttons/button-ref.svg', button:
+        'buttons/close-button.svg' %} button to the linked message</span>
+      </div>
+      <div>Commit text change:
+        <span class="how"><span class="tag">Enter</span></span>
+      </div>
+      <div>New text line:
+        <span class="how"><span class="tag">Shift</span>-<span class="tag">Enter</span></span>
+      </div>
+    </div>
+  </article>
 </body>
 {% else %}
 <body>

@@ -13,7 +13,7 @@ export function showError(err: any) {
 }
 
 export function showWarning(warn: any, action?: () => void) {
-  const notification = d3.select('#warning').classed('is-hidden', false);
+  const notification = d3.select('#warning').classed('is-hidden', false).raise();
   const text = `${warn}`;
   notification.select('.warning-text').text(text);
   if (action != null) {
@@ -30,6 +30,10 @@ export function hideWarning() {
   d3.select('#warning').classed('is-hidden', true).select('.confirm').remove();
 }
 
+export function showHelp(show: boolean) {
+  d3.select('#help').classed('is-hidden', !show).raise();
+}
+
 export function getLocalDomains(): string[] {
   return local.get<string[]>('m-ld.domains') ?? [];
 }
@@ -42,8 +46,9 @@ export function addLocalDomain(domain: string) {
 }
 
 export function initControls() {
-  // Warning notification delete button
+  // Un-show buttons
   d3.select('#warning .delete').on('click', hideWarning);
+  d3.select('#help .delete').on('click', () => showHelp(false));
 
   // Board menu dropdown
   const boardPicker = d3.select('#board-menu');
@@ -56,6 +61,7 @@ export function initControls() {
     })
     .on('blur', () => d3.select('#board-menu').classed('is-active', false));
   d3.select('#new-board').on('mousedown', () => location.hash = 'new');
+  d3.select('#show-help').on('mousedown', () => showHelp(true));
 
   function updateBoardPicks() {
     const localDomains = local.get<string[]>('m-ld.domains') ?? [];

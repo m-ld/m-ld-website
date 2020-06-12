@@ -100,3 +100,23 @@ $fa-font-path: "/webfonts";
   max-height: 10em;
   overflow-y: scroll;
 }
+
+#help {
+  @extend .corner-control;
+  top: 0;
+  right: 0;
+
+  & .message-body div {
+    margin-bottom: 0.5em;
+    white-space: nowrap;
+  }
+
+  & .how {
+    @extend .is-pulled-right;
+    margin-left: 1em;
+  }
+
+  & .board-message-button {
+    visibility: visible;
+  }
+}
