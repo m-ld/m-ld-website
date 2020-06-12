@@ -103,7 +103,6 @@ window.onload = function () {
   });
   function pickBoard(domain: string) {
     location.hash = domain;
-    location.reload();
   }
   // Board picker dropdown
   const boardPicker = d3.select('#board-picker');
@@ -154,4 +153,7 @@ window.onload = function () {
     });
   }
 }
+window.onhashchange = function () {
+  location.reload();
+};
 
