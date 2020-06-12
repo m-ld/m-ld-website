@@ -10,14 +10,9 @@ import { MeldApi } from '@m-ld/m-ld';
 // FIXME: Tidy up m-ld utility exports
 import { shortId, Subject, Select, Describe, Update, Reference, Resource } from '@m-ld/m-ld';
 import { LinkView } from './LinkView';
+import { showWarning } from './BoardControls';
 
 const CLICK_DRAG_DISTANCE = 3;
-
-export function showWarning(msg: any) {
-  d3.select('#warning')
-    .classed('is-hidden', false)
-    .select('.warning-text').text(`${msg}`);
-}
 
 export class BoardView extends InfiniteView {
   constructor(

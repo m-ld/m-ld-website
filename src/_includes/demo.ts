@@ -1,27 +1,29 @@
-import { BoardView, showWarning } from './lib/BoardView';
+import { BoardView } from './lib/BoardView';
 import { Message } from './lib/Message';
 import * as Level from 'level-js';
 import { clone, Update, shortId } from '@m-ld/m-ld';
 import { Config } from './config';
 import * as d3 from 'd3';
-import * as local from 'local-storage';
+import { showError, showCantDemo, getLocalDomains, addLocalDomain, initControls } from './lib/BoardControls';
 
 window.onload = function () {
   Modernizr.on('indexeddb', () => {
-    const missing = Object.keys(Modernizr).filter((key: keyof ModernizrStatic) => !Modernizr[key]);
+    const missing = Object.keys(Modernizr).filter(
+      (key: keyof ModernizrStatic) => !Modernizr[key]);
     if (missing.length)
-      d3.select('#cant-demo').classed('is-active', true)
-        .select('#missing').text(`${missing.join(', ')}`);
+      showCantDemo(missing);
     else
       grecaptcha.ready(start);
   });
+
+  initControls();
 
   async function start() {
     try {
       const token = await grecaptcha.execute(process.env.RECAPTCHA_SITE, { action: 'config' });
 
       let domain = document.location.hash.slice(1);
-      let localDomains = local.get<string[]>('m-ld.domains') ?? [];
+      const localDomains = getLocalDomains();
       if (domain === 'new' || (!domain && !localDomains.length)) {
         // Create a new domain
         domain = null;
@@ -50,9 +52,7 @@ window.onload = function () {
       await meld.latest();
 
       // Add the domain to the local list of domains
-      localDomains = localDomains.filter(d => d !== domain);
-      localDomains.unshift(domain);
-      local.set<string[]>('m-ld.domains', localDomains);
+      addLocalDomain(domain);
 
       // Unshow the loading progress
       d3.select('#loading').classed('is-active', false);
@@ -105,63 +105,6 @@ window.onload = function () {
     } catch (err) {
       showError(err);
     }
-  }
-
-  // Warning notification delete button
-  d3.select('#warning .delete').on('click', function (this: Element) {
-    d3.select('#warning').classed('is-hidden', true);
-  });
-  function pickBoard(domain: string) {
-    location.hash = domain;
-  }
-  // Board picker dropdown
-  const boardPicker = d3.select('#board-picker');
-  d3.select('#board-picker button')
-    .on('click', () => {
-      const show = !boardPicker.classed('is-active');
-      if (show)
-        updateBoardPicks();
-      boardPicker.classed('is-active', show);
-    })
-    .on('blur', () => d3.select('#board-picker').classed('is-active', false));
-  d3.select('#new-board').on('mousedown', () => pickBoard('new'));
-
-  function showError(err: any) {
-    d3.select('#error')
-      .classed('is-active', true)
-      .select('.error-text')
-      .text(`${err}`);
-  }
-
-  function updateBoardPicks() {
-    const localDomains = local.get<string[]>('m-ld.domains') ?? [];
-    const boardPicks = boardPicker.select('#boards')
-      .selectAll('.pick-board').data(localDomains)
-      .join('tr').classed('pick-board', true)
-      .html(''); // Remove previous content
-    boardPicks
-      .append('td').append('a').classed('dropdown-item', true)
-      .classed('is-active', (_, i) => i == 0)
-      .text(domain => domain)
-      .on('mousedown', pickBoard);
-    boardPicks.filter((_, i) => i > 0)
-      .append('td').append('a').classed('tag is-delete is-danger', true)
-      .attr('title', 'Remove this board')
-      .on('mousedown', deleteDomain);
-  }
-
-  function deleteDomain(domain: string) {
-    const localDomains = local.get<string[]>('m-ld.domains') ?? [];
-    // Level typing is wrong - destroy is a static method
-    (<any>Level).destroy(domain, (err: any) => {
-      if (err) {
-        showError(err);
-      } else {
-        local.set<string[]>('m-ld.domains', localDomains.filter(d => d !== domain));
-        showWarning(`Board ${domain} has been removed from this browser.`);
-        updateBoardPicks();
-      }
-    });
   }
 }
 window.onhashchange = function () {

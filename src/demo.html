@@ -64,9 +64,9 @@
   {% include 'popup.html', id: 'error', content: 'error.html' %}
   <div id="warning" class="notification is-warning is-hidden">
     <button class="delete"></button>
-    <span class="warning-text">Something went wrong</span>
+    <p class="warning-text">Something went wrong</p>
   </div>
-  <div id="board-picker" class="dropdown">
+  <div id="board-menu" class="dropdown">
     <div class="dropdown-trigger">
       <button class="button" aria-haspopup="true" aria-controls="dropdown-menu">
         <span class="icon">
@@ -79,11 +79,13 @@
         <div class="dropdown-item">
           <i>Boards you have visited from this browser:</i>
         </div>
-        <table class="table is-narrow">
-          <tbody id="boards">
-            <!-- pick-board rows -->
-          </tbody>
-        </table>
+        <div class="boards-pane">
+          <table class="table is-narrow">
+            <tbody id="boards">
+              <!-- pick-board rows -->
+            </tbody>
+          </table>
+        </div>
         <hr class="dropdown-divider">
         <a id="new-board" class="dropdown-item">New...</a>
       </div>

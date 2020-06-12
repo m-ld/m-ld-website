@@ -78,7 +78,7 @@ $fa-font-path: "/webfonts";
   right: 0;
 }
 
-#board-picker {
+#board-menu {
   @extend .corner-control;
   top: 0;
   left: 0;
@@ -94,4 +94,9 @@ $fa-font-path: "/webfonts";
     border: none;
     vertical-align: middle;
   }
+}
+
+.boards-pane {
+  max-height: 10em;
+  overflow-y: scroll;
 }

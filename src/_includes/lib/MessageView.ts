@@ -1,11 +1,12 @@
 import * as d3 from 'd3';
 import { setAttr, idNotInFilter } from './util';
-import { BoardView, showWarning } from './BoardView';
+import { BoardView } from './BoardView';
 import { Rectangle } from './Shapes';
 import { GroupUI } from './GroupUI';
 import { Message } from './Message';
 import { LinkView } from './LinkView';
 import { Resource } from '@m-ld/m-ld';
+import { showWarning } from './BoardControls';
 
 const MAGIC_DIV_SCALE: number = 10 / 9;
 const MIN_MESSAGE_WIDTH: number = 115; // Width of buttons + 20
