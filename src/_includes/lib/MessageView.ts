@@ -62,29 +62,33 @@ export class MessageView extends GroupUI<Resource<Message>> {
       this.position = this.msgPosition;
     }
 
-    // Size the shape to the content
-    const textRect = this.boardView.svgRect(this.content.node());
-    var width = Math.max(textRect.width * MAGIC_DIV_SCALE, MIN_MESSAGE_WIDTH),
-      height = textRect.height * MAGIC_DIV_SCALE;
-    setAttr(this.box, { width, height });
-    setAttr(this.body, { width, height });
+    // We push the re-sizing to the next frame because Firefox sometimes hasn't
+    // updated the bounding client rect yet.
+    window.requestAnimationFrame(() => {
+      // Size the shape to the content
+      const textRect = this.boardView.svgRect(this.content.node());
+      var width = Math.max(textRect.width * MAGIC_DIV_SCALE, MIN_MESSAGE_WIDTH),
+        height = textRect.height * MAGIC_DIV_SCALE;
+      setAttr(this.box, { width, height });
+      setAttr(this.body, { width, height });
 
-    // Re-draw outbound link-lines
-    const outLinks = this.msg.linkTo;
-    outLinks.forEach(that => this.withThat(that['@id'], that => this.updateLink(that)));
-    // Remove non-existent outbound link-lines
-    this.allOutLinkLines()
-      .filter(idNotInFilter(outLinks.map(that => LinkView.linkId(this.msg['@id'], that['@id']))))
-      .remove();
-
-    // Re-draw inbound link-lines
-    this.boardView.linksTo(this.msg['@id']).then(inLinks => {
-      inLinks.forEach(thatId => this.withThat(thatId, that => that.updateLink(this)));
-      // Remove non-existent inbound link-lines
-      this.allInLinkLines()
-        .filter(idNotInFilter(inLinks.map(thatId => LinkView.linkId(thatId, this.msg['@id']))))
+      // Re-draw outbound link-lines
+      const outLinks = this.msg.linkTo;
+      outLinks.forEach(that => this.withThat(that['@id'], that => this.updateLink(that)));
+      // Remove non-existent outbound link-lines
+      this.allOutLinkLines()
+        .filter(idNotInFilter(outLinks.map(that => LinkView.linkId(this.msg['@id'], that['@id']))))
         .remove();
-    }, showWarning);
+
+      // Re-draw inbound link-lines
+      this.boardView.linksTo(this.msg['@id']).then(inLinks => {
+        inLinks.forEach(thatId => this.withThat(thatId, that => that.updateLink(this)));
+        // Remove non-existent inbound link-lines
+        this.allInLinkLines()
+          .filter(idNotInFilter(inLinks.map(thatId => LinkView.linkId(thatId, this.msg['@id']))))
+          .remove();
+      }, showWarning);
+    });
   }
 
   remove() {
