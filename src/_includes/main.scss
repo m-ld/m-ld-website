@@ -78,11 +78,17 @@ $fa-font-path: "/webfonts";
   right: 0;
 }
 
-#board-menu {
+#board-buttons {
   @extend .corner-control;
   top: 0;
   left: 0;
 
+  & > :not(:first-child) {
+    padding-top: 0.5em;
+  }
+}
+
+#board-menu {
   & table {
     margin: 0;
   }
@@ -106,9 +112,14 @@ $fa-font-path: "/webfonts";
   top: 0;
   right: 0;
 
-  & .message-body div {
-    margin-bottom: 0.5em;
-    white-space: nowrap;
+  & .message-body {
+    div {
+      white-space: nowrap;
+    }
+
+    & > :not(:first-child) {
+      margin-top: 0.5em;
+    }
   }
 
   & .how {

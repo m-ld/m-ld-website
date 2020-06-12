@@ -62,6 +62,7 @@ export function initControls() {
     .on('blur', () => d3.select('#board-menu').classed('is-active', false));
   d3.select('#new-board').on('mousedown', () => location.hash = 'new');
   d3.select('#show-help').on('mousedown', () => showHelp(true));
+  d3.select('#show-help-button').on('click', () => showHelp(true));
 
   function updateBoardPicks() {
     const localDomains = local.get<string[]>('m-ld.domains') ?? [];
