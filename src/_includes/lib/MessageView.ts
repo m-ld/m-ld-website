@@ -55,8 +55,9 @@ export class MessageView extends GroupUI<Resource<Message>> {
 
   update(fromData?: 'fromData') {
     if (fromData) {
-      // Update the visible text
-      this.updateText();
+      // Update the visible text - but not if the user is editing
+      if (document.activeElement !== this.content.node())
+        this.updateText();
       // Update the position
       this.position = this.msgPosition;
     }
@@ -106,6 +107,7 @@ export class MessageView extends GroupUI<Resource<Message>> {
   }
 
   private updateText(codeMode: boolean = this.codeMode) {
+    // This has the effect of switching to the given codeMode, see codeMode()
     this.content.node().innerHTML = codeMode ? `<pre>${this.msgCode}</pre>` : this.msgText;
   }
 

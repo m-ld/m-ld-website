@@ -68,10 +68,14 @@ export class BoardView extends InfiniteView {
             .classed('board-message', true)
             .attr('id', msg => msg['@id'])
             .each(this.withThisMessage(mv => mv.position = mv.msgPosition));
+          enter.select('.board-message-body')
+            // The contenteditable div can be smaller than the body
+            .on('mousedown', this.withThisMessage(mv => mv.content.node().focus()));
           enter.select('.board-message-body > div')
             .text(msg => MessageView.mergeText(msg.text))
             .on('focus', this.withThisMessage(mv => mv.group.raise()))
-            .on('input', this.withThisMessage(mv => mv.update()))
+            .on('input', this.withThisMessage(this.inputChange))
+            .on('keydown', this.withThisMessage(this.inputKey))
             .on('blur', this.withThisMessage(this.inputEnd));
           enter.select('.board-message-close circle')
             .on('click', this.withThisMessage(this.removeMessage))
@@ -125,6 +129,18 @@ export class BoardView extends InfiniteView {
       .on('start', this.withThisMessage(this.btnDragStart))
       .on('drag', this.withThisMessage(dragging))
       .on('end', this.withThisMessage(dragEnd));
+  }
+
+  private inputChange(mv: MessageView) {
+    // This updates the message's size to accommodate the input
+    mv.update();
+  }
+
+  private inputKey(mv: MessageView) {
+    if (d3.event.key === 'Enter' && !d3.event.shiftKey) {
+      mv.content.node().blur();
+      d3.event.preventDefault();
+    }
   }
 
   private inputEnd(mv: MessageView) {
