@@ -23,10 +23,17 @@ Currently, this project requires a link to the private m-ld(-js) library, e.g.:
 
 To run locally:
 1. Install [now](https://vercel.com/download)
-1. Create a local file ".env" in the root and add any vars found under `env` in [now.json](now.json) (MQTT_URL=ws://localhost:8888).
+1. Create a local file ".env" in the root and add any vars found under `env` in
+   [now.json](now.json) (MQTT_URL=ws://localhost:8888).
 1. `npm run local`
 
-Note that `NPM_TOKEN` in [.env.build](./.env.build) is empty to pass through to your global npm token.
+Note that `NPM_TOKEN` in [.env.build](./.env.build) is empty to pass through to
+your global npm token.
+
+## browser compatibility
+Browser compatibility is checked with Modernizr, using a generated build
+[modernizr-custom.js](src/modernizr-custom.js). See the file header comment
+for the checked features.
 
 ## assets
 This repository is the source of truth for the m-ld and m-ld.io logos.
@@ -47,3 +54,4 @@ There is also a small png version, which is generated using
 * https://fontawesome.com/icons
 * https://github.com/d3/d3/blob/master/API.md
 * https://webkul.github.io/myscale/
+* https://modernizr.com/

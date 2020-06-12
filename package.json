@@ -43,6 +43,7 @@
     "@types/grecaptcha": "^3.0.1",
     "@types/level-js": "^4.0.1",
     "@types/local-storage": "^1.4.0",
+    "@types/modernizr": "^3.5.3",
     "@types/node-fetch": "^2.5.7",
     "@zeit/fetch": "^6.0.0",
     "d3": "^5.16.0",

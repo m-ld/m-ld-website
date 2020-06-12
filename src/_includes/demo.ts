@@ -7,7 +7,16 @@ import * as d3 from 'd3';
 import * as local from 'local-storage';
 
 window.onload = function () {
-  grecaptcha.ready(async () => {
+  Modernizr.on('indexeddb', () => {
+    const missing = Object.keys(Modernizr).filter((key: keyof ModernizrStatic) => !Modernizr[key]);
+    if (missing.length)
+      d3.select('#cant-demo').classed('is-active', true)
+        .select('#missing').text(`${missing.join(', ')}`);
+    else
+      grecaptcha.ready(start);
+  });
+
+  async function start() {
     try {
       const token = await grecaptcha.execute(process.env.RECAPTCHA_SITE, { action: 'config' });
 
@@ -96,7 +105,8 @@ window.onload = function () {
     } catch (err) {
       showError(err);
     }
-  });
+  }
+
   // Warning notification delete button
   d3.select('#warning .delete').on('click', function (this: Element) {
     d3.select('#warning').classed('is-hidden', true);
@@ -119,7 +129,8 @@ window.onload = function () {
   function showError(err: any) {
     d3.select('#error')
       .classed('is-active', true)
-      .select('.error-text').text(`${err}`);
+      .select('.error-text')
+      .text(`${err}`);
   }
 
   function updateBoardPicks() {
