@@ -8,7 +8,6 @@ import { LinkView } from './LinkView';
 import { Resource } from '@m-ld/m-ld';
 import { showWarning } from './BoardControls';
 
-const MAGIC_DIV_SCALE: number = 10 / 9;
 const MIN_MESSAGE_WIDTH: number = 115; // Width of buttons + 20
 
 export class MessageView extends GroupUI<Resource<Message>> {
@@ -68,8 +67,15 @@ export class MessageView extends GroupUI<Resource<Message>> {
     window.requestAnimationFrame(() => {
       // Size the shape to the content
       const textRect = this.boardView.svgRect(this.content.node());
-      var width = Math.max(textRect.width * MAGIC_DIV_SCALE, MIN_MESSAGE_WIDTH),
-        height = textRect.height * MAGIC_DIV_SCALE;
+      // Chromium bug: The computed effective zoom is currently force-set to 1.0
+      // for foreignObjects. We can detect by comparing the body to the box,
+      // because they are locked to having the same width attributes.
+      // https://bugs.chromium.org/p/chromium/issues/detail?id=976224
+      const zoomScale = this.box.node().getBoundingClientRect().width /
+        this.body.node().getBoundingClientRect().width;
+
+      var width = Math.max(textRect.width * zoomScale, MIN_MESSAGE_WIDTH),
+        height = textRect.height * zoomScale;
       setAttr(this.box, { width, height });
       setAttr(this.body, { width, height });
 
