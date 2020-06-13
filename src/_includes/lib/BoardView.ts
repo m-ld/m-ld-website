@@ -50,6 +50,10 @@ export class BoardView extends InfiniteView {
     return this.svg.selectAll('.board-message').data() as Resource<Message>[];
   }
 
+  get contentExtent(): DOMRect {
+    return this.messageGroup.node().getBBox();
+  }
+
   private sync(updates: MeldApi.SubjectUpdates) {
     this.svg.selectAll('.board-message')
       // Apply the given updates to the board messages
@@ -59,7 +63,7 @@ export class BoardView extends InfiniteView {
       .join(
         enter => {
           enter = enter
-            .select(() => this.append(MessageView.createMessageViewNode()))
+            .select(() => this.addMessageNode())
             .classed('board-message', true)
             .attr('id', msg => msg['@id'])
             .each(this.withThisMessage(mv => mv.position = mv.msgPosition));
@@ -309,8 +313,13 @@ export class BoardView extends InfiniteView {
     this.svg.select(`#${thatId}`).each(this.withThisMessage(action));
   }
 
-  append(el: Element): Element {
-    return this.svg.node().insertAdjacentElement('beforeend', el);
+  addMessageNode(): Element {
+    return this.messageGroup.node()
+      .insertAdjacentElement('beforeend', MessageView.createMessageViewNode());
+  }
+
+  private get messageGroup() {
+    return this.svg.select<SVGGElement>('#messages');
   }
 }
 

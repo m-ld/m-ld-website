@@ -49,6 +49,7 @@
       </filter>
     </defs>
     <g id="link-lines"></g>
+    <g id="messages"></g>
   </svg>
   {% include 'popup.html', id: 'cant-demo', content: 'cant-demo.html' %}
   {% include 'popup.html', id: 'error', content: 'error.html' %}
@@ -79,13 +80,11 @@
           </div>
           <hr class="dropdown-divider">
           <a id="new-board" class="dropdown-item">New...</a>
-          <hr class="dropdown-divider">
-          <a id="show-help" class="dropdown-item">Show Help...</a>
         </div>
       </div>
     </div>
     <div>
-      <button id="show-help-button" class="button">
+      <button id="show-help" class="button">
         <span class="icon">
           <i class="fas fa-question"></i>
         </span>
@@ -101,6 +100,12 @@
       <div>Zoom in/out:
         <span class="how">mouse-wheel</span>
       </div>
+      <div><a id="reset-zoom">Reset zoom</a>:
+        <span class="how">double-click on background</span>
+      </div>
+      <div><a id="zoom-all">Zoom to see all</a>:
+        <span class="how"><span class="tag">Shift</span>+ double-click</span>
+      </div>
       <div>Pan board:
         <span class="how">drag the background</span>
       </div>
@@ -113,7 +118,7 @@
         'buttons/button-ref.svg', button: 'buttons/add-button.svg' %}
         button</span>
       </div>
-      <div>Add a link to another message:
+      <div>Link to another message:
         <span class="how">drag the {% include 'buttons/button-ref.svg', button:
         'buttons/add-button.svg' %} button to it</span>
       </div>
@@ -125,7 +130,7 @@
         <span class="how"><span class="tag">Enter</span></span>
       </div>
       <div>New text line:
-        <span class="how"><span class="tag">Shift</span>-<span class="tag">Enter</span></span>
+        <span class="how"><span class="tag">Shift</span>+<span class="tag">Enter</span></span>
       </div>
     </div>
   </article>
