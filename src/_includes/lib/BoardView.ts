@@ -26,7 +26,7 @@ export class BoardView extends InfiniteView {
       '@describe': '?s', '@where': { '@id': '?s', '@type': 'Message' }
     } as Describe).pipe(toArray()).subscribe(
       subjects => this.sync(MeldApi.asSubjectUpdates({
-        '@insert': { '@graph': subjects }, '@delete': { '@graph': [] }
+        '@insert': subjects, '@delete': []
       })),
       showWarning);
 

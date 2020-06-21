@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "description": "m-ld.org website",
   "scripts": {
-    "link-local-m-ld": "sudo npm link ../m-ld-js",
+    "link-locals": "sudo npm link ../m-ld-js",
     "clean": "rm -rf _site",
     "build": "npx eleventy",
     "nodemo": "npx eleventy --serve",
@@ -37,7 +37,7 @@
     "websocket-stream": "^5.5.2"
   },
   "dependencies": {
-    "@m-ld/m-ld": "^0.1.7",
+    "@m-ld/m-ld": "^0.1.8",
     "@now/node": "^1.6.1",
     "@types/d3": "^5.7.2",
     "@types/grecaptcha": "^3.0.1",
