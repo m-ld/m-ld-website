@@ -30,7 +30,8 @@ export default async (req: NowRequest, res: NowResponse) => {
 
   // Get a new domain name if none is specified
   let domain = configReq['@domain'];
-  if (domain == null) {
+  let genesis = domain == null;
+  if (genesis) {
     const part1 = await fetchWord('adjective'), part2 = await fetchWord('noun');
     if (typeof part1 === 'string' || typeof part2 === 'string')
       return res.status(500).send('Domain name generation failed');
@@ -43,7 +44,13 @@ export default async (req: NowRequest, res: NowResponse) => {
   const mqttOpts = { protocol: protocol.replace(/:$/, ''), username, password, host, port: Number(port) };
   Object.keys(mqttOpts).forEach(key => mqttOpts[key] || delete mqttOpts[key]);
 
-  res.json({ '@domain': domain, mqttOpts, logLevel: process.env.LOG || 'warn' } as Config.Response);
+  res.json({
+    '@id': configReq['@id'],
+    '@domain': domain,
+    genesis,
+    mqttOpts,
+    logLevel: process.env.LOG || 'warn'
+  });
 }
 
 async function fetchWord(part: 'noun' | 'adjective') {

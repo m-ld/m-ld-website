@@ -1,10 +1,11 @@
 import { BoardView } from './lib/BoardView';
 import { Message } from './lib/Message';
 import * as Level from 'level-js';
-import { clone, Update, shortId } from '@m-ld/m-ld';
+import { clone, Update, shortId, uuid } from '@m-ld/m-ld';
 import { Config } from './config';
 import * as d3 from 'd3';
 import { showError, showCantDemo, getLocalDomains, addLocalDomain, initControls } from './lib/BoardControls';
+import { MqttRemotes } from '@m-ld/m-ld/dist/mqtt';
 
 window.onload = function () {
   Modernizr.on('indexeddb', () => {
@@ -33,18 +34,18 @@ window.onload = function () {
       }
 
       // Get the configuration for the domain
-      const meldConfig = await d3.json('/api/config', {
+      const config = await d3.json('/api/config', {
         method: 'post',
         headers: { 'Content-type': 'application/json; charset=UTF-8' },
         body: JSON.stringify({
-          '@domain': domain, token
+          '@id': uuid(), '@domain': domain, token
         } as Config.Request)
       }) as Config.Response;
-      domain = meldConfig['@domain'];
+      domain = config['@domain'];
       history.replaceState(null, null, '#' + domain);
 
       // Initialise the m-ld clone
-      const meld = await clone(Level(domain), meldConfig);
+      const meld = await clone(Level(domain), new MqttRemotes(config), config);
       window.addEventListener('unload', () => meld.close());
 
       // Wait for the latest state from the clone

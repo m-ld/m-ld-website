@@ -1,4 +1,4 @@
-import { MeldConfig } from '@m-ld/m-ld';
+import { MeldMqttConfig } from '@m-ld/m-ld/dist/mqtt';
 
 export namespace Config {
   export interface Client {
@@ -6,9 +6,10 @@ export namespace Config {
   }
 
   export interface Request {
+    '@id': string;
     '@domain'?: string;
     token: string;
   }
 
-  export type Response = MeldConfig;
+  export type Response = MeldMqttConfig;
 }
