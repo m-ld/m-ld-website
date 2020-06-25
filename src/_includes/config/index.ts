@@ -1,4 +1,4 @@
-import { MeldMqttConfig } from '@m-ld/m-ld/dist/mqtt';
+import { MeldAblyConfig } from '@m-ld/m-ld/dist/ably';
 
 export namespace Config {
   export interface Client {
@@ -11,5 +11,5 @@ export namespace Config {
     token: string;
   }
 
-  export type Response = MeldMqttConfig;
+  export type Response = MeldAblyConfig;
 }

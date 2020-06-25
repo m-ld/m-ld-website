@@ -8,6 +8,6 @@
   "env": {
     "RECAPTCHA_SECRET": "@recaptcha-secret",
     "WORDNIK_API_KEY": "@wordnik-api-key",
-    "MQTT_URL": "@mqtt-url"
+    "ABLY_KEY": "@ably-key"
   }
 }

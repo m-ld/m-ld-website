@@ -1,6 +1,8 @@
 import { NowRequest, NowResponse } from '@now/node'
 import { Config } from '../src/_includes/config';
+import { LogLevelDesc } from 'loglevel';
 import SetupFetch from '@zeit/fetch';
+import { FetchOptions } from '@zeit/fetch';
 import { URL } from 'url';
 const fetch = SetupFetch();
 
@@ -14,7 +16,7 @@ export default async (req: NowRequest, res: NowResponse) => {
     'https://www.google.com/recaptcha/api/siteverify', {
     secret: process.env.RECAPTCHA_SECRET,
     response: configReq.token
-  }, 'POST');
+  }, { method: 'POST' });
 
   if (typeof siteverify === 'string')
     return res.status(500).send(`reCAPTCHA failed with ${siteverify}`);
@@ -24,7 +26,7 @@ export default async (req: NowRequest, res: NowResponse) => {
 
   if (siteverify.action != 'config')
     return res.status(400).send(`reCAPTCHA action mismatch, received '${siteverify.action}'`);
-  
+
   if (siteverify.score < 0.5)
     return res.status(403).send(`reCAPTCHA check failed`);
 
@@ -39,18 +41,34 @@ export default async (req: NowRequest, res: NowResponse) => {
     domain = `${part1.word}-${part2.word}.m-ld.org`;
   }
 
-  // Get MQTT connection settings
-  const { protocol, username, password, hostname: host, port } = new URL(process.env.MQTT_URL);
-  const mqttOpts = { protocol: protocol.replace(/:$/, ''), username, password, host, port: Number(port) };
-  Object.keys(mqttOpts).forEach(key => mqttOpts[key] || delete mqttOpts[key]);
+  // Get an Ably token for the client
+  // https://www.ably.io/documentation/rest-api#request-token
+  const ablyKey = process.env.ABLY_KEY, keyName = ablyKey.split(':')[0],
+    Authorization = `Basic ${Buffer.from(ablyKey).toString('base64')}`;
+  const tokenRequest = {
+    keyName,
+    capability: JSON.stringify({ [`${domain}:*`]: ['subscribe', 'publish', 'presence'] }),
+    clientId: configReq['@id'],
+    timestamp: Date.now()
+  };
+  const ably = await fetchJson<{ token: string }>(
+    `https://rest.ably.io/keys/${keyName}/requestToken`, {}, {
+    method: 'POST',
+    headers: { Authorization, 'Content-Type': 'application/json' },
+    body: JSON.stringify(tokenRequest)
+  });
 
-  res.json({
+  if (typeof ably === 'string')
+    return res.status(500).send(`Ably token request failed with ${ably}`);
+
+  const config: Config.Response = {
     '@id': configReq['@id'],
     '@domain': domain,
     genesis,
-    mqttOpts,
-    logLevel: process.env.LOG || 'warn'
-  });
+    ably,
+    logLevel: process.env.LOG as LogLevelDesc || 'warn'
+  }
+  res.json(config);
 }
 
 async function fetchWord(part: 'noun' | 'adjective') {
@@ -65,14 +83,17 @@ async function fetchWord(part: 'noun' | 'adjective') {
     /^[a-z\-]+$/.test(rtn.word) ? rtn : fetchWord(part);
 }
 
-async function fetchJson<T extends object>(urlString: string, params: { [name: string]: string }, method: string = 'GET'): Promise<T | string> {
+async function fetchJson<T extends object>(
+  urlString: string,
+  params: { [name: string]: string },
+  options: FetchOptions = { method: 'GET' }): Promise<T | string> {
   const url = new URL(urlString);
   Object.entries(params).forEach(([name, value]) => url.searchParams.append(name, value));
-  const res = await fetch(url.toString(), { method });
-  if (res.status !== 200) {
+  const res = await fetch(url.toString(), options);
+  if (res.ok) {
+    return (await res.json()) || 'No JSON returned';
+  } else {
     console.debug(`Fetch from ${url} failed with ${res.statusText}`);
     return res.statusText;
-  } else {
-    return (await res.json()) || 'No JSON returned';
   }
 }
