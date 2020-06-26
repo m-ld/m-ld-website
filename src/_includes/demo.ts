@@ -1,10 +1,11 @@
 import { BoardView } from './lib/BoardView';
 import { Message } from './lib/Message';
 import * as Level from 'level-js';
-import { clone, Update, shortId } from '@m-ld/m-ld';
+import { clone, Update, shortId, uuid } from '@m-ld/m-ld';
 import { Config } from './config';
 import * as d3 from 'd3';
 import { showError, showCantDemo, getLocalDomains, addLocalDomain, initControls } from './lib/BoardControls';
+import { AblyRemotes } from '@m-ld/m-ld/dist/ably';
 
 window.onload = function () {
   Modernizr.on('indexeddb', () => {
@@ -20,8 +21,6 @@ window.onload = function () {
 
   async function start() {
     try {
-      const token = await grecaptcha.execute(process.env.RECAPTCHA_SITE, { action: 'config' });
-
       let domain = document.location.hash.slice(1);
       const localDomains = getLocalDomains();
       if (domain === 'new' || (!domain && !localDomains.length)) {
@@ -33,18 +32,16 @@ window.onload = function () {
       }
 
       // Get the configuration for the domain
-      const meldConfig = await d3.json('/api/config', {
-        method: 'post',
-        headers: { 'Content-type': 'application/json; charset=UTF-8' },
-        body: JSON.stringify({
-          '@domain': domain, token
-        } as Config.Request)
-      }) as Config.Response;
-      domain = meldConfig['@domain'];
+      const config = await fetchConfig(domain);
+      config.ably.authCallback = async (_, cb) =>
+        fetchConfig(config['@domain'])
+          .then(reconfig => cb(null, reconfig.ably.token))
+          .catch(err => cb(err, null));
+      domain = config['@domain'];
       history.replaceState(null, null, '#' + domain);
 
       // Initialise the m-ld clone
-      const meld = await clone(Level(domain), meldConfig);
+      const meld = await clone(Level(domain), new AblyRemotes(config), config);
       window.addEventListener('unload', () => meld.close());
 
       // Wait for the latest state from the clone
@@ -104,6 +101,15 @@ window.onload = function () {
       }
     } catch (err) {
       showError(err);
+    }
+
+    async function fetchConfig(domain: string) {
+      const token = await grecaptcha.execute(process.env.RECAPTCHA_SITE, { action: 'config' });
+      return await d3.json('/api/config', {
+        method: 'post',
+        headers: { 'Content-type': 'application/json; charset=UTF-8' },
+        body: JSON.stringify({ '@id': uuid(), '@domain': domain, token } as Config.Request)
+      }) as Config.Response;
     }
   }
 }
