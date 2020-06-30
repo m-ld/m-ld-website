@@ -74,41 +74,41 @@ window.onload = function () {
       // Check if we've already said Hello
       const welcome = await meld.get(welcomeId).toPromise();
       if (!welcome) {
-        meld.transact({
+        meld.transact<Message>({
           '@id': welcomeId,
           '@type': 'Message',
           text: `Welcome to ${domain}!`,
           x: 200, y: 100,
           linkTo: []
-        } as Message);
+        });
 
         await new Promise(res => setTimeout(res, 2000));
 
-        meld.transact({
-          '@insert': [{
+        meld.transact<Update>({
+          '@insert': [<Message>{
             '@id': 'thisIs',
             '@type': 'Message',
             text: 'This is your new collaborative message board.',
             x: 250, y: 200,
             linkTo: []
-          } as Message, {
+          }, <Partial<Message>>{
             '@id': welcomeId, linkTo: [{ '@id': 'thisIs' }]
-          } as Partial<Message>]
-        } as Update);
+          }]
+        });
 
         await new Promise(res => setTimeout(res, 2000));
 
-        meld.transact({
-          '@insert': [{
+        meld.transact<Update>({
+          '@insert': [<Message>{
             '@id': 'weUse',
             '@type': 'Message',
             text: "We'll use it to demonstrate how m-ld works.",
             x: 300, y: 300,
             linkTo: []
-          } as Message, {
+          }, <Partial<Message>>{
             '@id': 'thisIs', linkTo: [{ '@id': 'weUse' }]
-          } as Partial<Message>]
-        } as Update);
+          }]
+        });
       }
     } catch (err) {
       showError(err);
