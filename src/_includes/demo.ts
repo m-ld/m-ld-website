@@ -4,7 +4,7 @@ import * as Level from 'level-js';
 import { clone, Update, shortId, uuid } from '@m-ld/m-ld';
 import { Config } from './config';
 import * as d3 from 'd3';
-import { showError, showCantDemo, getLocalDomains, addLocalDomain, initControls } from './lib/BoardControls';
+import { showError, showCantDemo, getLocalDomains, addLocalDomain, initControls, showWarning } from './lib/BoardControls';
 import { AblyRemotes } from '@m-ld/m-ld/dist/ably';
 
 window.onload = function () {
@@ -32,21 +32,32 @@ window.onload = function () {
       }
 
       // Get the configuration for the domain
-      const config = await fetchConfig(domain);
+      const config = await fetchConfig(domain, uuid());
       config.ably.authCallback = async (_, cb) =>
-        fetchConfig(config['@domain'])
+        fetchConfig(config['@domain'], config['@id'])
           .then(reconfig => cb(null, reconfig.ably.token))
           .catch(err => cb(err, null));
       domain = config['@domain'];
       history.replaceState(null, null, '#' + domain);
 
       // Initialise the m-ld clone
-      const meld = await clone(Level(domain), new AblyRemotes(config), config);
+      const meld = await clone(Level(domain), AblyRemotes, config);
       window.addEventListener('unload', () => meld.close());
 
       // Wait for the latest state from the clone
       // (Remove this line to see rev-ups as they happen)
-      await meld.latest();
+      await meld.status.becomes({ outdated: false });
+
+      // When the clone goes offline, show a suitable warning
+      const statusSub = meld.status.subscribe(status => {
+        if (!status.online) {
+          showWarning('It looks like this browser is offline. ' +
+            'You can keep working, but don\'t refresh the page.');
+          meld.status.becomes({ online: true })
+            .then(() => showWarning('Back online!'));
+        }
+      });
+      window.addEventListener('beforeunload', () => statusSub.unsubscribe());
 
       // Add the domain to the local list of domains
       addLocalDomain(domain);
@@ -63,52 +74,52 @@ window.onload = function () {
       // Check if we've already said Hello
       const welcome = await meld.get(welcomeId).toPromise();
       if (!welcome) {
-        meld.transact({
+        meld.transact<Message>({
           '@id': welcomeId,
           '@type': 'Message',
           text: `Welcome to ${domain}!`,
           x: 200, y: 100,
           linkTo: []
-        } as Message);
+        });
 
         await new Promise(res => setTimeout(res, 2000));
 
-        meld.transact({
-          '@insert': [{
+        meld.transact<Update>({
+          '@insert': [<Message>{
             '@id': 'thisIs',
             '@type': 'Message',
             text: 'This is your new collaborative message board.',
             x: 250, y: 200,
             linkTo: []
-          } as Message, {
+          }, <Partial<Message>>{
             '@id': welcomeId, linkTo: [{ '@id': 'thisIs' }]
-          } as Partial<Message>]
-        } as Update);
+          }]
+        });
 
         await new Promise(res => setTimeout(res, 2000));
 
-        meld.transact({
-          '@insert': [{
+        meld.transact<Update>({
+          '@insert': [<Message>{
             '@id': 'weUse',
             '@type': 'Message',
             text: "We'll use it to demonstrate how m-ld works.",
             x: 300, y: 300,
             linkTo: []
-          } as Message, {
+          }, <Partial<Message>>{
             '@id': 'thisIs', linkTo: [{ '@id': 'weUse' }]
-          } as Partial<Message>]
-        } as Update);
+          }]
+        });
       }
     } catch (err) {
       showError(err);
     }
 
-    async function fetchConfig(domain: string) {
+    async function fetchConfig(domain: string, id: string) {
       const token = await grecaptcha.execute(process.env.RECAPTCHA_SITE, { action: 'config' });
       return await d3.json('/api/config', {
         method: 'post',
         headers: { 'Content-type': 'application/json; charset=UTF-8' },
-        body: JSON.stringify({ '@id': uuid(), '@domain': domain, token } as Config.Request)
+        body: JSON.stringify({ '@id': id, '@domain': domain, token } as Config.Request)
       }) as Config.Response;
     }
   }

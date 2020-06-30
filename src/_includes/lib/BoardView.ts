@@ -22,9 +22,9 @@ export class BoardView extends InfiniteView {
     super(selectSvg);
 
     // Sync all the messages in the given board now
-    meld.transact({
+    meld.transact<Describe>({
       '@describe': '?s', '@where': { '@id': '?s', '@type': 'Message' }
-    } as Describe).pipe(toArray()).subscribe(
+    }).then(
       subjects => this.sync(MeldApi.asSubjectUpdates({
         '@insert': subjects, '@delete': []
       })),
@@ -38,12 +38,11 @@ export class BoardView extends InfiniteView {
   }
 
   async linksTo(id: string): Promise<string[]> {
-    return this.meld.transact({
+    const selection = await this.meld.transact<Select>({
       '@select': '?s',
       '@where': { '@id': '?s', linkTo: { '@id': id } }
-    } as Select).pipe(
-      map(selection => (selection['?s'] as Reference)['@id']),
-      toArray()).toPromise();
+    });
+    return selection.map(values => (values['?s'] as Reference)['@id']);
   }
 
   get messages(): Resource<Message>[] {
@@ -145,10 +144,10 @@ export class BoardView extends InfiniteView {
   private inputEnd(mv: MessageView) {
     // Commit the change to the message
     if (mv.msgText !== mv.text) {
-      this.meld.transact({
+      this.meld.transact<Update>({
         '@insert': { '@id': mv.msg['@id'], text: mv.text },
         '@delete': { '@id': mv.msg['@id'], text: mv.msg.text }
-      } as Update).toPromise().catch(showWarning);
+      }).then(null, showWarning);
     }
   }
 
@@ -168,10 +167,10 @@ export class BoardView extends InfiniteView {
     d3.select(dragged).attr('cursor', 'grab');
     // Commit the change to the message
     const [x, y] = mv.position;
-    this.meld.transact({
+    this.meld.transact<Update>({
       '@insert': { '@id': mv.msg['@id'], x, y },
       '@delete': { '@id': mv.msg['@id'], x: mv.msg.x, y: mv.msg.y }
-    } as Update).toPromise().catch(showWarning);
+    }).then(null, showWarning);
   }
 
   private btnDragSubject(mv: MessageView, dragged: SVGElement): DragSubject {
@@ -196,9 +195,9 @@ export class BoardView extends InfiniteView {
   private linkDragEnd(mv: MessageView, dragged: SVGElement) {
     this.btnDragEnd(dragged, mv, (thatId, position) => {
       if (thatId != null) {
-        this.meld.transact({
+        this.meld.transact<Update>({
           '@insert': { '@id': mv.msg['@id'], linkTo: { '@id': thatId } }
-        } as Update).toPromise().catch(showWarning);
+        }).then(null, showWarning);
       } else {
         this.addNewMessage(mv, position);
       }
@@ -214,9 +213,9 @@ export class BoardView extends InfiniteView {
   private unlinkDragEnd(mv: MessageView, dragged: SVGElement) {
     this.btnDragEnd(dragged, mv, thatId => {
       if (thatId != null) {
-        this.meld.transact({
+        this.meld.transact<Update>({
           '@delete': { '@id': mv.msg['@id'], linkTo: { '@id': thatId } }
-        } as Update).toPromise().catch(showWarning);
+        }).then(null, showWarning);
       }
     }, 'unlink-target');
   }
@@ -283,7 +282,7 @@ export class BoardView extends InfiniteView {
       '@id': mv.msg['@id'],
       linkTo: [{ '@id': id }]
     };
-    this.meld.transact({ '@insert': [newMessage, newLink] } as Update).toPromise()
+    this.meld.transact<Update>({ '@insert': [newMessage, newLink] })
       .then(() => this.withThatMessage(id, mv => mv.content.node().focus()), showWarning);
   }
 
