@@ -64,6 +64,7 @@ window.onload = function () {
 
       // Unshow the loading progress
       d3.select('#loading').classed('is-active', false);
+      d3.select('#board-href').text(window.location.href);
 
       // The welcome message uses the id of the domain - it can't be deleted
       const welcomeId = shortId(domain);

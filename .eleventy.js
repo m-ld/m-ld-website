@@ -10,6 +10,6 @@ module.exports = function (config) {
     });
     return {
         dir: { input: 'src' },
-        templateFormats: ['html', 'svg', 'png', 'md', '11ty.js']
+        templateFormats: ['liquid', 'html', 'svg', 'png', 'md', '11ty.js']
     }
 }
