@@ -79,23 +79,38 @@ export class MessageView extends GroupUI<Resource<Message>> {
       setAttr(this.box, { width, height });
       setAttr(this.body, { width, height });
 
-      // Re-draw outbound link-lines
-      const outLinks = this.msg.linkTo;
-      outLinks.forEach(that => this.withThat(that['@id'], that => this.updateLink(that)));
-      // Remove non-existent outbound link-lines
-      this.allOutLinkLines()
-        .filter(idNotInFilter(outLinks.map(that => LinkView.linkId(this.msg['@id'], that['@id']))))
-        .remove();
-
-      // Re-draw inbound link-lines
-      this.boardView.linksTo(this.msg['@id']).then(inLinks => {
-        inLinks.forEach(thatId => this.withThat(thatId, that => that.updateLink(this)));
-        // Remove non-existent inbound link-lines
-        this.allInLinkLines()
-          .filter(idNotInFilter(inLinks.map(thatId => LinkView.linkId(thatId, this.msg['@id']))))
+      if (fromData) {
+        // Re-draw outbound link-lines
+        const outLinks = this.msg.linkTo;
+        outLinks.forEach(that => this.withThat(that['@id'], that => this.updateLink(that)));
+        // Remove non-existent outbound link-lines
+        this.allOutLinkLines()
+          .filter(idNotInFilter(outLinks.map(that => LinkView.linkId(this.msg['@id'], that['@id']))))
           .remove();
-      }, showWarning);
+
+        // Re-draw inbound link-lines
+        this.boardView.linksTo(this.msg['@id']).then(inLinks => {
+          inLinks.forEach(thatId => this.withThat(thatId, that => that.updateLink(this)));
+          // Remove non-existent inbound link-lines
+          this.allInLinkLines()
+            .filter(idNotInFilter(inLinks.map(thatId => LinkView.linkId(thatId, this.msg['@id']))))
+            .remove();
+        }, showWarning);
+      } else {
+        this.allOutLinkLines().each(this.withLink((_, thatId) =>
+          this.withThat(thatId, that => this.updateLink(that))));
+        this.allInLinkLines().each(this.withLink(thatId =>
+          this.withThat(thatId, that => that.updateLink(this))));
+      }
     });
+  }
+
+  private withLink(action: (fromId: string, toId: string) => void) {
+    const mv = this;
+    return function (this: SVGElement) {
+      const { fromId, toId } = LinkView.linkIds(d3.select(this).attr('id'));
+      return action.call(mv, fromId, toId);
+    };
   }
 
   remove() {

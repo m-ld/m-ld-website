@@ -39,6 +39,11 @@ export class LinkView {
     }
   }
 
+  static linkIds(id: string): { fromId: string, toId: string } {
+    const [fromId, toId] = id.split('-');
+    return { fromId, toId };
+  }
+
   static linkId(fromId: string, toId: string) {
     return `${fromId}-${toId}`;
   }

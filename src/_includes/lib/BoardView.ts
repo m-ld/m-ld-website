@@ -24,11 +24,9 @@ export class BoardView extends InfiniteView {
     // Sync all the messages in the given board now
     meld.transact<Describe>({
       '@describe': '?s', '@where': { '@id': '?s', '@type': 'Message' }
-    }).then(
-      subjects => this.sync(MeldApi.asSubjectUpdates({
-        '@insert': subjects, '@delete': []
-      })),
-      showWarning);
+    }).then(subjects => this.sync(MeldApi.asSubjectUpdates({
+      '@insert': subjects, '@delete': []
+    })), showWarning);
 
     // Follow changes to messages
     meld.follow().subscribe(update => {
@@ -45,77 +43,63 @@ export class BoardView extends InfiniteView {
     return selection.map(values => (values['?s'] as Reference)['@id']);
   }
 
-  get messages(): Resource<Message>[] {
-    return this.svg.selectAll('.board-message').data() as Resource<Message>[];
-  }
-
   get contentExtent(): DOMRect {
     return this.messageGroup.node().getBBox();
   }
 
   private sync(updates: MeldApi.SubjectUpdates) {
-    this.svg.selectAll('.board-message')
-      // Apply the given updates to the board messages
-      .data(this.applyUpdates(updates), function (this: Element, msg: Resource<Message>) {
-        return msg ? msg['@id'] : this.id;
-      })
-      .join(
-        enter => {
-          enter = enter
-            .select(() => this.addMessageNode())
-            .classed('board-message', true)
-            .attr('id', msg => msg['@id'])
-            .each(this.withThisMessage(mv => mv.position = mv.msgPosition));
-          enter.select('.board-message-body')
-            // The contenteditable div can be smaller than the body
-            .on('mousedown', this.withThisMessage(mv => mv.content.node().focus()));
-          enter.select('.board-message-body > div')
-            .text(msg => MessageView.mergeText(msg.text))
-            .on('focus', this.withThisMessage(mv => mv.group.raise()))
-            .on('input', this.withThisMessage(this.inputChange))
-            .on('keydown', this.withThisMessage(this.inputKey))
-            .on('blur', this.withThisMessage(this.inputEnd));
-          enter.select('.board-message-close circle')
-            .on('click', this.withThisMessage(this.removeMessage))
-            .call(this.setupBtnDrag(this.unlinkDragging, this.unlinkDragEnd));
-          enter.select('.board-message-add circle')
-            .on('click', this.withThisMessage(mv => this.addNewMessage(mv)))
-            .call(this.setupBtnDrag(this.linkDragging, this.linkDragEnd));
-          enter.selectAll('.board-message-move circle').call(d3.drag()
-            .container(this.svg.node())
-            .on('start', this.withThisMessage(this.moveDragStart))
-            .on('drag', this.withThisMessage(this.moveDragging))
-            .on('end', this.withThisMessage(this.moveDragEnd)));
-          enter.select('.board-message-code circle')
-            .on('click', this.withThisMessage(mv => mv.toggleCode()));
-          return enter;
-        },
-        update => update, // will be updated in a mo
-        exit => exit.each(this.withThisMessage(mv => mv.remove()))
-      )
-      // Update everyone from data, including the new folks
-      .each(this.withThisMessage(mv => mv.update('fromData')));
-  }
-
-  private applyUpdates(updates: MeldApi.SubjectUpdates) {
-    return this.messages
-      .map(msg => {
-        if (updates[msg['@id']]) {
-          // Update this message
-          MeldApi.update(msg, updates[msg['@id']]);
-          delete updates[msg['@id']]; // Side-effect: consumed the update
-        }
-        return msg;
-      })
-      .concat(Object.entries(updates).map(([id, update]) => {
-        // Any remaining updates are new messages
+    Object.keys(updates).forEach(id => {
+      const update = updates[id], msgSelect = this.selectMsg(id);
+      if (msgSelect.empty()) {
+        // New message
         const msg: Resource<Message> =
           { '@id': id, '@type': 'Message', text: [], x: [], y: [], linkTo: [] };
         MeldApi.update(msg, update);
-        return msg;
-      }))
-      // Remove any messages that have become invalid (deleted)
-      .filter(msg => msg.text.length || msg.text === '');
+        this.addMessageView(msg).each(this.withThisMessage(mv =>
+          mv.update('fromData')));
+      } else {
+        // Updated message
+        msgSelect.each(this.withThisMessage(mv => {
+          MeldApi.update(mv.msg, update);
+          // Detect if the message has become invalid (deleted)
+          if (mv.msg.text.length || mv.msg.text === '')
+            mv.update('fromData');
+          else
+            mv.remove();
+        }));
+      }
+    });
+  }
+
+  private addMessageView(msg: Resource<Message>) {
+    const msgSelect = d3.select(this.addMessageNode())
+      .datum(msg)
+      .classed('board-message', true)
+      .attr('id', msg => msg['@id'])
+      .each(this.withThisMessage(mv => mv.position = mv.msgPosition));
+    msgSelect.select('.board-message-body')
+      // The contenteditable div can be smaller than the body
+      .on('mousedown', this.withThisMessage(mv => mv.content.node().focus()));
+    msgSelect.select('.board-message-body > div')
+      .text(msg => MessageView.mergeText(msg.text))
+      .on('focus', this.withThisMessage(mv => mv.group.raise()))
+      .on('input', this.withThisMessage(this.inputChange))
+      .on('keydown', this.withThisMessage(this.inputKey))
+      .on('blur', this.withThisMessage(this.inputEnd));
+    msgSelect.select('.board-message-close circle')
+      .on('click', this.withThisMessage(this.removeMessage))
+      .call(this.setupBtnDrag(this.unlinkDragging, this.unlinkDragEnd));
+    msgSelect.select('.board-message-add circle')
+      .on('click', this.withThisMessage(mv => this.addNewMessage(mv)))
+      .call(this.setupBtnDrag(this.linkDragging, this.linkDragEnd));
+    msgSelect.selectAll('.board-message-move circle').call(d3.drag()
+      .container(this.svg.node())
+      .on('start', this.withThisMessage(this.moveDragStart))
+      .on('drag', this.withThisMessage(this.moveDragging))
+      .on('end', this.withThisMessage(this.moveDragEnd)));
+    msgSelect.select('.board-message-code circle')
+      .on('click', this.withThisMessage(mv => mv.toggleCode()));
+    return msgSelect;
   }
 
   private setupBtnDrag(dragging: (mv: MessageView) => void,
@@ -308,8 +292,12 @@ export class BoardView extends InfiniteView {
     }
   }
 
+  private selectMsg(id: string) {
+    return this.svg.select(`#${id}`);
+  }
+
   withThatMessage(thatId: string, action: (mv: MessageView) => any) {
-    this.svg.select(`#${thatId}`).each(this.withThisMessage(action));
+    this.selectMsg(thatId).each(this.withThisMessage(action));
   }
 
   addMessageNode(): Element {
