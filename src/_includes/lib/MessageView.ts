@@ -4,11 +4,9 @@ import { BoardView } from './BoardView';
 import { Rectangle } from './Shapes';
 import { GroupView } from './D3View';
 import { LinkView } from './LinkView';
-import { MessageItem } from './BoardIndex';
+import { MessageItem, MIN_MESSAGE_SIZE } from './BoardIndex';
 import { Resource } from '@m-ld/m-ld';
 import { Message } from './Message';
-
-const MIN_MESSAGE_WIDTH: number = 115; // Width of buttons + 20
 
 export class MessageView extends GroupView<MessageItem> {
   readonly boardView: BoardView;
@@ -82,8 +80,9 @@ export class MessageView extends GroupView<MessageItem> {
           const zoomScale = node(this.box).getBoundingClientRect().width /
             node(this.body).getBoundingClientRect().width;
 
-          var width = Math.max(textRect.width * zoomScale, MIN_MESSAGE_WIDTH),
-            height = textRect.height * zoomScale;
+          const [minWidth, minHeight] = MIN_MESSAGE_SIZE;
+          const width = Math.max(textRect.width * zoomScale, minWidth),
+            height = Math.max(textRect.height * zoomScale, minHeight);
           setAttr(this.box, { width, height });
           setAttr(this.body, { width, height });
           this.setMsg(new MessageItem(this.msg.resource, [width, height]));

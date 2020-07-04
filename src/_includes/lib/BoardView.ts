@@ -251,9 +251,10 @@ export class BoardView extends InfiniteView {
     const id = shortId();
     let [x, y] = position ?? from.msg.position;
     if (position == null) {
-      // TODO: Prevent collisions
-      x += 50;
-      y += 100;
+      const space = this.index.findSpace(from.msg);
+      // Use a sane default if no space is found
+      x = space != null ? space[0] : x + 50;
+      y = space != null ? space[1] : y + 100;
     }
     const newMessage: Resource<Message> = {
       '@id': id, '@type': 'Message', text: '', x, y, linkTo: []
