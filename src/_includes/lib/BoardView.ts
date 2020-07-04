@@ -9,12 +9,12 @@ import { MeldApi } from '@m-ld/m-ld';
 import { shortId, Subject, Select, Describe, Update, Reference, Resource } from '@m-ld/m-ld';
 import { LinkView } from './LinkView';
 import { showWarning } from './BoardControls';
-import { MessageItem, BoardIndex } from './BoardIndex';
+import { MessageItem, BoardBushIndex, BoardIndex } from './BoardIndex';
 
 const CLICK_DRAG_DISTANCE = 3;
 
 export class BoardView extends InfiniteView {
-  private readonly index: BoardIndex = new BoardIndex();
+  private readonly _index: BoardBushIndex = new BoardBushIndex();
 
   constructor(
     selectSvg: string,
@@ -48,6 +48,10 @@ export class BoardView extends InfiniteView {
     return node(this.messageGroup).getBBox();
   }
 
+  get index(): BoardIndex {
+    return this._index;
+  }
+
   private sync(updates: MeldApi.SubjectUpdates) {
     Object.keys(updates).forEach(id => {
       const update = updates[id], updated = this.withThatMessage(id, mv => {
@@ -68,7 +72,7 @@ export class BoardView extends InfiniteView {
 
   private updateViewFromData(mv: MessageView, msg: Resource<Message>) {
     // Update the index when the message view has re-sized itself
-    mv.update(msg).then(() => this.index.update(mv.msg)).catch(showWarning);
+    mv.update(msg).then(() => this._index.update(mv.msg)).catch(showWarning);
   }
 
   private addMessageView(data: Resource<Message>) {
@@ -249,13 +253,7 @@ export class BoardView extends InfiniteView {
 
   private addNewMessage(from: MessageView, position?: [number, number]) {
     const id = shortId();
-    let [x, y] = position ?? from.msg.position;
-    if (position == null) {
-      const space = this.index.findSpace(from.msg);
-      // Use a sane default if no space is found
-      x = space != null ? space[0] : x + 50;
-      y = space != null ? space[1] : y + 100;
-    }
+    const [x, y] = position ?? this.index.findSpace(from.msg);
     const newMessage: Resource<Message> = {
       '@id': id, '@type': 'Message', text: '', x, y, linkTo: []
     };
@@ -275,7 +273,7 @@ export class BoardView extends InfiniteView {
   }
 
   hitTest(test: Rectangle, filter: (id: string) => boolean): MessageView {
-    const found = this.index.search(test).filter(msg => filter(msg['@id']))[0];
+    const found = this._index.search(test).filter(msg => filter(msg['@id']))[0];
     return found && new MessageView(node(this.msgD3(found['@id'])), this);
   }
 

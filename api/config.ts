@@ -48,6 +48,11 @@ export default async (req: NowRequest, res: NowResponse) => {
     domain = `${part1.word}-${part2.word}.m-ld.org`;
   }
 
+  // Get a Bot name
+  const botName = await fetchWord('proper-noun', 5);
+  if (typeof botName === 'string')
+    return res.status(500).send('Bot name generation failed');
+
   // Get an Ably token for the client
   // https://www.ably.io/documentation/rest-api#request-token
   const ablyKey = process.env.ABLY_KEY, keyName = ablyKey.split(':')[0],
@@ -73,18 +78,23 @@ export default async (req: NowRequest, res: NowResponse) => {
     '@domain': domain,
     genesis,
     ably,
+    botName: botName.word,
     logLevel: process.env.LOG as LogLevelDesc || 'warn'
   }
   res.json(config);
 }
 
-async function fetchWord(part: 'noun' | 'adjective'): Promise<{ word: string } | string> {
-  const rtn = await fetchJson<{
-    word: string;
-  }>('http://api.wordnik.com/v4/words.json/randomWord', {
-    api_key: process.env.WORDNIK_API_KEY ?? '', // Already checked
+async function fetchWord(
+  part: 'noun' | 'adjective' | 'proper-noun',
+  maxLength?: number): Promise<{ word: string } | string> {
+  const params: { [name: string]: string } = {
+    api_key: process.env.WORDNIK_API_KEY ?? '',
     includePartOfSpeech: part
-  });
+  };
+  if (maxLength != null)
+    params.maxLength = `${maxLength}`;
+  const rtn = await fetchJson<{ word: string; }>(
+    'http://api.wordnik.com/v4/words.json/randomWord', params);
   return typeof rtn === 'string' ? rtn :
     // Only accept alphabet and hyphen characters
     /^[a-z\-]+$/.test(rtn.word) ? rtn : fetchWord(part);

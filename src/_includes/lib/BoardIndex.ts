@@ -1,7 +1,7 @@
 import type RBush from 'rbush';
 import { Resource, Reference } from '@m-ld/m-ld';
 import { Message } from './Message';
-import { Rectangle } from './Shapes';
+import { Rectangle, Line } from './Shapes';
 
 // This is required because rbush's exports are broken
 const MessageBush: new () => RBush<MessageItem> = require('rbush');
@@ -9,46 +9,75 @@ const MessageBush: new () => RBush<MessageItem> = require('rbush');
 export const MIN_MESSAGE_SIZE: [number, number] = [115, 50];
 
 /**
+ * Finds a location for new messages, with a preference for left-to-right then
+ * top-to-bottom reading order.
+ */
+export interface BoardIndex {
+  all(): MessageItem[];
+
+  search(box: Rectangle): MessageItem[];
+
+  collides(box: Rectangle): boolean;
+
+  findSpace(near: MessageItem,
+    size?: [number, number],
+    startTheta?: number,
+    margin?: number): [number, number];
+}
+
+/**
  * Spatial index for a message board. Indexes message locations based on merged
  * position and extent. For a consumer that is able to render board message
  * HTML, message extent can be specified directly; otherwise, a sane
- * approximation should be computed. Finds a location for new messages based on
- * message linkage, with a preference for left-to-right then top-to-bottom
- * reading order.
+ * approximation should be computed.
  */
-export class BoardIndex extends MessageBush {
-  update(item: MessageItem): BoardIndex {
+export class BoardBushIndex extends MessageBush implements BoardIndex {
+  update(item: MessageItem): BoardBushIndex {
     this.remove(item);
     if (!item.deleted)
       this.insert(item);
     return this;
   }
 
-  remove(item: MessageItem): BoardIndex {
-    super.remove(item, (a, b) => a['@id'] === b['@id']);
+  remove(item: MessageItem): BoardBushIndex {
+    const prev = this.all().find(prev => prev['@id'] === item['@id']);
+    if (prev != null)
+      super.remove(prev);
     return this;
   }
 
   findSpace(near: MessageItem,
     size: [number, number] = MIN_MESSAGE_SIZE,
-    startDistance: number = 50,
-    startTheta: number = 3 * Math.PI / 2,
-    margin: number = 20): [number, number] | undefined {
-    for (let dTheta = 0; dTheta < 100; dTheta++) {
-      // Spiral out anticlockwise from the given message's centre
-      const [nx, ny] = near.centre,
-        theta = startTheta + dTheta, // 1 radian increments
-        distance = (Math.floor(dTheta / (Math.PI * 2)) + 1) * startDistance,
-        x = (Math.cos(theta) * distance) + nx,
-        y = (Math.sin(theta) * distance) + ny;
-      if (!this.collides(new Rectangle([x, y], size).expand(margin)))
+    startTheta: number = Math.PI / 2,
+    margin: number = 20): [number, number] {
+    const [nx, ny] = near.centre, [width, height] = size;
+    let shell = 1, distance = margin, theta = startTheta;
+    for (let i = 0; i < 100; i++) {
+      const x = (Math.cos(theta) * distance) + nx - (width / 2),
+        y = (Math.sin(theta) * distance) + ny - (height / 2),
+        rect = new Rectangle([x, y], size).expand(margin);
+      if (near.expand(margin).intersects(rect)) {
+        distance += margin + 1;
+      } else if (!this.collides(rect)) {
         return [x, y];
+      } else {
+        // Spiral out anticlockwise from the given message's centre
+        const nextShell = Math.floor(Math.abs(theta - startTheta) / (Math.PI * 2)) + 1;
+        if (nextShell !== shell) {
+          distance += margin;
+          shell = nextShell;
+        }
+        theta -= 1 / shell; // Smaller increments as we go wider
+      }
     }
+    // Sane default if we can't find a gap
+    return [nx, ny + height];
   }
 }
 
 /**
- * Immutable wrapper for a message, which resolves position and text conflicts.
+ * Immutable wrapper for a message, which resolves position and text conflicts
+ * and maintains a size.
  */
 export class MessageItem extends Rectangle implements Message {
   readonly text: string;

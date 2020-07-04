@@ -1,11 +1,12 @@
 import { BoardView } from './lib/BoardView';
 import { Message } from './lib/Message';
 import * as Level from 'level-js';
-import { clone, Update, shortId, uuid } from '@m-ld/m-ld';
+import { clone, shortId, uuid } from '@m-ld/m-ld';
 import { Config } from './config';
 import * as d3 from 'd3';
 import { showError, showCantDemo, getLocalDomains, addLocalDomain, initControls, showWarning } from './lib/BoardControls';
 import { AblyRemotes } from '@m-ld/m-ld/dist/ably';
+import { BoardBot } from './lib/BoardBot';
 
 window.onload = function () {
   Modernizr.on('indexeddb', () => {
@@ -70,47 +71,22 @@ window.onload = function () {
       const welcomeId = shortId(domain);
 
       // Create the board UI View
-      new BoardView('#board', meld, welcomeId);
+      const bv = new BoardView('#board', meld, welcomeId);
 
-      // Check if we've already said Hello
-      const welcome = await meld.get(welcomeId).toPromise();
-      if (!welcome) {
-        meld.transact<Message>({
+      // Add the welcome message if not already there
+      const isNew = !(await meld.get(welcomeId)).length;
+      if (isNew) {
+        await meld.transact<Message>({
           '@id': welcomeId,
           '@type': 'Message',
           text: `Welcome to ${domain}!`,
           x: 200, y: 100,
           linkTo: []
         });
-
-        await new Promise(res => setTimeout(res, 2000));
-
-        meld.transact<Update>({
-          '@insert': [<Message>{
-            '@id': 'thisIs',
-            '@type': 'Message',
-            text: 'This is your new collaborative message board.',
-            x: 250, y: 200,
-            linkTo: []
-          }, <Partial<Message>>{
-            '@id': welcomeId, linkTo: [{ '@id': 'thisIs' }]
-          }]
-        });
-
-        await new Promise(res => setTimeout(res, 2000));
-
-        meld.transact<Update>({
-          '@insert': [<Message>{
-            '@id': 'weUse',
-            '@type': 'Message',
-            text: "We'll use it to demonstrate how m-ld works.",
-            x: 300, y: 300,
-            linkTo: []
-          }, <Partial<Message>>{
-            '@id': 'thisIs', linkTo: [{ '@id': 'weUse' }]
-          }]
-        });
       }
+
+      // Unleash the board's resident bot
+      await new BoardBot(config.botName, welcomeId, meld, bv.index).start(isNew);
     } catch (err) {
       showError(err);
     }
