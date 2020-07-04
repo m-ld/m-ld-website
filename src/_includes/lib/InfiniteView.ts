@@ -1,5 +1,5 @@
 import * as d3 from 'd3';
-import { setAttr, svgPoint, SVG } from './util';
+import { setAttr, svgPoint, SVG, node } from './util';
 import { Rectangle } from './Shapes';
 
 export abstract class InfiniteView {
@@ -53,7 +53,10 @@ export abstract class InfiniteView {
   }
 
   clientToSvg([x, y]: [number, number]): [number, number] {
-    const pt = svgPoint(this.svg.node(), [x, y]).matrixTransform(this.svg.node().getScreenCTM().inverse());
+    const nodeScreenCtm = node(this.svg).getScreenCTM();
+    if (nodeScreenCtm == null)
+      throw new Error('Screen CTM expected for SVG');
+    const pt = svgPoint(node(this.svg), [x, y]).matrixTransform(nodeScreenCtm.inverse());
     return [pt.x, pt.y];
   }
 

@@ -21,7 +21,7 @@ window.onload = function () {
 
   async function start() {
     try {
-      let domain = document.location.hash.slice(1);
+      let domain: string | null = document.location.hash.slice(1);
       const localDomains = getLocalDomains();
       if (domain === 'new' || (!domain && !localDomains.length)) {
         // Create a new domain
@@ -35,10 +35,10 @@ window.onload = function () {
       const config = await fetchConfig(domain, uuid());
       config.ably.authCallback = async (_, cb) =>
         fetchConfig(config['@domain'], config['@id'])
-          .then(reconfig => cb(null, reconfig.ably.token))
-          .catch(err => cb(err, null));
+          .then(reconfig => cb('', reconfig.ably.token))
+          .catch(err => cb(err, ''));
       domain = config['@domain'];
-      history.replaceState(null, null, '#' + domain);
+      history.replaceState(null, '', '#' + domain);
 
       // Initialise the m-ld clone
       const meld = await clone(Level(domain), AblyRemotes, config);
@@ -115,8 +115,11 @@ window.onload = function () {
       showError(err);
     }
 
-    async function fetchConfig(domain: string, id: string) {
-      const token = await grecaptcha.execute(process.env.RECAPTCHA_SITE, { action: 'config' });
+    async function fetchConfig(domain: string | null, id: string) {
+      const site = process.env.RECAPTCHA_SITE;
+      if (site == null)
+        throw new Error('Bad configuration: reCAPTCHA site missing');
+      const token = await grecaptcha.execute(site, { action: 'config' });
       return await d3.json('/api/config', {
         method: 'post',
         headers: { 'Content-type': 'application/json; charset=UTF-8' },

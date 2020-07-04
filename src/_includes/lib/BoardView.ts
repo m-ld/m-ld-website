@@ -1,42 +1,43 @@
 import * as d3 from 'd3';
 import { Message } from './Message';
-import { svgParent, getAttr, d3Selection } from './util';
+import { svgParent, getAttr, d3Selection, node } from './util';
 import { InfiniteView } from './InfiniteView';
 import { MessageView } from './MessageView';
-import { GroupUI } from './GroupUI';
+import { GroupView } from './D3View';
 import { Rectangle, Circle, Shape, Line } from './Shapes';
-import { map, toArray } from 'rxjs/operators';
 import { MeldApi } from '@m-ld/m-ld';
-// FIXME: Tidy up m-ld utility exports
 import { shortId, Subject, Select, Describe, Update, Reference, Resource } from '@m-ld/m-ld';
 import { LinkView } from './LinkView';
 import { showWarning } from './BoardControls';
+import { MessageItem, BoardIndex } from './BoardIndex';
 
 const CLICK_DRAG_DISTANCE = 3;
 
 export class BoardView extends InfiniteView {
+  private readonly index: BoardIndex = new BoardIndex();
+
   constructor(
     selectSvg: string,
-    private readonly meld: MeldApi,
+    private readonly model: MeldApi,
     private readonly welcomeId: string) {
     super(selectSvg);
 
     // Sync all the messages in the given board now
-    meld.transact<Describe>({
+    model.transact<Describe, Message>({
       '@describe': '?s', '@where': { '@id': '?s', '@type': 'Message' }
-    }).then(subjects => this.sync(MeldApi.asSubjectUpdates({
-      '@insert': subjects, '@delete': []
+    }).then(messages => this.sync(MeldApi.asSubjectUpdates({
+      '@insert': messages, '@delete': []
     })), showWarning);
 
     // Follow changes to messages
-    meld.follow().subscribe(update => {
+    model.follow().subscribe(update => {
       // Construct subject updates from the group updates
       this.sync(MeldApi.asSubjectUpdates(update));
     });
   }
 
   async linksTo(id: string): Promise<string[]> {
-    const selection = await this.meld.transact<Select>({
+    const selection = await this.model.transact<Select>({
       '@select': '?s',
       '@where': { '@id': '?s', linkTo: { '@id': id } }
     });
@@ -44,45 +45,40 @@ export class BoardView extends InfiniteView {
   }
 
   get contentExtent(): DOMRect {
-    return this.messageGroup.node().getBBox();
+    return node(this.messageGroup).getBBox();
   }
 
   private sync(updates: MeldApi.SubjectUpdates) {
     Object.keys(updates).forEach(id => {
-      const update = updates[id], msgSelect = this.selectMsg(id);
-      if (msgSelect.empty()) {
+      const update = updates[id], updated = this.withThatMessage(id, mv => {
+        const msg = mv.msg.resource;
+        MeldApi.update(msg, update);
+        this.updateViewFromData(mv, msg);
+      });
+      if (updated.empty()) {
         // New message
         const msg: Resource<Message> =
           { '@id': id, '@type': 'Message', text: [], x: [], y: [], linkTo: [] };
         MeldApi.update(msg, update);
-        this.addMessageView(msg).each(this.withThisMessage(mv =>
-          mv.update('fromData')));
-      } else {
-        // Updated message
-        msgSelect.each(this.withThisMessage(mv => {
-          MeldApi.update(mv.msg, update);
-          // Detect if the message has become invalid (deleted)
-          if (mv.msg.text.length || mv.msg.text === '')
-            mv.update('fromData');
-          else
-            mv.remove();
-        }));
+        this.addMessageView(msg).each(
+          this.withThisMessage(mv => this.updateViewFromData(mv, msg)));
       }
     });
   }
 
-  private addMessageView(msg: Resource<Message>) {
-    const msgSelect = d3.select(this.addMessageNode())
-      .datum(msg)
-      .classed('board-message', true)
-      .attr('id', msg => msg['@id'])
-      .each(this.withThisMessage(mv => mv.position = mv.msgPosition));
+  private updateViewFromData(mv: MessageView, msg: Resource<Message>) {
+    // Update the index when the message view has re-sized itself
+    mv.update(msg).then(() => this.index.update(mv.msg)).catch(showWarning);
+  }
+
+  private addMessageView(data: Resource<Message>) {
+    const msgSelect = MessageView.init(data);
+    node(this.messageGroup).insertAdjacentElement('beforeend', node(msgSelect));
     msgSelect.select('.board-message-body')
       // The contenteditable div can be smaller than the body
-      .on('mousedown', this.withThisMessage(mv => mv.content.node().focus()));
+      .on('mousedown', this.withThisMessage(mv => node(mv.content).focus()));
     msgSelect.select('.board-message-body > div')
-      .text(msg => MessageView.mergeText(msg.text))
-      .on('focus', this.withThisMessage(mv => mv.group.raise()))
+      .on('focus', this.withThisMessage(mv => mv.d3.raise()))
       .on('input', this.withThisMessage(this.inputChange))
       .on('keydown', this.withThisMessage(this.inputKey))
       .on('blur', this.withThisMessage(this.inputEnd));
@@ -93,7 +89,7 @@ export class BoardView extends InfiniteView {
       .on('click', this.withThisMessage(mv => this.addNewMessage(mv)))
       .call(this.setupBtnDrag(this.linkDragging, this.linkDragEnd));
     msgSelect.selectAll('.board-message-move circle').call(d3.drag()
-      .container(this.svg.node())
+      .container(node(this.svg))
       .on('start', this.withThisMessage(this.moveDragStart))
       .on('drag', this.withThisMessage(this.moveDragging))
       .on('end', this.withThisMessage(this.moveDragEnd)));
@@ -105,7 +101,7 @@ export class BoardView extends InfiniteView {
   private setupBtnDrag(dragging: (mv: MessageView) => void,
     dragEnd: (mv: MessageView, dragged: SVGElement) => void): (selection: d3Selection) => void {
     return d3.drag() // Set up drag-to-link behaviour
-      .container(this.svg.node())
+      .container(node(this.svg))
       .clickDistance(CLICK_DRAG_DISTANCE) // Ensure that single-click hits click handler
       .subject(this.withThisMessage(this.btnDragSubject))
       .on('start', this.withThisMessage(this.btnDragStart))
@@ -120,15 +116,15 @@ export class BoardView extends InfiniteView {
 
   private inputKey(mv: MessageView) {
     if (d3.event.key === 'Enter' && !d3.event.shiftKey) {
-      mv.content.node().blur();
+      node(mv.content).blur();
       d3.event.preventDefault();
     }
   }
 
   private inputEnd(mv: MessageView) {
     // Commit the change to the message
-    if (mv.msgText !== mv.text) {
-      this.meld.transact<Update>({
+    if (mv.msg.text !== mv.text) {
+      this.model.transact<Update>({
         '@insert': { '@id': mv.msg['@id'], text: mv.text },
         '@delete': { '@id': mv.msg['@id'], text: mv.msg.text }
       }).then(null, showWarning);
@@ -142,7 +138,7 @@ export class BoardView extends InfiniteView {
   private moveDragging(mv: MessageView) {
     // Do not modify the message data here, just the visual location
     const [x, y] = mv.position;
-    mv.group.raise();
+    mv.d3.raise();
     mv.position = [x + d3.event.dx, y + d3.event.dy];
     mv.update(); // To keep the lines attached
   }
@@ -151,23 +147,23 @@ export class BoardView extends InfiniteView {
     d3.select(dragged).attr('cursor', 'grab');
     // Commit the change to the message
     const [x, y] = mv.position;
-    this.meld.transact<Update>({
+    this.model.transact<Update>({
       '@insert': { '@id': mv.msg['@id'], x, y },
       '@delete': { '@id': mv.msg['@id'], x: mv.msg.x, y: mv.msg.y }
     }).then(null, showWarning);
   }
 
   private btnDragSubject(mv: MessageView, dragged: SVGElement): DragSubject {
-    const button = new GroupUI(<SVGGElement>svgParent(dragged)), startPos = button.position;
+    const button = new GroupView(<SVGGElement>svgParent(dragged)), startPos = button.position;
     return {
       button, startPos, cursor: d3.select(dragged).attr('cursor'),
-      link: new LinkView(this.svg, mv.msg['@id'], shortId())
+      link: LinkView.init(this.svg, mv.msg['@id'], shortId())
     };
   }
 
   private btnDragStart(mv: MessageView, dragged: SVGElement) {
     d3.select(dragged).attr('cursor', 'none');
-    mv.group.classed('active', true);
+    mv.active = true;
   }
 
   private linkDragging(mv: MessageView) {
@@ -179,7 +175,7 @@ export class BoardView extends InfiniteView {
   private linkDragEnd(mv: MessageView, dragged: SVGElement) {
     this.btnDragEnd(dragged, mv, (thatId, position) => {
       if (thatId != null) {
-        this.meld.transact<Update>({
+        this.model.transact<Update>({
           '@insert': { '@id': mv.msg['@id'], linkTo: { '@id': thatId } }
         }).then(null, showWarning);
       } else {
@@ -197,7 +193,7 @@ export class BoardView extends InfiniteView {
   private unlinkDragEnd(mv: MessageView, dragged: SVGElement) {
     this.btnDragEnd(dragged, mv, thatId => {
       if (thatId != null) {
-        this.meld.transact<Update>({
+        this.model.transact<Update>({
           '@delete': { '@id': mv.msg['@id'], linkTo: { '@id': thatId } }
         }).then(null, showWarning);
       }
@@ -205,11 +201,11 @@ export class BoardView extends InfiniteView {
   }
 
   private btnDragging(mv: MessageView, filter: (thatId: string) => boolean, targetClass: string) {
-    mv.group.raise(); // So that the button drags over other messages
+    mv.d3.raise(); // So that the button drags over other messages
     const drag: DragSubject = d3.event.subject, [cx, cy] = drag.button.position;
     drag.button.position = [cx + d3.event.dx, cy + d3.event.dy];
     // Hit-test for other messages
-    const target = this.hitTest(this.svgRect(drag.button.group.node()), filter);
+    const target = this.hitTest(this.svgRect(node(drag.button.d3)), filter);
     this.updateDragLink(drag, mv, targetClass, target);
     if (!MessageView.same(drag.target, target)) {
       if (target)
@@ -225,13 +221,13 @@ export class BoardView extends InfiniteView {
     if (target != null) {
       toShape = target.rect;
     } else {
-      const [x, y] = this.svgRect(drag.button.group.node()).topLeft;
-      const [r] = getAttr(drag.button.group.select('circle'), Number, 'r');
+      const [x, y] = this.svgRect(node(drag.button.d3)).topLeft;
+      const [r] = getAttr(drag.button.d3.select('circle'), Number, 'r');
       toShape = new Circle([x + r, y + r], r);
     }
     drag.link.update(mv.rect, toShape);
-    drag.link.line.classed(targetClass, true);
-    drag.link.line.raise();
+    drag.link.d3.classed(targetClass, true);
+    drag.link.d3.raise();
   }
 
   private btnDragEnd(
@@ -245,15 +241,15 @@ export class BoardView extends InfiniteView {
       drag.target.box.classed(targetClass, false);
     if (new Line(drag.startPos, drag.button.position).length > CLICK_DRAG_DISTANCE)
       commit(drag.target ? drag.target.msg['@id'] : null,
-        this.svgRect(drag.button.group.node()).topLeft);
-    drag.link.line.remove();
+        this.svgRect(node(drag.button.d3)).topLeft);
+    drag.link.d3.remove();
     drag.button.position = drag.startPos;
-    mv.group.classed('active', false);
+    mv.active = false;
   }
 
-  private addNewMessage(mv: MessageView, position?: [number, number]) {
+  private addNewMessage(from: MessageView, position?: [number, number]) {
     const id = shortId();
-    let [x, y] = position ?? mv.msgPosition;
+    let [x, y] = position ?? from.msg.position;
     if (position == null) {
       // TODO: Prevent collisions
       x += 50;
@@ -263,26 +259,23 @@ export class BoardView extends InfiniteView {
       '@id': id, '@type': 'Message', text: '', x, y, linkTo: []
     };
     const newLink: Subject = {
-      '@id': mv.msg['@id'],
+      '@id': from.msg['@id'],
       linkTo: [{ '@id': id }]
     };
-    this.meld.transact<Update>({ '@insert': [newMessage, newLink] })
-      .then(() => this.withThatMessage(id, mv => mv.content.node().focus()), showWarning);
+    this.model.transact<Update>({ '@insert': [newMessage, newLink] })
+      .then(() => this.withThatMessage(id, mv => node(mv.content).focus()), showWarning);
   }
 
-  private removeMessage(mv: MessageView): any {
+  private removeMessage(mv: MessageView) {
     if (mv.msg['@id'] !== this.welcomeId)
-      return this.meld.delete(mv.msg['@id']);
+      this.model.delete(mv.msg['@id']);
     else
       showWarning("Sorry, you can't delete the welcome message");
   }
 
   hitTest(test: Rectangle, filter: (id: string) => boolean): MessageView {
-    // May need to be optimised with e.g. rbush
-    const foundNode = this.svg.selectAll('.board-message').filter(this.withThisMessage(mv => {
-      return mv.rect.intersects(test) && filter(mv.msg['@id']);
-    })).node();
-    return foundNode && new MessageView(<Element>foundNode, this);
+    const found = this.index.search(test).filter(msg => filter(msg['@id']))[0];
+    return found && new MessageView(node(this.msgD3(found['@id'])), this);
   }
 
   withThisMessage(action: (mv: MessageView, el: SVGElement) => any): (this: Element) => any {
@@ -292,17 +285,12 @@ export class BoardView extends InfiniteView {
     }
   }
 
-  private selectMsg(id: string) {
-    return this.svg.select(`#${id}`);
-  }
-
   withThatMessage(thatId: string, action: (mv: MessageView) => any) {
-    this.selectMsg(thatId).each(this.withThisMessage(action));
+    return this.msgD3(thatId).each(this.withThisMessage(action));
   }
 
-  addMessageNode(): Element {
-    return this.messageGroup.node()
-      .insertAdjacentElement('beforeend', MessageView.createMessageViewNode());
+  private msgD3(thatId: string) {
+    return this.svg.select<Element>(`#${thatId}`);
   }
 
   private get messageGroup() {
@@ -311,7 +299,7 @@ export class BoardView extends InfiniteView {
 }
 
 interface DragSubject {
-  button: GroupUI;
+  button: GroupView;
   startPos: [number, number];
   cursor: string;
   target?: MessageView;

@@ -1,16 +1,16 @@
 import * as d3 from 'd3';
-import { setAttr, idNotInFilter } from './util';
+import { setAttr, d3Selection, node } from './util';
 import { BoardView } from './BoardView';
 import { Rectangle } from './Shapes';
-import { GroupUI } from './GroupUI';
-import { Message } from './Message';
+import { GroupView } from './D3View';
 import { LinkView } from './LinkView';
+import { MessageItem } from './BoardIndex';
 import { Resource } from '@m-ld/m-ld';
-import { showWarning } from './BoardControls';
+import { Message } from './Message';
 
 const MIN_MESSAGE_WIDTH: number = 115; // Width of buttons + 20
 
-export class MessageView extends GroupUI<Resource<Message>> {
+export class MessageView extends GroupView<MessageItem> {
   readonly boardView: BoardView;
 
   constructor(node: Element, boardView: BoardView) {
@@ -18,123 +18,126 @@ export class MessageView extends GroupUI<Resource<Message>> {
     this.boardView = boardView;
   }
 
-  get msg(): Resource<Message> {
-    return this.group.datum();
+  get msg(): MessageItem {
+    return this.d3.datum();
   }
 
-  get box(): d3.Selection<SVGRectElement, Resource<Message>, HTMLElement, unknown> {
-    return this.group.select('.board-message-box');
+  private setMsg(msg: MessageItem) {
+    this.d3.datum(msg);
   }
 
-  get body(): d3.Selection<SVGForeignObjectElement, Resource<Message>, HTMLElement, unknown> {
-    return this.group.select('.board-message-body');
+  get box(): d3Selection<SVGRectElement, MessageItem> {
+    return this.d3.select('.board-message-box');
   }
 
-  get content(): d3.Selection<HTMLDivElement, Resource<Message>, HTMLElement, unknown> {
+  get body(): d3Selection<SVGForeignObjectElement, MessageItem> {
+    return this.d3.select('.board-message-body');
+  }
+
+  get content(): d3Selection<HTMLDivElement, MessageItem> {
     return this.body.select('div');
   }
 
-  static mergeText(value: string | string[]): string {
-    return Array.isArray(value) ? value.join('<br>') : value;
+  static init(data: Resource<Message>) {
+    const item = new MessageItem(data);
+    const msgD3 = d3.select(MessageView.createMessageViewNode())
+      .classed('board-message', true)
+      .attr('id', data['@id'])
+      // We don't yet know the message size
+      .datum(item);
+    msgD3.select('.board-message-body > div')
+      .text(item.text)
+    return msgD3;
   }
 
-  get msgText(): string {
-    return MessageView.mergeText(this.msg.text);
-  }
-
-  static mergePosition([xs, ys]: [number | number[], number | number[]]): [number, number] {
-    return [
-      Array.isArray(xs) ? Math.min(...xs) : xs,
-      Array.isArray(ys) ? Math.min(...ys) : ys
-    ];
-  }
-
-  get msgPosition(): [number, number] {
-    return MessageView.mergePosition([this.msg.x, this.msg.y]);
-  }
-
-  update(fromData?: 'fromData') {
-    if (fromData) {
-      // Update the visible text - but not if the user is editing
-      if (document.activeElement !== this.content.node())
-        this.updateText();
-      // Update the position
-      this.position = this.msgPosition;
+  update(data?: Resource<Message>): Promise<void> {
+    if (data != null) {
+      // Detect if the message has become invalid (deleted)
+      this.setMsg(new MessageItem(data));
+      if (this.msg.deleted) {
+        this.d3.remove();
+        // Remove all link-lines from and to the removed messsage
+        LinkView.remove(this.allOutLinks);
+        LinkView.remove(this.allInLinks);
+        return Promise.resolve(); // Nothing else to do
+      } else {
+        // Update the visible text - but not if the user is editing
+        if (document.activeElement !== node(this.content))
+          this.updateText();
+        // Update the position
+        this.position = this.msg.position;
+      }
     }
-
     // We push the re-sizing to the next frame because Firefox sometimes hasn't
     // updated the bounding client rect yet.
-    window.requestAnimationFrame(() => {
-      // Size the shape to the content
-      const textRect = this.boardView.svgRect(this.content.node());
-      // Chromium bug: The computed effective zoom is currently force-set to 1.0
-      // for foreignObjects. We can detect by comparing the body to the box,
-      // because they are locked to having the same width attributes.
-      // https://bugs.chromium.org/p/chromium/issues/detail?id=976224
-      const zoomScale = this.box.node().getBoundingClientRect().width /
-        this.body.node().getBoundingClientRect().width;
+    return new Promise((resolve, reject) => {
+      window.requestAnimationFrame(async () => {
+        try {
+          // Size the shape to the content
+          const textRect = this.boardView.svgRect(node(this.content));
+          // Chromium bug: The computed effective zoom is currently force-set to 1.0
+          // for foreignObjects. We can detect by comparing the body to the box,
+          // because they are locked to having the same width attributes.
+          // https://bugs.chromium.org/p/chromium/issues/detail?id=976224
+          const zoomScale = node(this.box).getBoundingClientRect().width /
+            node(this.body).getBoundingClientRect().width;
 
-      var width = Math.max(textRect.width * zoomScale, MIN_MESSAGE_WIDTH),
-        height = textRect.height * zoomScale;
-      setAttr(this.box, { width, height });
-      setAttr(this.body, { width, height });
+          var width = Math.max(textRect.width * zoomScale, MIN_MESSAGE_WIDTH),
+            height = textRect.height * zoomScale;
+          setAttr(this.box, { width, height });
+          setAttr(this.body, { width, height });
+          this.setMsg(new MessageItem(this.msg.resource, [width, height]));
 
-      if (fromData) {
-        // Re-draw outbound link-lines
-        const outLinks = this.msg.linkTo;
-        outLinks.forEach(that => this.withThat(that['@id'], that => this.updateLink(that)));
-        // Remove non-existent outbound link-lines
-        this.allOutLinkLines()
-          .filter(idNotInFilter(outLinks.map(that => LinkView.linkId(this.msg['@id'], that['@id']))))
-          .remove();
+          if (data != null) // i.e. data has changed
+            await this.syncLinks();
 
-        // Re-draw inbound link-lines
-        this.boardView.linksTo(this.msg['@id']).then(inLinks => {
-          inLinks.forEach(thatId => this.withThat(thatId, that => that.updateLink(this)));
-          // Remove non-existent inbound link-lines
-          this.allInLinkLines()
-            .filter(idNotInFilter(inLinks.map(thatId => LinkView.linkId(thatId, this.msg['@id']))))
-            .remove();
-        }, showWarning);
-      } else {
-        this.allOutLinkLines().each(this.withLink((_, thatId) =>
-          this.withThat(thatId, that => this.updateLink(that))));
-        this.allInLinkLines().each(this.withLink(thatId =>
-          this.withThat(thatId, that => that.updateLink(this))));
-      }
+          // Update the position of all link lines
+          this.allOutLinks.forEach(link =>
+            this.withThat(link.toId, that => link.update(this.rect, that.rect)));
+          this.allInLinks.forEach(link =>
+            this.withThat(link.fromId, that => link.update(that.rect, this.rect)));
+          resolve();
+        } catch (err) {
+          reject(err);
+        }
+      });
     });
   }
 
-  private withLink(action: (fromId: string, toId: string) => void) {
-    const mv = this;
-    return function (this: SVGElement) {
-      const { fromId, toId } = LinkView.linkIds(d3.select(this).attr('id'));
-      return action.call(mv, fromId, toId);
-    };
-  }
+  private syncLinks() {
+    const outLinks = this.msg.linkTo.map(ref => ref['@id']);
+    // Remove non-existent outbound link-lines
+    LinkView.remove(this.allOutLinks.filter(link => !outLinks.includes(link.toId)));
+    // Create outbound link-lines if missing
+    outLinks.forEach(thatId => this.withThat(thatId, that => this.link(that)));
 
-  remove() {
-    this.group.remove();
-    // Remove all link-lines from and to the removed messsage
-    this.allOutLinkLines().remove();
-    this.allInLinkLines().remove();
+    return this.boardView.linksTo(this.msg['@id']).then(inLinks => {
+      // Remove non-existent inbound link-lines
+      LinkView.remove(this.allInLinks.filter(link => !inLinks.includes(link.fromId)));
+      // Create inound link-lines if missing
+      inLinks.forEach(thatId => this.withThat(thatId, that => that.link(this)));
+    });
   }
 
   toggleCode() {
     this.updateText(!this.codeMode);
     this.content.attr('contenteditable', !this.codeMode);
     this.box.classed('code-mode', this.codeMode);
-    this.group.raise();
+    this.d3.raise();
     this.update();
   }
 
+  set active(active: boolean) {
+    this.d3.classed('active', active);
+  }
+
   get text(): string {
-    return this.content.node().innerHTML;
+    return node(this.content).innerHTML;
   }
 
   private updateText(codeMode: boolean = this.codeMode) {
     // This has the effect of switching to the given codeMode, see codeMode()
-    this.content.node().innerHTML = codeMode ? `<pre>${this.msgCode}</pre>` : this.msgText;
+    node(this.content).innerHTML = codeMode ? `<pre>${this.msgCode}</pre>` : this.msg.text;
   }
 
   private get msgCode(): string {
@@ -145,16 +148,16 @@ export class MessageView extends GroupUI<Resource<Message>> {
     return !this.content.select('pre').empty();
   }
 
-  private allOutLinkLines() {
-    return this.boardView.svg.selectAll(`.link-line[id^="${this.msg['@id']}-"]`);
+  private get allOutLinks() {
+    return LinkView.fromLinkLines(this.boardView.svg, this.msg['@id']);
   }
 
-  private allInLinkLines() {
-    return this.boardView.svg.selectAll(`.link-line[id$="-${this.msg['@id']}"]`);
+  private get allInLinks() {
+    return LinkView.toLinkLines(this.boardView.svg, this.msg['@id']);
   }
 
-  private updateLink(that: MessageView) {
-    new LinkView(this.boardView.svg, this.msg['@id'], that.msg['@id']).update(this.rect, that.rect);
+  private link(that: MessageView) {
+    return LinkView.init(this.boardView.svg, this.msg['@id'], that.msg['@id']);
   }
 
   private withThat(thatId: string, action: (mv: MessageView) => any) {
@@ -169,18 +172,19 @@ export class MessageView extends GroupUI<Resource<Message>> {
     return [Number(this.box.attr('width')), Number(this.box.attr('height'))];
   }
 
-  static createMessageViewNode(): Element {
+  static messageParent(node: Element | null): SVGGElement {
+    if (node == null)
+      throw new Error('Message parent expected');
+    return d3.select(node).classed('board-message') ?
+      <SVGGElement>node : this.messageParent(node.parentElement);
+  }
+
+  static same(mv1?: MessageView, mv2?: MessageView) {
+    return (!mv1 && !mv2) || (mv1 && mv2 && mv1.msg['@id'] == mv2.msg['@id']);
+  }
+
+  private static createMessageViewNode(): Element {
     // Note that the template is found in /src/demo.html
     return <Element>(<Element>d3.select('#board-message-template').node()).cloneNode(true);
-  }
-
-  static messageParent(node: Element): SVGGElement {
-    if (node)
-      return d3.select(node).classed('board-message') ?
-        <SVGGElement>node : this.messageParent(node.parentElement);
-  }
-
-  static same(mv1: MessageView, mv2: MessageView) {
-    return (!mv1 && !mv2) || (mv1 && mv2 && mv1.msg['@id'] == mv2.msg['@id']);
   }
 }

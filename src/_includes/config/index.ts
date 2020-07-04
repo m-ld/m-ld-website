@@ -11,5 +11,5 @@ export namespace Config {
     token: string;
   }
 
-  export type Response = MeldAblyConfig;
+  export type Response = MeldAblyConfig & { ably: MeldAblyConfig['ably'] & { token: string } };
 }

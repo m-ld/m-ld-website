@@ -1,9 +1,0 @@
-{
-  "mqtt": {
-    "protocol": "wss",
-    "host": "hairdresser.cloudmqtt.com",
-    "port": 35705,
-    "username": "test",
-    "password": "test!"
-  }
-}

@@ -4,6 +4,7 @@
 const { join } = require('path');
 const browserify = require('browserify');
 const { promisify } = require('util');
+const tsconfig = require('../tsconfig.json');
 
 module.exports = class {
   data() {
@@ -15,12 +16,10 @@ module.exports = class {
 
   async render({ tsPath }) {
     if (process.env.LIVE_DEMO) {
-      var b = browserify(tsPath, {
-        debug: true // TODO: Remove for production
-      }).plugin("tsify", {
-        noImplicitAny: true,
-        target: 'es5'
-      }).transform(require('envify'));
+      // TODO: Remove debug for production
+      var b = browserify(tsPath, { debug: true })
+        .plugin('tsify', tsconfig.compilerOptions)
+        .transform(require('envify'));
       return promisify(b.bundle.bind(b))();
     }
   }

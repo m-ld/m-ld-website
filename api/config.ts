@@ -7,12 +7,19 @@ import { URL } from 'url';
 const fetch = SetupFetch();
 
 export default async (req: NowRequest, res: NowResponse) => {
+  if (process.env.RECAPTCHA_SECRET == null
+    || process.env.ABLY_KEY == null
+    || process.env.WORDNIK_API_KEY == null)
+    return res.status(500).send('Bad lambda configuration');
+
   const configReq = req.body as Config.Request;
   if (!configReq.token)
     return res.status(400).send('No token in request!');
 
   // Validate the token, see https://developers.google.com/recaptcha/docs/v3
-  const siteverify = await fetchJson<{ success: boolean, action: string, score: number }>(
+  const siteverify = await fetchJson<{
+    success: boolean, action: string, score: number, 'error-codes': string[]
+  }>(
     'https://www.google.com/recaptcha/api/siteverify', {
     secret: process.env.RECAPTCHA_SECRET,
     response: configReq.token
@@ -33,7 +40,7 @@ export default async (req: NowRequest, res: NowResponse) => {
   // Get a new domain name if none is specified
   let domain = configReq['@domain'];
   let genesis = domain == null;
-  if (genesis) {
+  if (domain == null) {
     const part1 = await fetchWord('adjective'), part2 = await fetchWord('noun');
     if (typeof part1 === 'string' || typeof part2 === 'string')
       return res.status(500).send('Domain name generation failed');
@@ -71,11 +78,11 @@ export default async (req: NowRequest, res: NowResponse) => {
   res.json(config);
 }
 
-async function fetchWord(part: 'noun' | 'adjective') {
+async function fetchWord(part: 'noun' | 'adjective'): Promise<{ word: string } | string> {
   const rtn = await fetchJson<{
     word: string;
   }>('http://api.wordnik.com/v4/words.json/randomWord', {
-    api_key: process.env.WORDNIK_API_KEY,
+    api_key: process.env.WORDNIK_API_KEY ?? '', // Already checked
     includePartOfSpeech: part
   });
   return typeof rtn === 'string' ? rtn :

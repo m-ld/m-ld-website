@@ -51,8 +51,8 @@
     <g id="link-lines"></g>
     <g id="messages"></g>
   </svg>
-  {% include 'popup.html', id: 'cant-demo', content: 'cant-demo.html' %}
-  {% include 'popup.html', id: 'error', content: 'error.html' %}
+  {% include 'popup.liquid', id: 'cant-demo', content: 'cant-demo.html' %}
+  {% include 'popup.liquid', id: 'error', content: 'error.html' %}
   <div id="warning" class="notification is-warning is-hidden">
     <button class="delete"></button>
     <p class="warning-text">Something went wrong</p>
@@ -144,7 +144,7 @@
 </body>
 {% else %}
 <body>
-  {% include 'popup.html', id: 'no-demo', classes: 'is-active', content: 'no-demo.html' %}
+  {% include 'popup.liquid', id: 'no-demo', classes: 'is-active', content: 'no-demo.html' %}
 </body>
 {% endif %}
 
