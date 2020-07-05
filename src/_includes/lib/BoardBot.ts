@@ -1,58 +1,55 @@
-import { MeldApi, Update, shortId } from '@m-ld/m-ld';
+import { MeldApi, Update, shortId, Subject } from '@m-ld/m-ld';
 import { BoardIndex, MessageItem } from './BoardIndex';
 import { Message } from './Message';
 
 export class BoardBot {
   private prevId: string;
+  private name: string;
 
   constructor(
-    private readonly name: string,
+    defaultName: string,
     private readonly welcomeId: string,
-    private readonly model: MeldApi,
+    private readonly meld: MeldApi,
     private readonly index: BoardIndex) {
     this.prevId = welcomeId;
+    this.name = defaultName;
   }
 
   async start(isNew: boolean) {
     await pause();
     if (isNew) {
-      await this.say(`<p>This is your new collaborative message board.</p>
-      <p>We'll use it to demonstrate how <b>m-ld</b> works.</p>`);
-      await pause();
-      await this.say(`For Help with using the board,<br>click the <i class="fas fa-question"></i> button.`);
-      await pause();
-      await this.say(['chooseTopic', `<p>My name is ${this.name}.</p>
-      <p>If you want me to be quiet, just tell me with new message like '${this.name}, shush'.</p>
+      await this.say(`For Help with this collaborative message board,
+      <br>click the <i class="fas fa-question"></i> button.`);
+      await pause(4);
+      await this.say(['chooseTopic', `<p>Hi! I'm a bot. My name is ${this.name}.</p>
+      <p>I'm here to talk about how <b>m-ld</b> works.
+      <p>If you want me to be quiet, just delete my messages.</p>
       Otherwise I'll talk about:<ul>
       <li>Sharing a board</li>
       <li><b>m-ld</b></li>
       <li>Disagreements</li>
-      <li>Anything else that I think of.</li></ul>
-      <p>If you want me to talk about something again, just ask in a new message.</p>`]);
+      <li>Anything else that I think of.</li></ul>`], false);
     }
-    await this.model.get('chooseTopic');
+    await pause(4);
+    if ((await this.meld.get('chooseTopic')) != null) {
+
+    }
   }
 
   private async say(
-    text: string | [string, string],
+    what: string | [string, string],
+    withLink = true,
     afterId: string = this.prevId): Promise<unknown> {
-    let id: string;
-    if (Array.isArray(text)) {
-      id = text[0];
-      text = text[1];
-    } else {
-      id = shortId();
-    }
+    const [id, text] = Array.isArray(what) ? what : [shortId(), what];
     const [x, y] = this.index.findSpace(this.message(afterId));
-    await this.model.transact<Update>({
-      '@insert': [<Message>{
-        '@id': id,
-        '@type': 'Message',
-        text, x, y,
-        linkTo: []
-      }, <Partial<Message>>{
-        '@id': afterId, linkTo: [{ '@id': id }]
-      }]
+    const message: Message & Subject = {
+      '@id': id, '@type': 'Message', text, x, y, linkTo: []
+    };
+    const link: Partial<Message> = {
+      '@id': afterId, linkTo: [{ '@id': id }]
+    };
+    await this.meld.transact<Update>({
+      '@insert': withLink ? [message, link] : message
     });
     return this.prevId = id;
   }
@@ -63,6 +60,6 @@ export class BoardBot {
   }
 }
 
-function pause(duration = 2000) {
-  return new Promise(res => setTimeout(res, duration));
+function pause(seconds: number = 2) {
+  return new Promise(res => setTimeout(res, seconds * 1000));
 }

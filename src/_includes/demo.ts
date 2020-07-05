@@ -74,7 +74,7 @@ window.onload = function () {
       const bv = new BoardView('#board', meld, welcomeId);
 
       // Add the welcome message if not already there
-      const isNew = !(await meld.get(welcomeId)).length;
+      const isNew = (await meld.get(welcomeId)) == null;
       if (isNew) {
         await meld.transact<Message>({
           '@id': welcomeId,

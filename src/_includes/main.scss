@@ -13,11 +13,17 @@ html#demo {
   overflow: hidden;
 }
 
+#board {
+  cursor: grab;
+}
+
 .board-message-box {
   fill: $light;
-  stroke: none;
+  stroke: $light;
   stroke-width: 3;
   filter: url(#shadow);
+  // highlights fade away, see link-target, remove-target & new-message
+  transition: stroke 1s;
 }
 
 .board-message-button {
@@ -62,10 +68,17 @@ html#demo {
 
 .link-target {
   stroke: $link;
+  transition: none;
 }
 
-.unlink-target {
+.remove-target {
   stroke: $danger;
+  transition: none;
+}
+
+.new-message {
+  stroke: $primary;
+  transition: none;
 }
 
 #link-arrowhead {

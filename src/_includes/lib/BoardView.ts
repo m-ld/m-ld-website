@@ -9,7 +9,7 @@ import { MeldApi } from '@m-ld/m-ld';
 import { shortId, Subject, Select, Describe, Update, Reference, Resource } from '@m-ld/m-ld';
 import { LinkView } from './LinkView';
 import { showWarning } from './BoardControls';
-import { MessageItem, BoardBushIndex, BoardIndex } from './BoardIndex';
+import { BoardBushIndex, BoardIndex } from './BoardIndex';
 
 const CLICK_DRAG_DISTANCE = 3;
 
@@ -87,11 +87,13 @@ export class BoardView extends InfiniteView {
       .on('keydown', this.withThisMessage(this.inputKey))
       .on('blur', this.withThisMessage(this.inputEnd));
     msgSelect.select('.board-message-close circle')
-      .on('click', this.withThisMessage(this.removeMessage))
-      .call(this.setupBtnDrag(this.unlinkDragging, this.unlinkDragEnd));
+      .on('mouseover', this.withThisMessage(mv => this.setRemoving(mv, true)))
+      .on('mouseleave', this.withThisMessage(mv => this.setRemoving(mv, false)))
+      .on('click', this.withThisMessage(mv => this.removeMessage(mv, true)))
+      .call(this.setupBtnDrag(this.unlinkDragStart, this.unlinkDragging, this.unlinkDragEnd));
     msgSelect.select('.board-message-add circle')
       .on('click', this.withThisMessage(mv => this.addNewMessage(mv)))
-      .call(this.setupBtnDrag(this.linkDragging, this.linkDragEnd));
+      .call(this.setupBtnDrag(this.btnDragStart, this.linkDragging, this.linkDragEnd));
     msgSelect.selectAll('.board-message-move circle').call(d3.drag()
       .container(node(this.svg))
       .on('start', this.withThisMessage(this.moveDragStart))
@@ -102,13 +104,33 @@ export class BoardView extends InfiniteView {
     return msgSelect;
   }
 
-  private setupBtnDrag(dragging: (mv: MessageView) => void,
+  private setRemoving(mv: MessageView, removing: boolean) {
+    if (!mv.box.classed('button-dragging') && mv.msg['@id'] !== this.welcomeId) {
+      mv.box.classed('remove-target', removing);
+      mv.msg.linkTo.forEach(linkedId => this.withThatMessage(linkedId['@id'], mv =>
+        this.setDeepRemoving(mv, removing)));
+      const removeKeyEvents = 'keydown.remove keyup.remove';
+      if (removing)
+        d3.select(document).on(removeKeyEvents, () => this.setRemoving(mv, true));
+      else
+        d3.select(document).on(removeKeyEvents, null);
+    }
+  }
+
+  private setDeepRemoving(mv: MessageView, removing: boolean): any {
+    return mv.box.classed('remove-target',
+      removing && d3.event.shiftKey && mv.msg['@id'] !== this.welcomeId);
+  }
+
+  private setupBtnDrag(
+    dragStart: (mv: MessageView, dragged: SVGElement) => void,
+    dragging: (mv: MessageView) => void,
     dragEnd: (mv: MessageView, dragged: SVGElement) => void): (selection: d3Selection) => void {
     return d3.drag() // Set up drag-to-link behaviour
       .container(node(this.svg))
       .clickDistance(CLICK_DRAG_DISTANCE) // Ensure that single-click hits click handler
       .subject(this.withThisMessage(this.btnDragSubject))
-      .on('start', this.withThisMessage(this.btnDragStart))
+      .on('start', this.withThisMessage(dragStart))
       .on('drag', this.withThisMessage(dragging))
       .on('end', this.withThisMessage(dragEnd));
   }
@@ -167,6 +189,7 @@ export class BoardView extends InfiniteView {
 
   private btnDragStart(mv: MessageView, dragged: SVGElement) {
     d3.select(dragged).attr('cursor', 'none');
+    mv.box.classed('button-dragging', true);
     mv.active = true;
   }
 
@@ -191,7 +214,12 @@ export class BoardView extends InfiniteView {
   private unlinkDragging(mv: MessageView) {
     this.btnDragging(
       mv, thatId => thatId != mv.msg['@id'] &&
-        MeldApi.includesValue(mv.msg.linkTo, { '@id': thatId }), 'unlink-target');
+        MeldApi.includesValue(mv.msg.linkTo, { '@id': thatId }), 'remove-target');
+  }
+
+  private unlinkDragStart(mv: MessageView, dragged: SVGElement) {
+    this.setRemoving(mv, false);
+    this.btnDragStart(mv, dragged);
   }
 
   private unlinkDragEnd(mv: MessageView, dragged: SVGElement) {
@@ -201,7 +229,7 @@ export class BoardView extends InfiniteView {
           '@delete': { '@id': mv.msg['@id'], linkTo: { '@id': thatId } }
         }).then(null, showWarning);
       }
-    }, 'unlink-target');
+    }, 'remove-target');
   }
 
   private btnDragging(mv: MessageView, filter: (thatId: string) => boolean, targetClass: string) {
@@ -248,6 +276,7 @@ export class BoardView extends InfiniteView {
         this.svgRect(node(drag.button.d3)).topLeft);
     drag.link.d3.remove();
     drag.button.position = drag.startPos;
+    mv.box.classed('button-dragging', false);
     mv.active = false;
   }
 
@@ -265,11 +294,16 @@ export class BoardView extends InfiniteView {
       .then(() => this.withThatMessage(id, mv => node(mv.content).focus()), showWarning);
   }
 
-  private removeMessage(mv: MessageView) {
-    if (mv.msg['@id'] !== this.welcomeId)
+  private removeMessage(mv: MessageView, top: boolean) {
+    if (mv.msg['@id'] !== this.welcomeId) {
       this.model.delete(mv.msg['@id']);
-    else
+      if (top && d3.event.shiftKey) {
+        mv.msg.linkTo.forEach(linked =>
+          this.withThatMessage(linked['@id'], mv => this.removeMessage(mv, false)));
+      }
+    } else if (top) {
       showWarning("Sorry, you can't delete the welcome message");
+    }
   }
 
   hitTest(test: Rectangle, filter: (id: string) => boolean): MessageView {

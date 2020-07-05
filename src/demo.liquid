@@ -23,7 +23,7 @@
   </div>
   <svg id="board">
     <defs>
-      <g id="board-message-template">
+      <g id="board-message-template" cursor="default">
         <!-- box and body must be locked to the same size, used to detect zoom, see
         MessageView#update -->
         <rect class="board-message-box" rx="10" width="10" height="10" />
@@ -111,20 +111,31 @@
       </div>
       <div>Move a message:
         <span class="how">drag the {% include 'buttons/button-ref.svg', button:
-        'buttons/move-button.svg' %} button</span>
+        'buttons/move-button.svg' %}</span>
+      </div>
+      <div>Add a message:
+        <span class="how">click the {% include
+        'buttons/button-ref.svg', button: 'buttons/add-button.svg' %}</span>
       </div>
       <div>Add a message at a specific place:
         <span class="how">drag and release the {% include
-        'buttons/button-ref.svg', button: 'buttons/add-button.svg' %}
-        button</span>
+        'buttons/button-ref.svg', button: 'buttons/add-button.svg' %}</span>
       </div>
       <div>Link to another message:
         <span class="how">drag the {% include 'buttons/button-ref.svg', button:
-        'buttons/add-button.svg' %} button to it</span>
+        'buttons/add-button.svg' %} to it</span>
+      </div>
+      <div>Remove a message:
+        <span class="how">click the {% include
+        'buttons/button-ref.svg', button: 'buttons/close-button.svg' %}</span>
+      </div>
+      <div>Remove linked messages:
+        <span class="how"><span class="tag">Shift</span>+{% include
+        'buttons/button-ref.svg', button: 'buttons/close-button.svg' %}</span>
       </div>
       <div>Remove a link:
         <span class="how">drag the {% include 'buttons/button-ref.svg', button:
-        'buttons/close-button.svg' %} button to the linked message</span>
+        'buttons/close-button.svg' %} to the linked message</span>
       </div>
       <div>Commit text change:
         <span class="how"><span class="tag">Enter</span></span>

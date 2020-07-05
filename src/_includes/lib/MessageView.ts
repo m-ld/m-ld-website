@@ -43,8 +43,8 @@ export class MessageView extends GroupView<MessageItem> {
       .attr('id', data['@id'])
       // We don't yet know the message size
       .datum(item);
-    msgD3.select('.board-message-body > div')
-      .text(item.text)
+    msgD3.select('.board-message-box').classed('new-message', true);
+    msgD3.select('.board-message-body > div').text(item.text)
     return msgD3;
   }
 
@@ -95,6 +95,9 @@ export class MessageView extends GroupView<MessageItem> {
             this.withThat(link.toId, that => link.update(this.rect, that.rect)));
           this.allInLinks.forEach(link =>
             this.withThat(link.fromId, that => link.update(that.rect, this.rect)));
+            
+          // No longer new
+          this.box.classed('new-message', false);
           resolve();
         } catch (err) {
           reject(err);

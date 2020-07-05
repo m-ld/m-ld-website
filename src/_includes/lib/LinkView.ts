@@ -26,7 +26,7 @@ export class LinkView extends D3View<SVGLineElement> {
     if (fromShape.area && toShape.area) {
       const centreLine = new Line(fromShape.centre, toShape.centre);
       const begin = fromShape.intersect(centreLine),
-        end = toShape.expand(5).intersect(centreLine);
+        end = toShape.expand(8).intersect(centreLine);
       if (begin.length && end.length) {
         this.d3.attr('visibility', null);
         setAttr(this.d3, new Line(begin[0], end[0]));
