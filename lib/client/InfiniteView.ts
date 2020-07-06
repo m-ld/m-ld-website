@@ -1,6 +1,6 @@
 import * as d3 from 'd3';
-import { setAttr, svgPoint, SVG, node } from './util';
-import { Rectangle } from './Shapes';
+import { setAttr, svgPoint, SVG, node } from './d3Util';
+import { Rectangle } from '../Shapes';
 
 export abstract class InfiniteView {
   readonly svg: SVG;

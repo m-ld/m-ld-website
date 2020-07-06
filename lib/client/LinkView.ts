@@ -1,5 +1,5 @@
-import { SVG, setAttr, d3Selection } from './util';
-import { Shape, Line } from './Shapes';
+import { SVG, setAttr, d3Selection } from './d3Util';
+import { Shape, Line } from '../Shapes';
 import * as d3 from 'd3';
 import { D3View } from './D3View';
 

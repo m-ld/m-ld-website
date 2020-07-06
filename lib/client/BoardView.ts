@@ -1,15 +1,15 @@
 import * as d3 from 'd3';
-import { Message } from './Message';
-import { svgParent, getAttr, d3Selection, node } from './util';
+import { Message } from '../Message';
+import { svgParent, getAttr, d3Selection, node } from './d3Util';
 import { InfiniteView } from './InfiniteView';
 import { MessageView } from './MessageView';
 import { GroupView } from './D3View';
-import { Rectangle, Circle, Shape, Line } from './Shapes';
+import { Rectangle, Circle, Shape, Line } from '../Shapes';
 import { MeldApi } from '@m-ld/m-ld';
 import { shortId, Subject, Select, Describe, Update, Reference, Resource } from '@m-ld/m-ld';
 import { LinkView } from './LinkView';
 import { showWarning } from './BoardControls';
-import { BoardBushIndex, BoardIndex } from './BoardIndex';
+import { BoardBushIndex, BoardIndex } from '../BoardIndex';
 
 const CLICK_DRAG_DISTANCE = 3;
 

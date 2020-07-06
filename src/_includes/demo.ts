@@ -1,12 +1,15 @@
-import { BoardView } from './lib/BoardView';
-import { Message } from './lib/Message';
+import { BoardView } from '../../lib/client/BoardView';
+import { Message } from '../../lib/Message';
 import * as Level from 'level-js';
 import { clone, shortId, uuid } from '@m-ld/m-ld';
-import { Config } from './config';
+import { Config, Chat } from '../../lib/dto';
 import * as d3 from 'd3';
-import { showError, showCantDemo, getLocalDomains, addLocalDomain, initControls, showWarning } from './lib/BoardControls';
+import {
+  showError, showCantDemo, getLocalDomains, addLocalDomain, initControls,
+  showWarning, getLocalBotName, setLocalBotName
+} from '../../lib/client/BoardControls';
 import { AblyRemotes } from '@m-ld/m-ld/dist/ably';
-import { BoardBot } from './lib/BoardBot';
+import { BoardBot } from '../../lib/BoardBot';
 
 window.onload = function () {
   Modernizr.on('indexeddb', () => {
@@ -39,6 +42,7 @@ window.onload = function () {
           .then(reconfig => cb('', reconfig.ably.token))
           .catch(err => cb(err, ''));
       domain = config['@domain'];
+      setLocalBotName(config.botName);
       history.replaceState(null, '', '#' + domain);
 
       // Initialise the m-ld clone
@@ -71,7 +75,7 @@ window.onload = function () {
       const welcomeId = shortId(domain);
 
       // Create the board UI View
-      const bv = new BoardView('#board', meld, welcomeId);
+      const boardView = new BoardView('#board', meld, welcomeId);
 
       // Add the welcome message if not already there
       const isNew = (await meld.get(welcomeId)) == null;
@@ -86,21 +90,34 @@ window.onload = function () {
       }
 
       // Unleash the board's resident bot
-      await new BoardBot(config.botName, welcomeId, meld, bv.index).start(isNew);
+      await new BoardBot(
+        config.botName, welcomeId, meld, boardView.index, { answer: fetchAnswer }).start(isNew);
     } catch (err) {
       showError(err);
     }
 
     async function fetchConfig(domain: string | null, id: string) {
+      return await fetch<Config.Request, Config.Response>('/api/config', (token: string) => ({
+        '@id': id, '@domain': domain, token, botName: getLocalBotName()
+      }));
+    }
+
+    async function fetchAnswer(message: string, topMessages: string[]) {
+      return (await fetch<Chat.Request, Chat.Response>('/api/chat', (token: string) => ({
+        token, message, topMessages
+      }))).message;
+    }
+
+    async function fetch<Q, S>(api: string, req: (token: string) => Q): Promise<S> {
       const site = process.env.RECAPTCHA_SITE;
       if (site == null)
         throw new Error('Bad configuration: reCAPTCHA site missing');
       const token = await grecaptcha.execute(site, { action: 'config' });
-      return await d3.json('/api/config', {
+      return await d3.json(api, {
         method: 'post',
         headers: { 'Content-type': 'application/json; charset=UTF-8' },
-        body: JSON.stringify({ '@id': id, '@domain': domain, token } as Config.Request)
-      }) as Config.Response;
+        body: JSON.stringify(req(token) as Q)
+      }) as S;
     }
   }
 }

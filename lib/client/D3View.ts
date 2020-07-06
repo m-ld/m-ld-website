@@ -1,5 +1,5 @@
 import * as d3 from 'd3';
-import { d3Selection } from './util';
+import { d3Selection } from './d3Util';
 
 export class D3View<E extends Element = Element, D = unknown> {
   constructor(

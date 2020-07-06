@@ -1,12 +1,12 @@
 import * as d3 from 'd3';
-import { setAttr, d3Selection, node } from './util';
+import { setAttr, d3Selection, node } from './d3Util';
 import { BoardView } from './BoardView';
-import { Rectangle } from './Shapes';
+import { Rectangle } from '../Shapes';
 import { GroupView } from './D3View';
 import { LinkView } from './LinkView';
-import { MessageItem, MIN_MESSAGE_SIZE } from './BoardIndex';
+import { MessageItem, MIN_MESSAGE_SIZE } from '../BoardIndex';
 import { Resource } from '@m-ld/m-ld';
-import { Message } from './Message';
+import { Message } from '../Message';
 
 export class MessageView extends GroupView<MessageItem> {
   readonly boardView: BoardView;

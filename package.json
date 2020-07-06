@@ -45,6 +45,7 @@
     "@types/node-fetch": "^2.5.7",
     "@types/rbush": "^3.0.0",
     "@zeit/fetch": "^6.0.0",
+    "compromise": "^13.3.1",
     "d3": "^5.16.0",
     "grecaptcha": "^1.0.3",
     "level-js": "^5.0.2",

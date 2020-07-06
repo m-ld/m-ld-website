@@ -1,116 +1,53 @@
-import { NowRequest, NowResponse } from '@now/node'
-import { Config } from '../src/_includes/config';
-import { LogLevelDesc } from 'loglevel';
-import SetupFetch from '@zeit/fetch';
-import { FetchOptions } from '@zeit/fetch';
-import { URL } from 'url';
-const fetch = SetupFetch();
+import { Config } from '../lib/dto';
+import { fetchJson, nlp, LOG, randomWord, responder } from '../lib/api/common';
 
-export default async (req: NowRequest, res: NowResponse) => {
-  if (process.env.RECAPTCHA_SECRET == null
-    || process.env.ABLY_KEY == null
-    || process.env.WORDNIK_API_KEY == null)
-    return res.status(500).send('Bad lambda configuration');
+export default responder<Config.Request, Config.Response>(async configReq => {
+  const { domain, genesis } = await newDomain(configReq['@domain']);
+  return {
+    '@id': configReq['@id'],
+    '@domain': domain, genesis,
+    ably: await ablyConfig(domain, configReq['@id']),
+    botName: await newBotName(configReq.botName),
+    logLevel: LOG.getLevel()
+  }
+});
 
-  const configReq = req.body as Config.Request;
-  if (!configReq.token)
-    return res.status(400).send('No token in request!');
-
-  // Validate the token, see https://developers.google.com/recaptcha/docs/v3
-  const siteverify = await fetchJson<{
-    success: boolean, action: string, score: number, 'error-codes': string[]
-  }>(
-    'https://www.google.com/recaptcha/api/siteverify', {
-    secret: process.env.RECAPTCHA_SECRET,
-    response: configReq.token
-  }, { method: 'POST' });
-
-  if (typeof siteverify === 'string')
-    return res.status(500).send(`reCAPTCHA failed with ${siteverify}`);
-
-  if (!siteverify.success)
-    return res.status(400).send(`reCAPTCHA failed with ${siteverify['error-codes']}`);
-
-  if (siteverify.action != 'config')
-    return res.status(400).send(`reCAPTCHA action mismatch, received '${siteverify.action}'`);
-
-  if (siteverify.score < 0.5)
-    return res.status(403).send(`reCAPTCHA check failed`);
-
-  // Get a new domain name if none is specified
-  let domain = configReq['@domain'];
+/**
+ * Get a new domain name if none is specified in the request
+ */
+async function newDomain(domain: string | null) {
   let genesis = domain == null;
   if (domain == null) {
-    const part1 = await fetchWord('adjective'), part2 = await fetchWord('noun');
-    if (typeof part1 === 'string' || typeof part2 === 'string')
-      return res.status(500).send('Domain name generation failed');
-
-    domain = `${part1.word}-${part2.word}.m-ld.org`;
+    const [part1, part2] = await Promise.all([
+      randomWord('adjective'), randomWord('noun')]);
+    domain = `${part1}-${part2}.m-ld.org`;
   }
+  return { domain, genesis };
+}
 
-  // Get a Bot name
-  const botName = await fetchWord('proper-noun', 5);
-  if (typeof botName === 'string')
-    return res.status(500).send('Bot name generation failed');
-
-  // Get an Ably token for the client
-  // https://www.ably.io/documentation/rest-api#request-token
+/**
+ * Get an Ably token for the client
+ * https://www.ably.io/documentation/rest-api#request-token
+ */
+async function ablyConfig(domain: string, clientId: string) {
+  if (process.env.ABLY_KEY == null)
+    throw 'Bad lambda configuration';
   const ablyKey = process.env.ABLY_KEY, keyName = ablyKey.split(':')[0],
     Authorization = `Basic ${Buffer.from(ablyKey).toString('base64')}`;
-  const tokenRequest = {
-    keyName,
-    capability: JSON.stringify({ [`${domain}:*`]: ['subscribe', 'publish', 'presence'] }),
-    clientId: configReq['@id'],
-    timestamp: Date.now()
-  };
-  const ably = await fetchJson<{ token: string }>(
+  return fetchJson<{ token: string; }>(
     `https://rest.ably.io/keys/${keyName}/requestToken`, {}, {
     method: 'POST',
     headers: { Authorization, 'Content-Type': 'application/json' },
-    body: JSON.stringify(tokenRequest)
+    body: JSON.stringify({
+      keyName, clientId, timestamp: Date.now(),
+      capability: JSON.stringify({ [`${domain}:*`]: ['subscribe', 'publish', 'presence'] }),
+    })
   });
-
-  if (typeof ably === 'string')
-    return res.status(500).send(`Ably token request failed with ${ably}`);
-
-  const config: Config.Response = {
-    '@id': configReq['@id'],
-    '@domain': domain,
-    genesis,
-    ably,
-    botName: botName.word,
-    logLevel: process.env.LOG as LogLevelDesc || 'warn'
-  }
-  res.json(config);
 }
 
-async function fetchWord(
-  part: 'noun' | 'adjective' | 'proper-noun',
-  maxLength?: number): Promise<{ word: string } | string> {
-  const params: { [name: string]: string } = {
-    api_key: process.env.WORDNIK_API_KEY ?? '',
-    includePartOfSpeech: part
-  };
-  if (maxLength != null)
-    params.maxLength = `${maxLength}`;
-  const rtn = await fetchJson<{ word: string; }>(
-    'http://api.wordnik.com/v4/words.json/randomWord', params);
-  return typeof rtn === 'string' ? rtn :
-    // Only accept alphabet and hyphen characters
-    /^[a-z\-]+$/.test(rtn.word) ? rtn : fetchWord(part);
-}
-
-async function fetchJson<T extends object>(
-  urlString: string,
-  params: { [name: string]: string },
-  options: FetchOptions = { method: 'GET' }): Promise<T | string> {
-  const url = new URL(urlString);
-  Object.entries(params).forEach(([name, value]) => url.searchParams.append(name, value));
-  const res = await fetch(url.toString(), options);
-  if (res.ok) {
-    return (await res.json()) || 'No JSON returned';
-  } else {
-    console.debug(`Fetch from ${url} failed with ${res.statusText}`);
-    return res.statusText;
-  }
+/**
+ * Get a Bot name if none is specified in the request
+ */
+async function newBotName(botName: string | null) {
+  return botName ?? nlp(await randomWord('proper-noun')).toTitleCase().text();
 }

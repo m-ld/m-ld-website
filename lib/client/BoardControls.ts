@@ -46,6 +46,14 @@ export function addLocalDomain(domain: string) {
   local.set<string[]>('m-ld.domains', localDomains);
 }
 
+export function getLocalBotName() {
+  return local.get<string>('m-ld.demo.bot');
+}
+
+export function setLocalBotName(name: string) {
+  local.set<string>('m-ld.demo.bot', name);
+}
+
 export function initControls() {
   // Un-show buttons
   d3.select('#warning .delete').on('click', hideWarning);
