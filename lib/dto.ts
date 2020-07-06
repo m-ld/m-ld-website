@@ -1,6 +1,7 @@
 import { MeldAblyConfig } from '@m-ld/m-ld/dist/ably';
 
 export interface AuthorisedRequest {
+  origin: string;
   token: string;
 }
 
@@ -19,6 +20,7 @@ export namespace Config {
 
 export namespace Chat {
   export interface Request extends AuthorisedRequest {
+    botName: string;
     message: string;
     topMessages: string[];
   }

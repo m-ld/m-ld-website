@@ -79,7 +79,7 @@ export class HttpError {
 
 export async function fetchJson<T extends object>(
   urlString: string,
-  params: object,
+  params: object = {},
   options: FetchOptions = { method: 'GET' }): Promise<T> {
   const url = new URL(urlString);
   Object.entries(params).forEach(([name, value]) =>

@@ -70,8 +70,8 @@
     <div class="columns">
       <div class="column is-8-desktop is-offset-2-desktop">
         <h1 class="title has-text-centered">frequently asked questions</h1>
-        {%- for faq in collections.faq -%}
-        <div class="content has-text-weight-bold is-medium">
+        {%- for faq in collections['front-page-faq'] -%}
+        <div id="{{ faq.fileSlug }}" class="content has-text-weight-bold is-medium">
           {{ faq.data.question }}
         </div>
         <div class="content">

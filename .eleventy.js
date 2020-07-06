@@ -1,9 +1,9 @@
 module.exports = function (config) {
     config.addPassthroughCopy({
-        'node_modules/@fortawesome/fontawesome-free/webfonts': 'webfonts'
+        './node_modules/@fortawesome/fontawesome-free/webfonts': 'webfonts'
     });
-    config.addPassthroughCopy('src/modernizr-custom.js');
-    config.addWatchTarget('lib');
+    config.addPassthroughCopy('./src/modernizr-custom.js');
+    config.addWatchTarget('./lib/');
     // Do not ghost events across browsers - defeats the point of m-ld
     config.setBrowserSyncConfig({ ghostMode: false });
     config.setLiquidOptions({

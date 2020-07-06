@@ -90,22 +90,22 @@ window.onload = function () {
       }
 
       // Unleash the board's resident bot
-      await new BoardBot(
-        config.botName, welcomeId, meld, boardView.index, { answer: fetchAnswer }).start(isNew);
+      await new BoardBot(config.botName, welcomeId, meld, boardView.index, {
+        answer: async (message: string, topMessages: string[]) =>
+          (await fetch<Chat.Request, Chat.Response>('/api/chat', (token: string) => ({
+            origin: window.location.origin,
+            token, message, topMessages, botName: config.botName
+          }))).message
+      }).start(isNew);
     } catch (err) {
       showError(err);
     }
 
     async function fetchConfig(domain: string | null, id: string) {
       return await fetch<Config.Request, Config.Response>('/api/config', (token: string) => ({
+        origin: window.location.origin,
         '@id': id, '@domain': domain, token, botName: getLocalBotName()
       }));
-    }
-
-    async function fetchAnswer(message: string, topMessages: string[]) {
-      return (await fetch<Chat.Request, Chat.Response>('/api/chat', (token: string) => ({
-        token, message, topMessages
-      }))).message;
     }
 
     async function fetch<Q, S>(api: string, req: (token: string) => Q): Promise<S> {

@@ -48,7 +48,7 @@ export class MessageView extends GroupView<MessageItem> {
     return msgD3;
   }
 
-  update(data?: Resource<Message>): Promise<void> {
+  async update(data?: Resource<Message>): Promise<void> {
     if (data != null) {
       // Detect if the message has become invalid (deleted)
       this.setMsg(new MessageItem(data));
@@ -66,44 +66,45 @@ export class MessageView extends GroupView<MessageItem> {
         this.position = this.msg.position;
       }
     }
-    // We push the re-sizing to the next frame because Firefox sometimes hasn't
-    // updated the bounding client rect yet.
-    return new Promise((resolve, reject) => {
-      window.requestAnimationFrame(async () => {
-        try {
-          // Size the shape to the content
-          const textRect = this.boardView.svgRect(node(this.content));
-          // Chromium bug: The computed effective zoom is currently force-set to 1.0
-          // for foreignObjects. We can detect by comparing the body to the box,
-          // because they are locked to having the same width attributes.
-          // https://bugs.chromium.org/p/chromium/issues/detail?id=976224
-          const zoomScale = node(this.box).getBoundingClientRect().width /
-            node(this.body).getBoundingClientRect().width;
+    // We push the re-sizing to at least the next frame because Firefox
+    // sometimes hasn't updated the bounding client rect yet.
+    const images = this.content.selectAll<HTMLImageElement, unknown>('img').nodes();
+    if (images.length)
+      await Promise.all(images.map(img =>
+        img.complete ? Promise.resolve() : new Promise((resolve, reject) => {
+          img.addEventListener('load', resolve);
+          img.addEventListener('error', resolve); // Ignore failed image load
+        })));
+    else
+      await new Promise(resolve => window.requestAnimationFrame(resolve));
 
-          const [minWidth, minHeight] = MIN_MESSAGE_SIZE;
-          const width = Math.max(textRect.width * zoomScale, minWidth),
-            height = Math.max(textRect.height * zoomScale, minHeight);
-          setAttr(this.box, { width, height });
-          setAttr(this.body, { width, height });
-          this.setMsg(new MessageItem(this.msg.resource, [width, height]));
+    // Size the shape to the content
+    const textRect = this.boardView.svgRect(node(this.content));
+    // Chromium bug: The computed effective zoom is currently force-set to 1.0
+    // for foreignObjects. We can detect by comparing the body to the box,
+    // because they are locked to having the same width attributes.
+    // https://bugs.chromium.org/p/chromium/issues/detail?id=976224
+    const zoomScale = node(this.box).getBoundingClientRect().width /
+      node(this.body).getBoundingClientRect().width;
 
-          if (data != null) // i.e. data has changed
-            await this.syncLinks();
+    const [minWidth, minHeight] = MIN_MESSAGE_SIZE;
+    const width = Math.max(textRect.width * zoomScale, minWidth),
+      height = Math.max(textRect.height * zoomScale, minHeight);
+    setAttr(this.box, { width, height });
+    setAttr(this.body, { width, height });
+    this.setMsg(new MessageItem(this.msg.resource, [width, height]));
 
-          // Update the position of all link lines
-          this.allOutLinks.forEach(link =>
-            this.withThat(link.toId, that => link.update(this.rect, that.rect)));
-          this.allInLinks.forEach(link =>
-            this.withThat(link.fromId, that => link.update(that.rect, this.rect)));
-            
-          // No longer new
-          this.box.classed('new-message', false);
-          resolve();
-        } catch (err) {
-          reject(err);
-        }
-      });
-    });
+    if (data != null) // i.e. data has changed
+      await this.syncLinks();
+
+    // Update the position of all link lines
+    this.allOutLinks.forEach(link =>
+      this.withThat(link.toId, that => link.update(this.rect, that.rect)));
+    this.allInLinks.forEach(link =>
+      this.withThat(link.fromId, that => link.update(that.rect, this.rect)));
+
+    // No longer new
+    this.box.classed('new-message', false);
   }
 
   private syncLinks() {
