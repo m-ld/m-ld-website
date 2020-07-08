@@ -109,7 +109,7 @@ const APP_TOPICS: {
       That's all I'm going to say for now. You can ask me questions,<br>
       and I'll try to answer them (call me by name).<br>
       You can also head to the FAQ in the docs.<br>
-      Happy Messaging!`,
+      This board is yours to use, of course. Happy Messaging!`,
     size: [3, 2],
     next: []
   }
