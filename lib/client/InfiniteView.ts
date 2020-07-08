@@ -81,7 +81,7 @@ export abstract class InfiniteView {
     this.setViewBox([vBx - (px * dx), vBy - (py * dy)], [vBw + dx, vBh + dy]);
   }
 
-  zoomToExtent() {
+  zoomToExtent(): boolean {
     // We want the viewbox to contain the content extent, but not more
     // zoomed than 100% (i.e. window size).
     const { x, y, width: cw, height: ch } = this.contentExtent;
@@ -89,6 +89,7 @@ export abstract class InfiniteView {
     const w = Math.max(ww, cw), h = Math.max(wh, ch), p = w / h;
     const vBw = pw > p ? w * pw / p : w, vBh = pw > p ? h : h * pw / p;
     this.setViewBox([x - (vBw - cw) / 2, y - (vBh - ch) / 2], [vBw, vBh]);
+    return cw > ww;
   }
 
   protected abstract get contentExtent(): DOMRect;

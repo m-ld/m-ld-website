@@ -28,8 +28,8 @@ export class NlpBrain implements BotBrain {
       patterns: [`[#Expression] .? ${this.botName}`],
       respond: groups => ans(1, `${groups[0].text()}!`, Sentiment.START_CHAT)
     }, {
-      patterns: [`^[#Expression]$`],
-      respond: groups => ans(1, `${groups[0].text()}, I'm still here.`)
+      patterns: [`^[#Expression]$`, `${this.botName} are you there`, `is anyone .? there`],
+      respond: (groups, i) => ans(1, `${i == 0 ? groups[0].text() : 'Hi'}, I'm still here.`)
     }, {
       patterns: [`what is your name`],
       respond: () => ans(1, `My name is ${this.botName}.`)
@@ -54,7 +54,7 @@ export class NlpBrain implements BotBrain {
       respond: groups => ans(1, `It's "words:word.json/${groups[0].text()}/relatedWords?useCanonical=true&relationshipTypes=synonym&limitPerRelationshipType=10"`)
     }, {
       patterns: [`^[#Noun]$`],
-      respond: groups => ans(1, `${groups[0].text().replace(/[\!?\.]/g, '')}?`)
+      respond: groups => ans(1, `${trimPunc(groups[0].text())}?`)
     }, {
       patterns: [`do you . (#Noun|#Verb)`],
       respond: () => ans(1, selectRandom('Yes!', 'No', 'Nope', 'Yep'))
@@ -72,7 +72,7 @@ export class NlpBrain implements BotBrain {
       respond: () => ans(1, `That's sad. You probably should talk to someone real about it.`)
     }, {
       patterns: [`how old are you`],
-      respond: () => ans(1, `${Math.floor(process.uptime() / 1000)} seconds.`)
+      respond: () => ans(1, `${process.uptime()} seconds.`)
     }, {
       patterns: [`new box`],
       respond: () => ans(1, '')
@@ -80,11 +80,13 @@ export class NlpBrain implements BotBrain {
     this.brain = (faqBrain).concat(chatBrain);
   }
 
-  async respond(message: string, _topMessages: string[]): Promise<Answer> {
-    return best(this.think(nlp(message))) ?? { message: null, sentiment: [] };
+  async respond(message: string, topMessages: string[]): Promise<Answer> {
+    const previous = topMessages.filter(prev => prev !== message)
+      .map(prev => nlp(prev).normalize()).map(trimPunc);
+    return best(this.think(nlp(message), previous)) ?? { message: null, sentiment: [] };
   }
 
-  think(doc: nlp.Document,
+  think(doc: nlp.Document, previous: string[],
     omit: Set<number> = new Set): Thought[] {
     return flatDense<Thought>(this.brain.filter((_, i) => !omit.has(i))
       .map(({ patterns, respond }, miniBrainIndex) => {
@@ -94,10 +96,11 @@ export class NlpBrain implements BotBrain {
         nowOmit.delete(miniBrainIndex);
         const perPattern = patterns.map((pattern, patternIndex) => {
           const matching = doc.match(pattern); // Captures groups
-          if (matching.found) {
+          // Try not to repeat ourselves
+          if (matching.found && !previous.some(prev => matching.has(prev))) {
             const answer = respond(matching.groups(), patternIndex);
             return [answer]
-              .concat(this.think(doc.ifNo(pattern), nowOmit).map(
+              .concat(this.think(doc.ifNo(pattern), previous, nowOmit).map(
                 more => ({
                   score: more.score + 1,
                   message: `${answer.message}<br>${more.message}`,
@@ -132,4 +135,8 @@ function ans(score: number, ...mindStuff: (string | Sentiment)[]): Thought {
     message: mindStuff.filter(stuff => typeof stuff == 'string').join('<br>'),
     sentiment: mindStuff.filter(s => typeof s == 'number') as Sentiment[]
   }
+}
+
+function trimPunc(message: string): string {
+  return message.replace(/[\!?\.]/g, '');
 }

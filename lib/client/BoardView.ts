@@ -27,7 +27,10 @@ export class BoardView extends InfiniteView {
       '@describe': '?s', '@where': { '@id': '?s', '@type': 'Message' }
     }).then(messages => this.sync(MeldApi.asSubjectUpdates({
       '@insert': messages, '@delete': []
-    })), showWarning);
+    }))).then(anyMessages => {
+      if (anyMessages && this.zoomToExtent())
+        showWarning('Tip: You can look more closely by double-clicking.');
+    }, showWarning);
 
     // Follow changes to messages
     model.follow().subscribe(update => {
@@ -52,7 +55,7 @@ export class BoardView extends InfiniteView {
     return this._index;
   }
 
-  private sync(updates: MeldApi.SubjectUpdates) {
+  private sync(updates: MeldApi.SubjectUpdates): boolean {
     Object.keys(updates).forEach(id => {
       const update = updates[id], updated = this.withThatMessage(id, mv => {
         const msg = mv.msg.resource;
@@ -68,6 +71,7 @@ export class BoardView extends InfiniteView {
           this.withThisMessage(mv => this.updateViewFromData(mv, msg)));
       }
     });
+    return !!Object.keys(updates).length;
   }
 
   private updateViewFromData(mv: MessageView, msg: Resource<Message>) {
