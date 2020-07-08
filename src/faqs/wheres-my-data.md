@@ -4,7 +4,7 @@ tags:
   - front-page-faq
 question: Where is my data?
 patterns:
-  - data
+  - where * (data|state)
 summary: <b>m-ld</b> data is physically in clones.
 date: 2020-01-01
 ---

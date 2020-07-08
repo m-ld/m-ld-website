@@ -1,4 +1,5 @@
 import { MeldAblyConfig } from '@m-ld/m-ld/dist/ably';
+import { BotBrain, Answer } from './BotBrain';
 
 export interface AuthorisedRequest {
   origin: string;
@@ -6,7 +7,8 @@ export interface AuthorisedRequest {
 }
 
 export namespace Config {
-  export interface Request extends AuthorisedRequest {
+  export interface Request
+    extends AuthorisedRequest {
     '@id': string;
     '@domain': string | null;
     botName: string | null;
@@ -19,13 +21,19 @@ export namespace Config {
 }
 
 export namespace Chat {
-  export interface Request extends AuthorisedRequest {
+  export interface Request
+    extends AuthorisedRequest {
     botName: string;
     message: string;
     topMessages: string[];
   }
 
-  export interface Response {
-    message: string | null;
-  }
+  export type Response = Answer;
+}
+
+export interface FaqIndexEntry {
+  question: string;
+  patterns: string[];
+  summary: string;
+  id: string;
 }

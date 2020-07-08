@@ -1,5 +1,6 @@
 import { Config } from '../lib/dto';
-import { fetchJson, nlp, LOG, randomWord, responder } from '../lib/api/common';
+import { fetchJson, LOG, randomWord, responder } from '../lib/api/common';
+import nlp from 'compromise';
 
 export default responder<Config.Request, Config.Response>(async configReq => {
   const { domain, genesis } = await newDomain(configReq['@domain']);

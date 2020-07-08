@@ -2,15 +2,13 @@ import { MeldApi, Update, shortId, Subject, Resource } from '@m-ld/m-ld';
 import { BoardIndex, MessageItem, MIN_MESSAGE_SIZE } from './BoardIndex';
 import { Message } from './Message';
 import { MeldUpdate } from '@m-ld/m-ld/dist/m-ld';
-
-export interface BotBrain {
-  answer(message: string, topMessages: string[]): Promise<string | null>;
-}
+import { BotBrain, Sentiment, selectRandom } from './BotBrain';
 
 export class BoardBot {
   private prevId: string;
   private myIds = new Set<string>();
   private thinking = false;
+  private chatting = false;
 
   constructor(
     private readonly name: string,
@@ -27,24 +25,19 @@ export class BoardBot {
       await this.say(`For Help with this collaborative message board,
       <br>click the <i class="fas fa-question"></i> button.`, [2, 1.5]);
       await pause(4);
-      await this.say([this.introId, `
+      await this.say([this.greetingId, `
       Hi! I'm a bot. My name is ${this.name}.<br>
       I'm here to talk about <b>m-ld</b>.<br>
       I'll start by explaining how this app works.<br>
-      I'll also try to answer any questions.<br>
-      If you delete this message I'll be quiet,<br>
-      but I'll still answer if you mention my name.`], [2, 2.5], false);
+      I'll also try to answer any questions.`], [2, 2.5], false);
     }
-    if (await this.isChatting()) {
-      // TODO: Topics!
+    if ((await this.meld.get(this.greetingId)) != null) {
+      // TODO: Topics! - but de-dup
       await pause(4);
     } else {
       // At startup, we might be a different bot on the same board.
       await pause();
-      this.say([this.introId, `
-      Hey, it's ${this.name}, checking in.<br>
-      If you delete this message I'll be quiet,<br>
-      but I'll still answer if you mention my name.`], [2, 2])
+      this.say([this.greetingId, this.greeting], [2, 2])
     }
     // Set up chat in response to messages
     this.meld.follow().subscribe(update => {
@@ -58,19 +51,21 @@ export class BoardBot {
   }
 
   private async maybeAnswer(update: MeldUpdate) {
-    const chatting = await this.isChatting();
-    const msg = update['@insert'].find(
-      subject => subject['@id'] != null
-        && !this.myIds.has(subject['@id']) // Not one of my own
-        && msgText(subject) // Has some text
-        && (chatting || this.addressedIn(msgText(subject))));
+    const msg = update['@insert'].filter( // Check not one of my own
+      subject => subject['@id'] != null && !this.myIds.has(subject['@id']))
+      .map(subject => ({ '@id': subject['@id'], text: msgText(subject) }))
+      .find(msg => msg && (this.chatting || this.addressedIn(msg.text)));
     if (msg != null) {
       // Pause for thought
-      await pause(Math.random() * 3 + 1);
-      const answer = await this.brain.answer(msgText(msg),
+      // await pause(Math.random() + 1);
+      const answer = await this.brain.respond(msg.text,
         this.index.topMessages(10, this.myIds));
-      if (answer != null)
-        await this.say(answer, [1, 1], true, msg['@id']);
+      if (answer.message != null)
+        await this.say(answer.message, [1, 1], true, msg['@id']);
+      if (answer.sentiment.includes(Sentiment.START_CHAT))
+        this.chatting = true;
+      if (answer.sentiment.includes(Sentiment.STOP_CHAT))
+        this.chatting = false;
     }
   }
 
@@ -79,12 +74,15 @@ export class BoardBot {
     return text.match(`(?:^|\\s)${this.name}(?:$|[^\\w])`);
   }
 
-  private get introId(): string {
+  private get greetingId(): string {
     return shortId(`${this.name}/intro`);
   }
 
-  private async isChatting() {
-    return (await this.meld.get(this.introId)) != null;
+  private get greeting() {
+    return selectRandom(
+      `Hey, it's ${this.name}, checking in.`,
+      `Hi, it's ${this.name}, still here.`,
+      `Hello! ${this.name} here, if you need me.`);
   }
 
   /**

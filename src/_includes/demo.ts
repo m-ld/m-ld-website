@@ -91,11 +91,11 @@ window.onload = function () {
 
       // Unleash the board's resident bot
       await new BoardBot(config.botName, welcomeId, meld, boardView.index, {
-        answer: async (message: string, topMessages: string[]) =>
+        respond: async (message: string, topMessages: string[]) =>
           (await fetch<Chat.Request, Chat.Response>('/api/chat', (token: string) => ({
             origin: window.location.origin,
             token, message, topMessages, botName: config.botName
-          }))).message
+          })))
       }).start(isNew);
     } catch (err) {
       showError(err);

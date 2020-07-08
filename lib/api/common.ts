@@ -5,12 +5,11 @@ import * as LOG from 'loglevel';
 import SetupFetch from '@zeit/fetch';
 import { FetchOptions } from '@zeit/fetch';
 import { URL } from 'url';
-import nlp from 'compromise';
 const fetch = SetupFetch();
 
 LOG.setLevel(process.env.LOG as LogLevelDesc || 'warn');
-export { LOG, nlp };
-  
+export { LOG };
+
 /**
  * Within a responder handler, internal server errors such as from a third-party
  * service can be just strings.
@@ -26,14 +25,14 @@ export function responder<Q extends AuthorisedRequest, R>(handler: (q: Q) => Pro
     }
   }
 }
-  
+
 async function authorise(req: AuthorisedRequest): Promise<void> {
   if (process.env.RECAPTCHA_SECRET == null)
     throw 'Bad lambda configuration';
 
   if (!req.token)
     throw new HttpError(400, 'No token in request!');
-  
+
   // Validate the token, see https://developers.google.com/recaptcha/docs/v3
   const siteverify = await fetchJson<{
     success: boolean, action: string, score: number, 'error-codes': string[]
@@ -84,6 +83,11 @@ export async function fetchJson<T extends object>(
   const url = new URL(urlString);
   Object.entries(params).forEach(([name, value]) =>
     url.searchParams.append(name, `${value}`));
+  return fetchJsonUrl(url, options);
+}
+
+export async function fetchJsonUrl<T extends object>(
+  url: URL, options: FetchOptions = { method: 'GET' }): Promise<T> {
   const res = await fetch(url.toString(), options);
   if (res.ok) {
     const json = await res.json();
@@ -109,8 +113,7 @@ export async function randomWord(params: WordParams | PartOfSpeech): Promise<str
     params = { includePartOfSpeech: params };
   const rtn = await fetchJson<{ word: string; }>(
     'http://api.wordnik.com/v4/words.json/randomWord', {
-    api_key: process.env.WORDNIK_API_KEY,
-      ...params
+    api_key: process.env.WORDNIK_API_KEY, ...params
   });
   // Only accept alphabet and hyphen characters
   return /^[a-z\-]+$/.test(rtn.word) ? rtn.word : randomWord(params);
