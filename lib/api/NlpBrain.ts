@@ -28,33 +28,30 @@ export class NlpBrain implements BotBrain {
       patterns: [`[#Expression] .? ${this.botName}`],
       respond: groups => ans(1, `${groups[0].text()}!`, Sentiment.START_CHAT)
     }, {
-      patterns: [`^[#Expression]$`, `${this.botName} are you there`, `is anyone .? there`],
+      patterns: [`^[#Expression]$`, `are you there`, `is anyone .? there`],
       respond: (groups, i) => ans(1, `${i == 0 ? groups[0].text() : 'Hi'}, I'm still here.`)
+    }, {
+      patterns: [`[(quiet|shush|shh|sh|stfu|shut)]`],
+      respond: groups => ans(1, `OK, ${groups[0].text()}-ing.`, Sentiment.STOP_CHAT)
+    }, {
+      patterns: [`(talk|chat)$`, `(talk|chat) about [#Noun]`],
+      respond: (groups, i) => ans(i + 1, i ? `text:word.json/${groups[0].text()}/topExample` :
+        `OK! What about?`, Sentiment.START_CHAT)
     }, {
       patterns: [`what is your name`],
       respond: () => ans(1, `My name is ${this.botName}.`)
+    }, {
+      patterns: [`your favourite [#Noun]`],
+      respond: groups => ans(1, `It's "words:word.json/${groups[0].text()}/relatedWords?useCanonical=true&relationshipTypes=synonym&limitPerRelationshipType=10"`)
+    }, {
+      patterns: [`^[#Noun]$`],
+      respond: groups => ans(1, `${trimPunctuation(groups[0].text())}?`)
     }, {
       patterns: [`I want (a|some)? [#Noun]`],
       respond: groups => ans(1, `You shall have ${groups[0].text()}.`)
     }, {
       patterns: [`would you like (some|any)? [#Noun]`, `do you want (some|any)? [#Noun]`],
       respond: groups => ans(1, `With ${groups[0].text()} I will rule the world!`)
-    }, {
-      patterns: [`${this.botName} * [(quiet|shush|shh|sh|stfu|shut)]`],
-      respond: groups => ans(1, `OK, ${groups[0].text()}-ing.`, Sentiment.STOP_CHAT)
-    }, {
-      patterns: [`${this.botName} * (talk|chat)`, `${this.botName} * (talk|chat) * [#Noun]`],
-      respond: (groups, i) => ans(i + 1, i ? `text:word.json/${groups[0].text()}/topExample` :
-        `OK! What about?`, Sentiment.START_CHAT)
-    }, {
-      patterns: [`(talk|chat) about [#Noun]`],
-      respond: groups => ans(1, `text:word.json/${groups[0].text()}/topExample`)
-    }, {
-      patterns: [`your favourite [#Noun]`],
-      respond: groups => ans(1, `It's "words:word.json/${groups[0].text()}/relatedWords?useCanonical=true&relationshipTypes=synonym&limitPerRelationshipType=10"`)
-    }, {
-      patterns: [`^[#Noun]$`],
-      respond: groups => ans(1, `${trimPunc(groups[0].text())}?`)
     }, {
       patterns: [`do you . (#Noun|#Verb)`],
       respond: () => ans(1, selectRandom('Yes!', 'No', 'Nope', 'Yep'))
@@ -81,9 +78,13 @@ export class NlpBrain implements BotBrain {
   }
 
   async respond(message: string, topMessages: string[]): Promise<Answer> {
+    // At the moment only use top messages to prevent repeats
     const previous = topMessages.filter(prev => prev !== message)
-      .map(prev => nlp(prev).normalize()).map(trimPunc);
-    return best(this.think(nlp(message), previous)) ?? { message: null, sentiment: [] };
+      // https://github.com/spencermountain/compromise/issues/768
+      .map(prev => (nlp(prev).normalize() as any).text()).map(trimPunctuation);
+    // Also remove a direct address from the message
+    const body = message.replace(new RegExp(`^\\s*${this.botName}[^\\w]+`), '');
+    return best(this.think(nlp(body), previous)) ?? { message: null, sentiment: [] };
   }
 
   think(doc: nlp.Document, previous: string[],
@@ -94,7 +95,7 @@ export class NlpBrain implements BotBrain {
         // this minibrain, to prevent repeated matches.
         const nowOmit = new Set(omit);
         nowOmit.delete(miniBrainIndex);
-        const perPattern = patterns.map((pattern, patternIndex) => {
+        const perPattern = flatDense<Thought>(patterns.map((pattern, patternIndex) => {
           const matching = doc.match(pattern); // Captures groups
           // Try not to repeat ourselves
           if (matching.found && !previous.some(prev => matching.has(prev))) {
@@ -107,10 +108,10 @@ export class NlpBrain implements BotBrain {
                   sentiment: answer.sentiment.concat(more.sentiment)
                 })));
           }
-        });
+        }));
         // Everyone's score increases by the number of patterns matched
-        return flatDense<Thought>(perPattern)
-          .map(thought => ({ ...thought, score: thought.score + perPattern.length }));
+        return perPattern.map(thought =>
+          ({ ...thought, score: thought.score + perPattern.length }));
       }));
   };
 }
@@ -137,6 +138,6 @@ function ans(score: number, ...mindStuff: (string | Sentiment)[]): Thought {
   }
 }
 
-function trimPunc(message: string): string {
+function trimPunctuation(message: string): string {
   return message.replace(/[\!?\.]/g, '');
 }

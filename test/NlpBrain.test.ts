@@ -34,6 +34,21 @@ it('answers an FAQ question', async () => {
   expect(answer).answerWith(/FAQ/);
 });
 
+it('answers with the correct FAQ', async () => {
+  const answer = await new NlpBrain('Fred', [{
+    question: 'About Security',
+    patterns: ['security'],
+    summary: 'Security matters!',
+    id: 'about-security'
+  }, {
+    question: 'About Needs',
+    patterns: ['needs'],
+    summary: 'My needs matter!',
+    id: 'about-needs'
+  }]).respond('meld security', []);
+  expect(answer).answerWith(/Security matters/);
+});
+
 it('answers a greeting', async () => {
   expect(await new NlpBrain('Fred', []).respond('Hi Fred', []))
     .answerWith(/Hi/);
@@ -60,6 +75,16 @@ it('knows when to chat', async () => {
 it('knows when to stop chat', async () => {
   expect(await new NlpBrain('Fred', []).respond('Fred please shush', []))
     .answerWith(Sentiment.STOP_CHAT);
+});
+
+it('questions a noun', async () => {
+  expect(await new NlpBrain('Fred', []).respond('potatoes', []))
+    .answerWith(/potatoes\?/);
+});
+
+it('questions an addressed noun', async () => {
+  expect(await new NlpBrain('Fred', []).respond('Fred, potatoes', []))
+    .answerWith(/potatoes\?/);
 });
 
 function expectMessageWith(answer: Answer, regex: RegExp) {
