@@ -39,7 +39,7 @@
     "websocket-stream": "^5.5.2"
   },
   "dependencies": {
-    "@m-ld/m-ld": "^0.1.14",
+    "@m-ld/m-ld": "^0.2.1",
     "@now/node": "^1.6.1",
     "@types/d3": "^5.7.2",
     "@types/grecaptcha": "^3.0.1",
