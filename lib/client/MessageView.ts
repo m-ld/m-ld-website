@@ -84,8 +84,9 @@ export class MessageView extends GroupView<MessageItem> {
     // for foreignObjects. We can detect by comparing the body to the box,
     // because they are locked to having the same width attributes.
     // https://bugs.chromium.org/p/chromium/issues/detail?id=976224
-    const zoomScale = node(this.box).getBoundingClientRect().width /
-      node(this.body).getBoundingClientRect().width;
+    const zoomScale = navigator.userAgent.indexOf("AppleWebKit") > -1 ?
+      node(this.box).getBoundingClientRect().width /
+      node(this.body).getBoundingClientRect().width : 1;
 
     const [minWidth, minHeight] = MIN_MESSAGE_SIZE;
     const width = Math.max(textRect.width * zoomScale, minWidth),
