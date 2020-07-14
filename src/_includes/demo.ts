@@ -2,7 +2,7 @@ import { BoardView } from '../../lib/client/BoardView';
 import { Message } from '../../lib/Message';
 import * as Level from 'level-js';
 import { clone, shortId, uuid } from '@m-ld/m-ld';
-import { Config, Chat } from '../../lib/dto';
+import { Config, Chat, AuthorisedRequest, ID_HEADER, DOMAIN_HEADER } from '../../lib/dto';
 import * as d3 from 'd3';
 import {
   showError, showCantDemo, getLocalDomains, addLocalDomain, initControls,
@@ -10,6 +10,8 @@ import {
 } from '../../lib/client/BoardControls';
 import { AblyRemotes } from '@m-ld/m-ld/dist/ably';
 import { BoardBot } from '../../lib/BoardBot';
+import * as LOG from 'loglevel';
+import * as remoteLog from 'loglevel-plugin-remote';
 
 window.onload = function () {
   Modernizr.on('indexeddb', () => {
@@ -25,11 +27,11 @@ window.onload = function () {
 
   async function start() {
     try {
-      let domain: string | null = document.location.hash.slice(1);
+      let domain: string = document.location.hash.slice(1) ?? '';
       const localDomains = getLocalDomains();
       if (domain === 'new' || (!domain && !localDomains.length)) {
         // Create a new domain
-        domain = null;
+        domain = '';
       } else if (!domain) {
         // Return to the last domain visited
         domain = localDomains[0];
@@ -37,11 +39,17 @@ window.onload = function () {
 
       // Get the configuration for the domain
       const config = await fetchConfig(domain, uuid());
+      config.ably.token = config.token;
       config.ably.authCallback = async (_, cb) =>
         fetchConfig(config['@domain'], config['@id'])
-          .then(reconfig => cb('', reconfig.ably.token))
+          .then(reconfig => {
+            remoteLog.setToken(reconfig.token);
+            config.token = reconfig.token;
+            return cb('', reconfig.token);
+          })
           .catch(err => cb(err, ''));
       domain = config['@domain'];
+      configureLogging(config);
       setLocalBotName(config.botName);
       history.replaceState(null, '', '#' + domain);
 
@@ -92,36 +100,51 @@ window.onload = function () {
       // Unleash the board's resident bot
       await new BoardBot(config.botName, welcomeId, meld, boardView.index, {
         respond: async (message: string, topMessages: string[]) =>
-          (await fetch<Chat.Request, Chat.Response>('/api/chat', (token: string) => ({
-            origin: window.location.origin,
-            token, message, topMessages, botName: config.botName
-          })))
+          (await fetch<Chat.Request, Chat.Response>('/api/chat', {
+            '@id': config['@id'], '@domain': domain,
+            origin: window.location.origin, token: config.token,
+            message, topMessages, botName: config.botName
+          }))
       }).start(isNew);
     } catch (err) {
       showError(err);
     }
 
-    async function fetchConfig(domain: string | null, id: string) {
-      return await fetch<Config.Request, Config.Response>('/api/config', (token: string) => ({
-        origin: window.location.origin,
-        '@id': id, '@domain': domain, token, botName: getLocalBotName()
-      }));
-    }
-
-    async function fetch<Q, S>(api: string, req: (token: string) => Q): Promise<S> {
+    async function fetchConfig(domain: string | '', id: string) {
       const site = process.env.RECAPTCHA_SITE;
       if (site == null)
         throw new Error('Bad configuration: reCAPTCHA site missing');
       const token = await grecaptcha.execute(site, { action: 'config' });
-      return await d3.json(api, {
-        method: 'post',
-        headers: { 'Content-type': 'application/json; charset=UTF-8' },
-        body: JSON.stringify(req(token) as Q)
-      }) as S;
+      return await fetch<Config.Request, Config.Response>('/api/config', {
+        origin: window.location.origin,
+        '@id': id, '@domain': domain, token, botName: getLocalBotName()
+      });
     }
   }
 }
 window.onhashchange = function () {
   location.reload();
 };
+
+function configureLogging(config: Config.Response) {
+  if (config.logLevel != null)
+    LOG.setLevel(config.logLevel);
+  remoteLog.apply(LOG, {
+    url: '/api/log',
+    token: config.token,
+    headers: {
+      [ID_HEADER]: config['@id'],
+      [DOMAIN_HEADER]: config['@domain']
+    },
+    format: remoteLog.json
+  });
+}
+
+async function fetch<Q extends AuthorisedRequest, S>(api: string, req: Q): Promise<S> {
+  return await d3.json(api, {
+    method: 'post',
+    headers: { 'Content-type': 'application/json; charset=UTF-8' },
+    body: JSON.stringify(req)
+  }) as S;
+}
 

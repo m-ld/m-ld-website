@@ -1,58 +1,155 @@
 import { NowResponse, NowRequest } from '@now/node'
-import { AuthorisedRequest } from '../dto';
+import { AuthorisedRequest, AuthType, ID_HEADER, DOMAIN_HEADER } from '../dto';
 import { LogLevelDesc } from 'loglevel';
-import * as LOG from 'loglevel';
+import { getLogger, LogLevelNumbers, LoggingMethod } from 'loglevel';
+import { createLogger, ILogzioLogger } from 'logzio-nodejs';
+import { JsonLog } from 'loglevel-plugin-remote';
+import { verify } from 'jsonwebtoken';
 import SetupFetch from '@zeit/fetch';
 import { FetchOptions } from '@zeit/fetch';
 import { URL } from 'url';
 const fetch = SetupFetch();
 
+class RemoteLog {
+  private logz: ILogzioLogger;
+  private anythingToSend = false;
+
+  constructor(jsonReq: AuthorisedRequest) {
+    if (process.env.LOGZ_KEY == null)
+      throw new HttpError(500, 'Bad lambda configuration');
+
+    this.logz = createLogger({
+      token: process.env.LOGZ_KEY,
+      protocol: 'https',
+      host: 'listener.logz.io',
+      type: 'm-ld',
+      extraFields: {
+        origin: jsonReq.origin,
+        '@id': jsonReq['@id'],
+        '@domain': jsonReq['@domain']
+      }
+    });
+  }
+
+  log(json: JsonLog) {
+    // https://github.com/logzio/logzio-nodejs/issues/82
+    this.logz.log(<any>json);
+    this.anythingToSend = true;
+  }
+
+  async close(): Promise<void> {
+    // Logz does a send round-trip even if there's nothing in the queue
+    if (this.anythingToSend)
+      return new Promise((resolve, reject) =>
+        this.logz.sendAndClose(err => err ? reject(err) : resolve()))
+  }
+}
+/**
+ * Global used for shipping to Logz.io within the context of a responder.
+ */
+let remoteLog: RemoteLog | null = null;
+/**
+ * Global used for lambda logging, produces JSON format and ships to Logz.io
+ * within the context of a responder.
+ */
+export const LOG = getLogger('lambda');
+const localFactory = LOG.methodFactory;
+LOG.methodFactory = function (
+  methodName: string, level: LogLevelNumbers, loggerName: string): LoggingMethod {
+  const localMethod = localFactory(methodName, level, loggerName);
+  return function (...message: any[]) {
+    // Log locally (to console)
+    localMethod.apply(this, message);
+    // And remotely (to Logz)
+    remoteLog?.log({
+      level: <any>Object.keys(LOG.levels)[level],
+      logger: loggerName,
+      message: `${message}`, // TODO: Interpolate
+      stacktrace: '', // TODO if necessary
+      timestamp: new Date().toISOString()
+    });
+  }
+}
 LOG.setLevel(process.env.LOG as LogLevelDesc || 'warn');
-export { LOG };
 
 /**
  * Within a responder handler, internal server errors such as from a third-party
  * service can be just strings.
  */
-export function responder<Q extends AuthorisedRequest, R>(handler: (q: Q) => Promise<R>) {
+export function responder<Q extends AuthorisedRequest, R>(
+  authType: AuthType, handler: (q: Q, remoteLog: RemoteLog) => Promise<R>) {
   return async (req: NowRequest, res: NowResponse) => {
     try {
+      // Note that prior to header processing, jsonReq may be partial
       const jsonReq = req.body as Q; // TODO: Request validation
-      await authorise(jsonReq);
-      res.json(await handler(jsonReq));
+      processHeaders(req, jsonReq);
+      remoteLog = new RemoteLog(jsonReq);
+      await authorise(jsonReq.token, authType);
+      const jsonRes = await handler(jsonReq, remoteLog);
+      // Vercel aggressively kills the lambda once the response is sent, so
+      // ensure that remote logs have been sent before responding
+      await remoteLog.close();
+      res.json(jsonRes);
     } catch (err) {
       HttpError.respond(res, err);
+    } finally {
+      remoteLog = null;
     }
   }
 }
 
-async function authorise(req: AuthorisedRequest): Promise<void> {
-  if (process.env.RECAPTCHA_SECRET == null)
-    throw 'Bad lambda configuration';
+function processHeaders(req: NowRequest, jsonReq: AuthorisedRequest) {
+  const headerToken = req.headers.authorization != null ?
+    /Bearer\s(.+)/.exec(req.headers.authorization)?.[1] : null;
+  if (headerToken != null)
+    jsonReq.token = headerToken;
+  ifHeader(req, ID_HEADER, value => jsonReq['@id'] = value);
+  ifHeader(req, DOMAIN_HEADER, value => jsonReq['@domain'] = value);
+}
 
-  if (!req.token)
-    throw new HttpError(400, 'No token in request!');
+function ifHeader(req: NowRequest, key: string, cb: (value: string) => void) {
+  const value = req.headers[key];
+  if (value != null && value.length)
+    cb(Array.isArray(value) ? value[0] : value);
+}
 
-  // Validate the token, see https://developers.google.com/recaptcha/docs/v3
-  const siteverify = await fetchJson<{
-    success: boolean, action: string, score: number, 'error-codes': string[]
-  }>(
-    'https://www.google.com/recaptcha/api/siteverify', {
-    secret: process.env.RECAPTCHA_SECRET,
-    response: req.token
-  }, { method: 'POST' });
+async function authorise(token: string, type: AuthType): Promise<void> {
+  switch (type) {
+    case 'jwt':
+      return new Promise((resolve, reject) => {
+        if (process.env.ABLY_KEY == null)
+          throw 'Bad lambda configuration';
+        const [, secret] = process.env.ABLY_KEY.split(':');
+        verify(token, secret, err => err ? reject(err) : resolve());
+      });
+    case 'recaptcha':
+      if (process.env.RECAPTCHA_SECRET == null)
+        throw 'Bad lambda configuration';
 
-  if (typeof siteverify === 'string')
-    throw `reCAPTCHA failed with ${siteverify}`;
+      if (!token)
+        throw new HttpError(400, 'No token in request!');
 
-  if (!siteverify.success)
-    throw `reCAPTCHA failed with ${siteverify['error-codes']}`;
+      // Validate the token, see https://developers.google.com/recaptcha/docs/v3
+      const siteverify = await fetchJson<{
+        success: boolean, action: string, score: number, 'error-codes': string[]
+      }>(
+        'https://www.google.com/recaptcha/api/siteverify', {
+        secret: process.env.RECAPTCHA_SECRET,
+        response: token
+      }, { method: 'POST' });
 
-  if (siteverify.action != 'config')
-    throw new HttpError(403, `reCAPTCHA action mismatch, received '${siteverify.action}'`);
+      if (typeof siteverify === 'string')
+        throw `reCAPTCHA failed with ${siteverify}`;
 
-  if (siteverify.score < 0.5)
-    throw new HttpError(403, `reCAPTCHA check failed`);
+      if (!siteverify.success)
+        throw `reCAPTCHA failed with ${siteverify['error-codes']}`;
+
+      if (siteverify.action != 'config')
+        throw new HttpError(403, `reCAPTCHA action mismatch, received '${siteverify.action}'`);
+
+      if (siteverify.score < 0.5)
+        throw new HttpError(403, `reCAPTCHA check failed`);
+  }
 }
 
 export class HttpError {

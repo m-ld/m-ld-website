@@ -6,7 +6,7 @@ import { URL } from 'url';
 
 const faqs: { [origin: string]: FaqIndexEntry[] } = {};
 
-export default responder<Chat.Request, Chat.Response>(async chatReq => {
+export default responder<Chat.Request, Chat.Response>('jwt', async chatReq => {
   // Load the faqs json from the origin, see src/faqs.11ty.js
   if (faqs[chatReq.origin] == null)
     faqs[chatReq.origin] = await fetchJson<FaqIndexEntry[]>(
