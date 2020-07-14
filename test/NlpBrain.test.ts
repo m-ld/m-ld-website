@@ -87,6 +87,19 @@ it('questions an addressed noun', async () => {
     .answerWith(/potatoes\?/);
 });
 
+it('does not repeat previous words', async () => {
+  expect(await new NlpBrain('Fred', []).respond('potatoes', ['potatoes']))
+    .toMatchObject({ message: null });
+});
+
+it('does not repeat previous phrases', async () => {
+  const prevAnswer = await new NlpBrain('Fred', []).respond('Fred are you there', []);
+  if (!prevAnswer.message)
+    fail();
+  expect(await new NlpBrain('Fred', []).respond('Fred are you there', [prevAnswer.message]))
+    .toMatchObject({ message: null });
+});
+
 function expectMessageWith(answer: Answer, regex: RegExp) {
   if (answer.message == null)
     fail();
