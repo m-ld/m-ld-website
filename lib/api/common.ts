@@ -8,7 +8,7 @@ import { verify } from 'jsonwebtoken';
 import SetupFetch from '@zeit/fetch';
 import { FetchOptions } from '@zeit/fetch';
 import { URL } from 'url';
-const fetch = SetupFetch();
+export const fetch = SetupFetch();
 
 class RemoteLog {
   private logz: ILogzioLogger;
@@ -192,7 +192,7 @@ export async function fetchJsonUrl<T extends object>(
       throw `No JSON returned from ${url}`;
     return json;
   } else {
-    throw `Fetch from ${url} failed with ${res.statusText}`
+    throw `Fetch from ${url} failed with ${res.status}: ${res.statusText}`;
   }
 }
 

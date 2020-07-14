@@ -1,20 +1,41 @@
 import { Config } from '../lib/dto';
-import { LOG, randomWord, responder } from '../lib/api/common';
+import { LOG, randomWord, responder, fetch } from '../lib/api/common';
 import nlp from 'compromise';
 import { sign } from 'jsonwebtoken';
 
 export default responder<Config.Request, Config.Response>('recaptcha', async configReq => {
   const { domain, genesis } = await newDomain(configReq['@domain']);
-  // Tokens are Ably JWTs
-  const token = await ablyToken(domain, configReq['@id']);
-  return {
+  const config: Partial<Config.Response> = {
     '@id': configReq['@id'],
-    '@domain': domain, genesis,
-    ably: { token }, token,
-    botName: await newBotName(configReq.botName),
+    '@domain': domain,
+    genesis,
     logLevel: LOG.getLevel()
+  };
+  if (!genesis) {
+    // Try to load a custom config for this domain
+    Object.assign(config, await loadCustomConfig(domain));
   }
+  // Tokens are Ably JWTs - used for both our config and Ably's
+  config.token = await ablyToken(domain, configReq['@id']);
+  config.ably = Object.assign(config.ably ?? {}, { token: config.token });
+  config.botName = config.botName ?? await newBotName(configReq.botName);
+  // We're now sure we have everything, even if Typescript isn't
+  return <Config.Response>config;
 });
+
+/**
+ * Load custom config for the domain from https://github.com/m-ld/message-board-demo.
+ * Failure-tolerant but will warn if error status is other than Not Found.
+ */
+async function loadCustomConfig(domain: string): Promise<object> {
+  const res = await fetch(
+    `https://raw.githubusercontent.com/m-ld/message-board-demo/master/config/${domain}.json`);
+  if (res.ok)
+    return res.json();
+  else if (res.status !== 404)
+    LOG.warn(`Fetch config failed with ${res.status}: ${res.statusText}`);
+  return {};
+}
 
 /**
  * Get a new domain name if none is specified in the request
@@ -43,7 +64,7 @@ async function ablyToken(domain: string, clientId: string): Promise<string> {
     }, secret, {
       keyid: keyName,
       expiresIn: '10m'
-    }, (err, token) => err ? reject(err): resolve(token));
+    }, (err, token) => err ? reject(err) : resolve(token));
   });
 }
 
