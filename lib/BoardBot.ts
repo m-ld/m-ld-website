@@ -25,7 +25,7 @@ const FIRST_GREETING: Topic = {
 const RETURN_GREETING: Topic = {
   text: bot => selectRandom(
     `Hey, it's ${bot.name}, checking in. I'm a bot.`,
-    `Hi, it's bot ${bot.name}, still here.`,
+    `Hi, it's bot ${bot.name}, I'm here.`,
     `Hello! ${bot.name} here, a bot, if you need me.`),
   size: [1.5, 1]
 };

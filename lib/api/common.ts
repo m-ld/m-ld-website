@@ -80,12 +80,10 @@ export function responder<Q extends AuthorisedRequest, R>(
   authType: AuthType, handler: (q: Q, remoteLog: RemoteLog) => Promise<R>) {
   return async (req: NowRequest, res: NowResponse) => {
     try {
-      // Note that prior to header processing, jsonReq may be partial
-      const jsonReq = req.body as Q; // TODO: Request validation
-      processHeaders(req, jsonReq);
-      remoteLog = new RemoteLog(jsonReq);
-      await authorise(jsonReq.token, authType);
-      const jsonRes = await handler(jsonReq, remoteLog);
+      const authReq = getAuthorisedRequest<Q>(req);
+      remoteLog = new RemoteLog(authReq);
+      await authorise(authReq.token, authType);
+      const jsonRes = await handler(authReq, remoteLog);
       // Vercel aggressively kills the lambda once the response is sent, so
       // ensure that remote logs have been sent before responding
       await remoteLog.close();
@@ -98,13 +96,27 @@ export function responder<Q extends AuthorisedRequest, R>(
   }
 }
 
-function processHeaders(req: NowRequest, jsonReq: AuthorisedRequest) {
+function getAuthorisedRequest<Q extends AuthorisedRequest>(req: NowRequest): Q {
+  const jsonReq: Partial<Q> = req.body;
   const headerToken = req.headers.authorization != null ?
     /Bearer\s(.+)/.exec(req.headers.authorization)?.[1] : null;
   if (headerToken != null)
     jsonReq.token = headerToken;
   ifHeader(req, ID_HEADER, value => jsonReq['@id'] = value);
   ifHeader(req, DOMAIN_HEADER, value => jsonReq['@domain'] = value);
+  ifHeader(req, 'origin', value => jsonReq.origin = jsonReq.origin ?? value);
+  if (hasAuthorisation(jsonReq))
+    return jsonReq;
+  else
+    throw new HttpError(401, 'Missing authorised request fields');
+}
+
+function hasAuthorisation<Q extends AuthorisedRequest>(jsonReq: Partial<Q>): jsonReq is Q {
+   // TODO: Validate other Q fields
+  return jsonReq['@id'] != null &&
+    jsonReq['@domain'] != null &&
+    jsonReq.token != null &&
+    jsonReq.origin != null;
 }
 
 function ifHeader(req: NowRequest, key: string, cb: (value: string) => void) {

@@ -29,7 +29,10 @@ export namespace Config {
      * Blank domain asks the config service for a new domain
      */
     '@domain': string | '';
-    botName: string | null;
+    /**
+     * Domain active bot name, or false if none yet exists
+     */
+    botName: string | false;
     /**
      * Google reCAPTCHA token
      */
@@ -37,7 +40,10 @@ export namespace Config {
   }
 
   export type Response = MeldAblyConfig & {
-    botName: string;
+    /**
+     * Domain active bot, or `false` to disable the bot
+     */
+    botName: string | false;
     /**
      * JWT token, must be Ably-compatible
      * @see https://www.ably.io/documentation/core-features/authentication#ably-jwt

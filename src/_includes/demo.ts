@@ -4,9 +4,9 @@ import * as Level from 'level-js';
 import { clone, shortId, uuid } from '@m-ld/m-ld';
 import { Config, Chat, AuthorisedRequest, ID_HEADER, DOMAIN_HEADER } from '../../lib/dto';
 import * as d3 from 'd3';
+import { BoardLocal } from '../../lib/client/BoardLocal'
 import {
-  showError, showCantDemo, getLocalDomains, addLocalDomain, initControls,
-  showWarning, getLocalBotName, setLocalBotName
+  showError, showCantDemo, initControls, showWarning
 } from '../../lib/client/BoardControls';
 import { AblyRemotes } from '@m-ld/m-ld/dist/ably';
 import { BoardBot } from '../../lib/BoardBot';
@@ -23,18 +23,18 @@ window.onload = function () {
       grecaptcha.ready(start);
   });
 
-  initControls();
+  const local = new BoardLocal();
+  initControls(local);
 
   async function start() {
     try {
       let domain: string = document.location.hash.slice(1) ?? '';
-      const localDomains = getLocalDomains();
-      if (domain === 'new' || (!domain && !localDomains.length)) {
+      if (domain === 'new' || (!domain && !local.domains.length)) {
         // Create a new domain
         domain = '';
       } else if (!domain) {
         // Return to the last domain visited
-        domain = localDomains[0];
+        domain = local.domains[0];
       }
 
       // Get the configuration for the domain
@@ -50,7 +50,8 @@ window.onload = function () {
           .catch(err => cb(err, ''));
       domain = config['@domain'];
       configureLogging(config);
-      setLocalBotName(config.botName);
+      const botName = config.botName;
+      local.setBotName(domain, botName);
       history.replaceState(null, '', '#' + domain);
 
       // Initialise the m-ld clone
@@ -73,7 +74,7 @@ window.onload = function () {
       window.addEventListener('beforeunload', () => statusSub.unsubscribe());
 
       // Add the domain to the local list of domains
-      addLocalDomain(domain);
+      local.addDomain(domain);
 
       // Unshow the loading progress
       d3.select('#loading').classed('is-active', false);
@@ -98,13 +99,14 @@ window.onload = function () {
       }
 
       // Unleash the board's resident bot
-      await new BoardBot(config.botName, welcomeId, meld, boardView.index, {
-        respond: async (message: string, topMessages: string[]) =>
-          (await fetch<Chat.Request, Chat.Response>('/api/chat', {
-            '@id': config['@id'], '@domain': domain,
-            origin: window.location.origin, token: config.token,
-            message, topMessages, botName: config.botName
-          }))
+      if (botName)
+        await new BoardBot(botName, welcomeId, meld, boardView.index, {
+          respond: async (message: string, topMessages: string[]) =>
+            (await fetch<Chat.Request, Chat.Response>('/api/chat', {
+              '@id': config['@id'], '@domain': domain,
+              origin: window.location.origin, token: config.token,
+              message, topMessages, botName
+            }))
       }).start(isNew);
     } catch (err) {
       showError(err);
@@ -117,7 +119,7 @@ window.onload = function () {
       const token = await grecaptcha.execute(site, { action: 'config' });
       return await fetch<Config.Request, Config.Response>('/api/config', {
         origin: window.location.origin,
-        '@id': id, '@domain': domain, token, botName: getLocalBotName()
+        '@id': id, '@domain': domain, token, botName: local.getBotName(domain)
       });
     }
   }

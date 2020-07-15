@@ -18,7 +18,14 @@ export default responder<Config.Request, Config.Response>('recaptcha', async con
   // Tokens are Ably JWTs - used for both our config and Ably's
   config.token = await ablyToken(domain, configReq['@id']);
   config.ably = Object.assign(config.ably ?? {}, { token: config.token });
-  config.botName = config.botName ?? await newBotName(configReq.botName);
+  // Check if bot is explicitly disabled in the custom config
+  if (config.botName !== false) {
+    // Bot name is browser-specific, so just look for truthiness
+    if (config.botName != null) // Every browser has a bot!
+      config.botName = configReq.botName || await newBotName();
+    else // New bot if genesis, otherwise keep whatever we had before
+      config.botName = genesis ? await newBotName() : configReq.botName;
+  }
   // We're now sure we have everything, even if Typescript isn't
   return <Config.Response>config;
 });
@@ -71,6 +78,6 @@ async function ablyToken(domain: string, clientId: string): Promise<string> {
 /**
  * Get a Bot name if none is specified in the request
  */
-async function newBotName(botName: string | null) {
-  return botName ?? nlp(await randomWord('proper-noun')).toTitleCase().text();
+async function newBotName() {
+  return nlp(await randomWord('proper-noun')).toTitleCase().text();
 }
