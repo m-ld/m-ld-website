@@ -30,6 +30,17 @@ To run locally:
 Note that `NPM_TOKEN` in [.env.build](./.env.build) is empty to pass through to
 your global npm token.
 
+## logging
+Logging can be activated for local demo boards by adding e.g. `LOG=DEBUG` to a
+`.env` file in the project root (also used for secrets, see above).
+
+Any board in the world can have logging activated (or any other config changes)
+by adding a JSON configuration file to the config folder on the public
+m-ld/message-board-demo repo. This file is used as the basis for a board's
+`MeldAblyConfig`.
+
+Logs are shipped to the _m-ld.io Ltd_ account at Logz.io.
+
 ## browser compatibility
 Browser compatibility is checked with Modernizr, using a generated build
 [modernizr-custom.js](src/modernizr-custom.js). See the file header comment

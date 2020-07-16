@@ -87,7 +87,7 @@ export abstract class InfiniteView {
     const { x, y, width: cw, height: ch } = this.contentExtent;
     const [ww, wh] = windowSize(), pw = ww / wh;
     const w = Math.max(ww, cw), h = Math.max(wh, ch), p = w / h;
-    const vBw = pw > p ? w * pw / p : w, vBh = pw > p ? h : h * pw / p;
+    const vBw = pw > p ? w * pw / p : w, vBh = pw > p ? h : h * p / pw;
     this.setViewBox([x - (vBw - cw) / 2, y - (vBh - ch) / 2], [vBw, vBh]);
     return cw > ww;
   }
