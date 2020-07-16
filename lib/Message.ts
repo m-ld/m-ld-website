@@ -1,6 +1,6 @@
-import { Subject, Reference } from '@m-ld/m-ld';
+import { Reference } from '@m-ld/m-ld';
 
-export interface Message extends Subject {
+export interface Message {
   '@id': string;
   '@type': 'Message';
   text: string;

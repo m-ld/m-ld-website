@@ -2,7 +2,15 @@ import * as d3 from 'd3';
 
 export type SVG = d3.Selection<SVGSVGElement, unknown, HTMLElement, unknown>;
 
-export type d3Selection = d3.Selection<d3.BaseType, unknown, d3.BaseType, unknown>;
+export type d3Selection<E extends d3.BaseType = d3.BaseType, D = unknown> =
+  d3.Selection<E, D, d3.BaseType, unknown>;
+
+export function node<E extends d3.BaseType>(selection: d3Selection<E>): E {
+  const node = selection.node();
+  if (node == null)
+    throw new Error('Node expected');
+  return node;
+}
 
 export function setAttr(selection: d3Selection, attrs: object) {
   Object.entries(attrs).forEach(([key, value]) => {
@@ -17,6 +25,8 @@ export function getAttr<T>(selection: d3Selection,
 
 export function svgPoint(el: SVGElement, [x, y]: [number, number]): SVGPoint {
   const svg = el instanceof SVGSVGElement ? el : el.ownerSVGElement;
+  if (svg == null)
+    throw new Error('SVG ancestor expected');
   const pt = svg.createSVGPoint();
   pt.x = x;
   pt.y = y;
@@ -30,10 +40,6 @@ export function svgRound(amount: number, decimals: number = 2) {
 export function svgParent(el: SVGElement): SVGElement {
   if (el.parentElement instanceof SVGElement)
     return el.parentElement;
-}
-
-export function idNotInFilter(ids: string[]): (this: Element) => boolean {
-  return function (this: Element) {
-    return !ids.includes(this.id);
-  };
+  else
+    throw new Error('SVG parent expected');
 }

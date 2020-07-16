@@ -1,6 +1,6 @@
 import * as d3 from 'd3';
-import * as local from 'local-storage';
 import * as Level from 'level-js';
+import { BoardLocal } from './BoardLocal';
 
 export function showCantDemo(missing: string[]) {
   d3.select('#cant-demo').classed('is-active', true)
@@ -35,18 +35,7 @@ export function showHelp() {
   d3.select('#help').classed('is-hidden', !help.classed('is-hidden')).raise();
 }
 
-export function getLocalDomains(): string[] {
-  return local.get<string[]>('m-ld.domains') ?? [];
-}
-
-export function addLocalDomain(domain: string) {
-  let localDomains = getLocalDomains();
-  localDomains = localDomains.filter(d => d !== domain);
-  localDomains.unshift(domain);
-  local.set<string[]>('m-ld.domains', localDomains);
-}
-
-export function initControls() {
+export function initControls(local: BoardLocal) {
   // Un-show buttons
   d3.select('#warning .delete').on('click', hideWarning);
   d3.select('#help .delete').on('click', () => showHelp());
@@ -65,9 +54,8 @@ export function initControls() {
   d3.select('#show-help').on('click', () => showHelp());
 
   function updateBoardPicks() {
-    const localDomains = local.get<string[]>('m-ld.domains') ?? [];
     const boardPicks = boardPicker.select('#boards')
-      .selectAll('.pick-board').data(localDomains)
+      .selectAll('.pick-board').data(local.domains)
       .join('tr').classed('pick-board', true)
       .html(''); // Remove previous content
     boardPicks
@@ -83,13 +71,13 @@ export function initControls() {
   }
 
   function deleteDomain(domain: string) {
-    const localDomains = local.get<string[]>('m-ld.domains') ?? [];
+    const localDomains = local.domains;
     // Level typing is wrong - destroy is a static method
     (<any>Level).destroy(domain, (err: any) => {
       if (err) {
         showError(err);
       } else {
-        local.set<string[]>('m-ld.domains', localDomains.filter(d => d !== domain));
+        local.removeDomain(domain);
         showWarning(`Board ${domain} has been removed from this browser.`);
         updateBoardPicks();
       }

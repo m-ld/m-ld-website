@@ -1,6 +1,6 @@
 import * as d3 from 'd3';
-import { setAttr, svgPoint, SVG } from './util';
-import { Rectangle } from './Shapes';
+import { setAttr, svgPoint, SVG, node } from './d3Util';
+import { Rectangle } from '../Shapes';
 
 export abstract class InfiniteView {
   readonly svg: SVG;
@@ -53,7 +53,10 @@ export abstract class InfiniteView {
   }
 
   clientToSvg([x, y]: [number, number]): [number, number] {
-    const pt = svgPoint(this.svg.node(), [x, y]).matrixTransform(this.svg.node().getScreenCTM().inverse());
+    const nodeScreenCtm = node(this.svg).getScreenCTM();
+    if (nodeScreenCtm == null)
+      throw new Error('Screen CTM expected for SVG');
+    const pt = svgPoint(node(this.svg), [x, y]).matrixTransform(nodeScreenCtm.inverse());
     return [pt.x, pt.y];
   }
 
@@ -78,7 +81,7 @@ export abstract class InfiniteView {
     this.setViewBox([vBx - (px * dx), vBy - (py * dy)], [vBw + dx, vBh + dy]);
   }
 
-  zoomToExtent() {
+  zoomToExtent(): boolean {
     // We want the viewbox to contain the content extent, but not more
     // zoomed than 100% (i.e. window size).
     const { x, y, width: cw, height: ch } = this.contentExtent;
@@ -86,6 +89,7 @@ export abstract class InfiniteView {
     const w = Math.max(ww, cw), h = Math.max(wh, ch), p = w / h;
     const vBw = pw > p ? w * pw / p : w, vBh = pw > p ? h : h * pw / p;
     this.setViewBox([x - (vBw - cw) / 2, y - (vBh - ch) / 2], [vBw, vBh]);
+    return cw > ww;
   }
 
   protected abstract get contentExtent(): DOMRect;

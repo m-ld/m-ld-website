@@ -1,4 +1,5 @@
 import { checkIntersection, colinearPointWithinSegment } from 'line-intersect';
+import { BBox } from 'rbush';
 const InfiniteLine = require('line2');
 
 export interface Shape {
@@ -40,7 +41,7 @@ export class Circle implements Shape {
   }
 }
 
-export class Rectangle implements Shape {
+export class Rectangle implements Shape, BBox {
   readonly x: number;
   readonly y: number;
   readonly width: number;
@@ -51,6 +52,10 @@ export class Rectangle implements Shape {
     this.y = y;
     this.width = width;
     this.height = height;
+  }
+
+  get position(): [number, number] {
+    return [this.x, this.y];
   }
 
   get size(): [number, number] {
@@ -70,7 +75,13 @@ export class Rectangle implements Shape {
   }
 
   intersect(line: Line): [number, number][] {
-    return this.sides.map(side => side.intersect(line)).filter(point => point);
+    const points: [number, number][] = [];
+    this.sides.forEach(side => {
+      const intersect = side.intersect(line);
+      if (intersect != null)
+        points.push(intersect);
+    })
+    return points;
   }
 
   intersects(that: Rectangle): boolean {
@@ -103,19 +114,35 @@ export class Rectangle implements Shape {
   }
 
   get bottomLeft(): [number, number] {
-    return [this.x, this.y + this.height];
+    return [this.x, this.maxY];
   }
 
   get bottomRight(): [number, number] {
-    return [this.x + this.width, this.y + this.height];
+    return [this.maxX, this.maxY];
   }
 
   get topRight(): [number, number] {
-    return [this.x + this.width, this.y];
+    return [this.maxX, this.y];
   }
 
   get points(): [number, number][] {
     return [this.topLeft, this.topRight, this.bottomRight, this.bottomLeft];
+  }
+
+  get minX(): number {
+    return this.x;
+  }
+
+  get minY(): number {
+    return this.y;
+  }
+
+  get maxX(): number {
+    return this.x + this.width;
+  }
+
+  get maxY(): number {
+    return this.y + this.height;
   }
 
   expand(pixels: number): Rectangle {
@@ -145,8 +172,8 @@ export class Line {
     return Math.sqrt(Math.pow(this.x2 - this.x1, 2) + Math.pow(this.y2 - this.y1, 2));
   }
 
-  intersect(that: Line): [number, number] {
+  intersect(that: Line): [number, number] | null {
     let i = checkIntersection(this.x1, this.y1, this.x2, this.y2, that.x1, that.y1, that.x2, that.y2);
-    return i.type == 'intersecting' ? [i.point.x, i.point.y] : null;
+    return i.type == 'intersecting' && i.point != null ? [i.point.x, i.point.y] : null;
   }
 }

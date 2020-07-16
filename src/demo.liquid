@@ -23,7 +23,7 @@
   </div>
   <svg id="board">
     <defs>
-      <g id="board-message-template">
+      <g id="board-message-template" cursor="default">
         <!-- box and body must be locked to the same size, used to detect zoom, see
         MessageView#update -->
         <rect class="board-message-box" rx="10" width="10" height="10" />
@@ -51,8 +51,8 @@
     <g id="link-lines"></g>
     <g id="messages"></g>
   </svg>
-  {% include 'popup.html', id: 'cant-demo', content: 'cant-demo.html' %}
-  {% include 'popup.html', id: 'error', content: 'error.html' %}
+  {% include 'popup.liquid', id: 'cant-demo', content: 'cant-demo.html' %}
+  {% include 'popup.liquid', id: 'error', content: 'error.html' %}
   <div id="warning" class="notification is-warning is-hidden">
     <button class="delete"></button>
     <p class="warning-text">Something went wrong</p>
@@ -110,21 +110,32 @@
         <span class="how">drag the background</span>
       </div>
       <div>Move a message:
-        <span class="how">drag the {% include 'buttons/button-ref.svg', button:
-        'buttons/move-button.svg' %} button</span>
+        <span class="how">drag {% include 'buttons/button-ref.svg', button:
+        'buttons/move-button.svg' %}</span>
+      </div>
+      <div>Add a message:
+        <span class="how">click {% include
+        'buttons/button-ref.svg', button: 'buttons/add-button.svg' %}</span>
       </div>
       <div>Add a message at a specific place:
-        <span class="how">drag and release the {% include
-        'buttons/button-ref.svg', button: 'buttons/add-button.svg' %}
-        button</span>
+        <span class="how">drag and release {% include
+        'buttons/button-ref.svg', button: 'buttons/add-button.svg' %}</span>
       </div>
       <div>Link to another message:
-        <span class="how">drag the {% include 'buttons/button-ref.svg', button:
-        'buttons/add-button.svg' %} button to it</span>
+        <span class="how">drag {% include 'buttons/button-ref.svg', button:
+        'buttons/add-button.svg' %} to it</span>
+      </div>
+      <div>Remove a message:
+        <span class="how">click {% include
+        'buttons/button-ref.svg', button: 'buttons/close-button.svg' %}</span>
+      </div>
+      <div>Remove linked messages:
+        <span class="how"><span class="tag">Shift</span>+{% include
+        'buttons/button-ref.svg', button: 'buttons/close-button.svg' %}</span>
       </div>
       <div>Remove a link:
-        <span class="how">drag the {% include 'buttons/button-ref.svg', button:
-        'buttons/close-button.svg' %} button to the linked message</span>
+        <span class="how">drag {% include 'buttons/button-ref.svg', button:
+        'buttons/close-button.svg' %} to the linked message</span>
       </div>
       <div>Commit text change:
         <span class="how"><span class="tag">Enter</span></span>
@@ -132,12 +143,19 @@
       <div>New text line:
         <span class="how"><span class="tag">Shift</span>+<span class="tag">Enter</span></span>
       </div>
-    </div>
   </article>
+  <div id="smallprint">
+    Content that you add to this message board is not stored by m-ld.io Ltd.
+    Internet users can view and edit the board content, without restriction, by
+    navigating to <samp id="board-href"></samp>. This page is for demonstration
+    purposes only and is not intended for sharing private data.
+    See <samp>m-ld.io/privacy</samp>. To discuss your use-case for <b>m-ld</b>
+    please email <samp>info@m-ld.io</samp>.
+  </div>
 </body>
 {% else %}
 <body>
-  {% include 'popup.html', id: 'no-demo', classes: 'is-active', content: 'no-demo.html' %}
+  {% include 'popup.liquid', id: 'no-demo', classes: 'is-active', content: 'no-demo.html' %}
 </body>
 {% endif %}
 

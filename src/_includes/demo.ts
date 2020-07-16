@@ -1,11 +1,17 @@
-import { BoardView } from './lib/BoardView';
-import { Message } from './lib/Message';
+import { BoardView } from '../../lib/client/BoardView';
+import { Message } from '../../lib/Message';
 import * as Level from 'level-js';
-import { clone, Update, shortId, uuid } from '@m-ld/m-ld';
-import { Config } from './config';
+import { clone, shortId, uuid } from '@m-ld/m-ld';
+import { Config, Chat, AuthorisedRequest, ID_HEADER, DOMAIN_HEADER } from '../../lib/dto';
 import * as d3 from 'd3';
-import { showError, showCantDemo, getLocalDomains, addLocalDomain, initControls, showWarning } from './lib/BoardControls';
+import { BoardLocal } from '../../lib/client/BoardLocal'
+import {
+  showError, showCantDemo, initControls, showWarning
+} from '../../lib/client/BoardControls';
 import { AblyRemotes } from '@m-ld/m-ld/dist/ably';
+import { BoardBot } from '../../lib/BoardBot';
+import * as LOG from 'loglevel';
+import * as remoteLog from 'loglevel-plugin-remote';
 
 window.onload = function () {
   Modernizr.on('indexeddb', () => {
@@ -17,28 +23,36 @@ window.onload = function () {
       grecaptcha.ready(start);
   });
 
-  initControls();
+  const local = new BoardLocal();
+  initControls(local);
 
   async function start() {
     try {
-      let domain = document.location.hash.slice(1);
-      const localDomains = getLocalDomains();
-      if (domain === 'new' || (!domain && !localDomains.length)) {
+      let domain: string = document.location.hash.slice(1) ?? '';
+      if (domain === 'new' || (!domain && !local.domains.length)) {
         // Create a new domain
-        domain = null;
+        domain = '';
       } else if (!domain) {
         // Return to the last domain visited
-        domain = localDomains[0];
+        domain = local.domains[0];
       }
 
       // Get the configuration for the domain
       const config = await fetchConfig(domain, uuid());
+      config.ably.token = config.token;
       config.ably.authCallback = async (_, cb) =>
         fetchConfig(config['@domain'], config['@id'])
-          .then(reconfig => cb(null, reconfig.ably.token))
-          .catch(err => cb(err, null));
+          .then(reconfig => {
+            remoteLog.setToken(reconfig.token);
+            config.token = reconfig.token;
+            return cb('', reconfig.token);
+          })
+          .catch(err => cb(err, ''));
       domain = config['@domain'];
-      history.replaceState(null, null, '#' + domain);
+      configureLogging(config);
+      const botName = config.botName;
+      local.setBotName(domain, botName);
+      history.replaceState(null, '', '#' + domain);
 
       // Initialise the m-ld clone
       const meld = await clone(Level(domain), AblyRemotes, config);
@@ -60,71 +74,79 @@ window.onload = function () {
       window.addEventListener('beforeunload', () => statusSub.unsubscribe());
 
       // Add the domain to the local list of domains
-      addLocalDomain(domain);
+      local.addDomain(domain);
 
       // Unshow the loading progress
       d3.select('#loading').classed('is-active', false);
+      d3.select('#board-href').text(window.location.href);
 
       // The welcome message uses the id of the domain - it can't be deleted
       const welcomeId = shortId(domain);
 
       // Create the board UI View
-      new BoardView('#board', meld, welcomeId);
+      const boardView = new BoardView('#board', meld, welcomeId);
 
-      // Check if we've already said Hello
-      const welcome = await meld.get(welcomeId).toPromise();
-      if (!welcome) {
-        meld.transact<Message>({
+      // Add the welcome message if not already there
+      const isNew = (await meld.get(welcomeId)) == null;
+      if (isNew) {
+        await meld.transact<Message>({
           '@id': welcomeId,
           '@type': 'Message',
           text: `Welcome to ${domain}!`,
           x: 200, y: 100,
           linkTo: []
         });
-
-        await new Promise(res => setTimeout(res, 2000));
-
-        meld.transact<Update>({
-          '@insert': [<Message>{
-            '@id': 'thisIs',
-            '@type': 'Message',
-            text: 'This is your new collaborative message board.',
-            x: 250, y: 200,
-            linkTo: []
-          }, <Partial<Message>>{
-            '@id': welcomeId, linkTo: [{ '@id': 'thisIs' }]
-          }]
-        });
-
-        await new Promise(res => setTimeout(res, 2000));
-
-        meld.transact<Update>({
-          '@insert': [<Message>{
-            '@id': 'weUse',
-            '@type': 'Message',
-            text: "We'll use it to demonstrate how m-ld works.",
-            x: 300, y: 300,
-            linkTo: []
-          }, <Partial<Message>>{
-            '@id': 'thisIs', linkTo: [{ '@id': 'weUse' }]
-          }]
-        });
       }
+
+      // Unleash the board's resident bot
+      if (botName)
+        await new BoardBot(botName, welcomeId, meld, boardView.index, {
+          respond: async (message: string, topMessages: string[]) =>
+            (await fetch<Chat.Request, Chat.Response>('/api/chat', {
+              '@id': config['@id'], '@domain': domain,
+              origin: window.location.origin, token: config.token,
+              message, topMessages, botName
+            }))
+      }).start(isNew);
     } catch (err) {
       showError(err);
     }
 
-    async function fetchConfig(domain: string, id: string) {
-      const token = await grecaptcha.execute(process.env.RECAPTCHA_SITE, { action: 'config' });
-      return await d3.json('/api/config', {
-        method: 'post',
-        headers: { 'Content-type': 'application/json; charset=UTF-8' },
-        body: JSON.stringify({ '@id': id, '@domain': domain, token } as Config.Request)
-      }) as Config.Response;
+    async function fetchConfig(domain: string | '', id: string) {
+      const site = process.env.RECAPTCHA_SITE;
+      if (site == null)
+        throw new Error('Bad configuration: reCAPTCHA site missing');
+      const token = await grecaptcha.execute(site, { action: 'config' });
+      return await fetch<Config.Request, Config.Response>('/api/config', {
+        origin: window.location.origin,
+        '@id': id, '@domain': domain, token, botName: local.getBotName(domain)
+      });
     }
   }
 }
 window.onhashchange = function () {
   location.reload();
 };
+
+function configureLogging(config: Config.Response) {
+  if (config.logLevel != null)
+    LOG.setLevel(config.logLevel);
+  remoteLog.apply(LOG, {
+    url: '/api/log',
+    token: config.token,
+    headers: {
+      [ID_HEADER]: config['@id'],
+      [DOMAIN_HEADER]: config['@domain']
+    },
+    format: remoteLog.json
+  });
+}
+
+async function fetch<Q extends AuthorisedRequest, S>(api: string, req: Q): Promise<S> {
+  return await d3.json(api, {
+    method: 'post',
+    headers: { 'Content-type': 'application/json; charset=UTF-8' },
+    body: JSON.stringify(req)
+  }) as S;
+}
 

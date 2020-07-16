@@ -8,6 +8,7 @@
   "env": {
     "RECAPTCHA_SECRET": "@recaptcha-secret",
     "WORDNIK_API_KEY": "@wordnik-api-key",
-    "ABLY_KEY": "@ably-key"
+    "ABLY_KEY": "@ably-key",
+    "LOGZ_KEY": "@logz-key"
   }
 }
