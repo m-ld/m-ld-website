@@ -11,7 +11,6 @@ export default responder<Chat.Request, Chat.Response>('jwt', async chatReq => {
   if (faqs[chatReq.origin] == null)
     faqs[chatReq.origin] = await fetchJson<FaqIndexEntry[]>(
       new URL('faqs.json', chatReq.origin).toString());
-
   const answer = await new NlpBrain(chatReq.botName, faqs[chatReq.origin])
     .respond(chatReq.message, chatReq.topMessages);
   if (answer.message != null)

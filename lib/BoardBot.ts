@@ -3,6 +3,7 @@ import { BoardIndex, MessageItem, MIN_MESSAGE_SIZE } from './BoardIndex';
 import { Message } from './Message';
 import { MeldUpdate } from '@m-ld/m-ld/dist/m-ld';
 import { BotBrain, Sentiment, selectRandom } from './BotBrain';
+import * as striptags from 'striptags';
 
 type Topic = {
   text: string | ((bot: BoardBot) => string),
@@ -164,12 +165,12 @@ export class BoardBot {
     const msg = update['@insert'].filter( // Check not one of my own
       subject => subject['@id'] != null && !this.myIds.has(subject['@id']))
       .map(subject => ({ '@id': subject['@id'], text: msgText(subject) }))
-      .find(msg => msg.text != null && (this.addressedIn(msg.text) || this.chatting));
+      .find(msg => msg.text && (this.addressedIn(msg.text) || this.chatting));
     if (msg != null) {
       // Pause for thought
-      await pause();
+      await pause(Math.random());
       const answer = await this.brain.respond(msg.text,
-        this.index.topMessages(10, this.myIds));
+        this.index.topMessages(10, this.myIds).map(msg => striptags(msg)));
       if (answer.message != null)
         await this.say({ text: answer.message, size: [1, 1] }, true, msg['@id']);
       if (answer.sentiment.includes(Sentiment.START_CHAT))
@@ -225,5 +226,5 @@ function pause(seconds: number = 2) {
 }
 
 function msgText(subject: Subject): string {
-  return MessageItem.mergeText((<Resource<Message>>subject).text);
+  return striptags(MessageItem.mergeText((<Resource<Message>>subject).text)).trim();
 }
