@@ -47,8 +47,13 @@ export abstract class InfiniteView {
       this.setViewBox([nx, ny], [vBw, vBh]);
     }).filter(() => {
       // Ignore events on child elements
-      return document.elementFromPoint(
-        d3.event.clientX, d3.event.clientY) == this.svg.node();
+      if (d3.event instanceof MouseEvent)
+        return document.elementFromPoint(
+          d3.event.clientX, d3.event.clientY) === this.svg.node();
+      else if (d3.event instanceof TouchEvent)
+        return [...d3.event.touches].every(touch => document.elementFromPoint(
+          touch.clientX, touch.clientY) === this.svg.node());
+      else return false;
     }));
   }
 

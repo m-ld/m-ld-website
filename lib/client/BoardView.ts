@@ -84,9 +84,10 @@ export class BoardView extends InfiniteView {
     node(this.messageGroup).insertAdjacentElement('beforeend', node(msgSelect));
     msgSelect.select('.board-message-body')
       // The contenteditable div can be smaller than the body
-      .on('mousedown', this.withThisMessage(mv => node(mv.content).focus()));
+      .on('mousedown', this.withThisMessage(this.forceEditFocus))
+      .on('touchstart', this.withThisMessage(this.forceEditFocus));
     msgSelect.select('.board-message-body > div')
-      .on('focus', this.withThisMessage(mv => mv.d3.raise()))
+      .on('focus', this.withThisMessage(this.inputStart))
       .on('input', this.withThisMessage(this.inputChange))
       .on('keydown', this.withThisMessage(this.inputKey))
       .on('blur', this.withThisMessage(this.inputEnd));
@@ -106,6 +107,17 @@ export class BoardView extends InfiniteView {
     msgSelect.select('.board-message-code circle')
       .on('click', this.withThisMessage(mv => mv.toggleCode()));
     return msgSelect;
+  }
+
+  private forceEditFocus(mv: MessageView) {
+    const div = node(mv.content);
+    if (document.activeElement !== div) {
+      // Raise early to prevent the focus handler raise from causing a blur
+      mv.d3.raise();
+      div.focus();
+      document.execCommand('selectAll');
+      d3.event.preventDefault();
+    }
   }
 
   private setRemoving(mv: MessageView, removing: boolean) {
@@ -144,6 +156,11 @@ export class BoardView extends InfiniteView {
     mv.update();
   }
 
+  private inputStart(mv: MessageView) {
+    mv.d3.raise();
+    mv.active = true;
+  }
+
   private inputKey(mv: MessageView) {
     if (d3.event.key === 'Enter' && !d3.event.shiftKey) {
       node(mv.content).blur();
@@ -152,11 +169,12 @@ export class BoardView extends InfiniteView {
   }
 
   private inputEnd(mv: MessageView) {
-    // Commit the change to the message
-    if (mv.msg.text !== mv.text) {
+    mv.active = false;
+    // Commit the change to the message if this isn't a spurious event
+    if (mv.msg.text !== mv.text && !mv.msg.deleted) {
       this.model.transact<Update>({
         '@insert': { '@id': mv.msg['@id'], text: mv.text },
-        '@delete': { '@id': mv.msg['@id'], text: mv.msg.text }
+        '@delete': { '@id': mv.msg['@id'], text: mv.msg.resource.text }
       }).then(null, showWarning);
     }
   }
@@ -179,7 +197,7 @@ export class BoardView extends InfiniteView {
     const [x, y] = mv.position;
     this.model.transact<Update>({
       '@insert': { '@id': mv.msg['@id'], x, y },
-      '@delete': { '@id': mv.msg['@id'], x: mv.msg.x, y: mv.msg.y }
+      '@delete': { '@id': mv.msg['@id'], x: mv.msg.resource.x, y: mv.msg.resource.y }
     }).then(null, showWarning);
   }
 

@@ -108,19 +108,18 @@ export class MessageView extends GroupView<MessageItem> {
     this.box.classed('new-message', false);
   }
 
-  private syncLinks() {
+  private async syncLinks() {
     const outLinks = this.msg.linkTo.map(ref => ref['@id']);
     // Remove non-existent outbound link-lines
     LinkView.remove(this.allOutLinks.filter(link => !outLinks.includes(link.toId)));
     // Create outbound link-lines if missing
     outLinks.forEach(thatId => this.withThat(thatId, that => this.link(that)));
 
-    return this.boardView.linksTo(this.msg['@id']).then(inLinks => {
-      // Remove non-existent inbound link-lines
-      LinkView.remove(this.allInLinks.filter(link => !inLinks.includes(link.fromId)));
-      // Create inound link-lines if missing
-      inLinks.forEach(thatId => this.withThat(thatId, that => that.link(this)));
-    });
+    const inLinks = await this.boardView.linksTo(this.msg['@id']);
+    // Remove non-existent inbound link-lines
+    LinkView.remove(this.allInLinks.filter(link_1 => !inLinks.includes(link_1.fromId)));
+    // Create inound link-lines if missing
+    inLinks.forEach(thatId_2 => this.withThat(thatId_2, that_2 => that_2.link(this)));
   }
 
   toggleCode() {
@@ -145,7 +144,7 @@ export class MessageView extends GroupView<MessageItem> {
   }
 
   private get msgCode(): string {
-    return JSON.stringify(this.msg, null, 2);
+    return JSON.stringify(this.msg.resource, null, 2);
   }
 
   private get codeMode(): boolean {

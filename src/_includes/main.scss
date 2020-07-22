@@ -11,6 +11,12 @@ $fa-font-path: "/webfonts";
 html#demo {
   // Needs to be on the html element for Firefox
   overflow: hidden;
+  body {
+    height: 100%;
+    overflow: hidden;
+    width: 100%;
+    position: fixed;
+  }
 }
 
 #board {
@@ -41,6 +47,13 @@ html#demo {
 .board-message.active {
   .board-message-button {
     visibility: visible;
+  }
+}
+
+.board-message.active {
+  .board-message-box:not(.remove-target) {
+    stroke: $primary;
+    transition: none;
   }
 }
 
