@@ -17,7 +17,7 @@ export default responder<Config.Request, Config.Response>('recaptcha', async con
   }
   // Tokens are Ably JWTs - used for both our config and Ably's
   config.token = await ablyToken(domain, configReq['@id']);
-  config.ably = Object.assign(config.ably ?? {}, { token: config.token });
+  config.ably = Object.assign(config.ably ?? {}, { token: config.token, maxRate: 20 });
   // Check if bot is explicitly disabled in the custom config
   if (config.botName !== false) {
     // Bot name is browser-specific, so just look for truthiness

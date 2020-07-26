@@ -13,9 +13,7 @@ export function node<E extends d3.BaseType>(selection: d3Selection<E>): E {
 }
 
 export function setAttr(selection: d3Selection, attrs: object) {
-  Object.entries(attrs).forEach(([key, value]) => {
-    selection.attr(key, value);
-  });
+  Object.entries(attrs).forEach(([key, value]) => selection.attr(key, value));
 }
 
 export function getAttr<T>(selection: d3Selection,
