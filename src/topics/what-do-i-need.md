@@ -1,6 +1,8 @@
 ---
-tags: faq
-question: To use m-ld, what do I need?
+tags:
+  - topic
+  - faq
+title: To use m-ld, what do I need?
 patterns:
   - what * (you|I) need
 summary: For <b>m-ld</b> you need an engine and a messaging layer.

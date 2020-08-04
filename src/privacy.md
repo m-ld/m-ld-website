@@ -1,5 +1,5 @@
 ---
-layout: privacy.html
+layout: privacy.liquid
 ---
 
 m-ld.io Ltd (“We”) understand that your privacy is important to you and that you care about how your personal data is used and shared online. We respect and value the privacy of everyone who visits our websites, m-ld.org and m-ld.io (“our sites”) and will only collect and use personal data in ways that are described here, and in a manner that is consistent with our obligations and your rights under the law.

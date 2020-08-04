@@ -24,7 +24,7 @@ expect.extend({
 
 it('answers an FAQ question', async () => {
   const answer = await new NlpBrain('Fred', [{
-    question: 'About Security',
+    title: 'About Security',
     patterns: ['security'],
     summary: 'Security matters!',
     id: 'about-security'
@@ -36,12 +36,12 @@ it('answers an FAQ question', async () => {
 
 it('answers with the correct FAQ', async () => {
   const answer = await new NlpBrain('Fred', [{
-    question: 'About Security',
+    title: 'About Security',
     patterns: ['security'],
     summary: 'Security matters!',
     id: 'about-security'
   }, {
-    question: 'About Needs',
+    title: 'About Needs',
     patterns: ['needs'],
     summary: 'My needs matter!',
     id: 'about-needs'
@@ -58,7 +58,7 @@ it('answers a greeting', async () => {
 
 it('answers a greeted FAQ question', async () => {
   const answer = await new NlpBrain('Fred', [{
-    question: 'About Security',
+    title: 'About Security',
     patterns: ['security'],
     summary: 'Security matters!',
     id: 'about-security'

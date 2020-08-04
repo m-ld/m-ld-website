@@ -1,8 +1,8 @@
 ---
 tags:
+  - topic
   - faq
-  - front-page-faq
-question: Is my data secure?
+title: Is my data secure?
 patterns:
   - '(secure|security|secured)'
 summary: <b>m-ld</b> data can be secured in motion and at rest.

@@ -67,8 +67,8 @@ export namespace Chat {
   export type Response = Answer;
 }
 
-export interface FaqIndexEntry {
-  question: string;
+export interface TopicIndexEntry {
+  title: string;
   patterns: string[];
   summary: string;
   id: string;

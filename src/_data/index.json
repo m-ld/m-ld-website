@@ -3,29 +3,35 @@
   "platforms": [
     {
       "name": "javascript",
-      "icon": "fab fa-js"
+      "icon": "fab fa-js",
+      "url": "https://js.m-ld.org/"
     },
     {
       "name": "java",
-      "icon": "fab fa-java"
-    },
-    {
-      "name": "xamarin",
-      "icon": "fab fa-microsoft",
+      "icon": "fab fa-java",
       "soon": true
     },
     {
       "name": "docker",
-      "icon": "fab fa-docker"
+      "icon": "fab fa-docker",
+      "soon": true
+    },
+    {
+      "name": "xamarin",
+      "icon": "fab fa-microsoft",
+      "request": true,
+      "url": "mailto:info@m-ld.io?subject=Xamarin platform"
     },
     {
       "name": "flutter",
       "icon": "fab fa-google",
-      "soon": true
+      "request": true,
+      "url": "mailto:info@m-ld.io?subject=Flutter platform"
     },
     {
       "name": "...",
-      "icon": "fas fa-edit"
+      "icon": "fas fa-edit",
+      "url": "mailto:info@m-ld.io"
     }
   ]
 }

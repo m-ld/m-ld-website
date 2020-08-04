@@ -1,17 +1,17 @@
-import { Chat, FaqIndexEntry } from '../lib/dto';
+import { Chat, TopicIndexEntry } from '../lib/dto';
 import { fetchJson, responder, HttpError, fetchJsonUrl } from '../lib/api/common';
 import { NlpBrain } from '../lib/api/NlpBrain';
 import { selectRandom } from '../lib/BotBrain';
 import { URL } from 'url';
 
-const faqs: { [origin: string]: FaqIndexEntry[] } = {};
+const topics: { [origin: string]: TopicIndexEntry[] } = {};
 
 export default responder<Chat.Request, Chat.Response>('jwt', async chatReq => {
-  // Load the faqs json from the origin, see src/faqs.11ty.js
-  if (faqs[chatReq.origin] == null)
-    faqs[chatReq.origin] = await fetchJson<FaqIndexEntry[]>(
-      new URL('faqs.json', chatReq.origin).toString());
-  const answer = await new NlpBrain(chatReq.botName, faqs[chatReq.origin])
+  // Load the topics json from the origin, see src/topics.11ty.js
+  if (topics[chatReq.origin] == null)
+    topics[chatReq.origin] = await fetchJson<TopicIndexEntry[]>(
+      new URL('topics.json', chatReq.origin).toString());
+  const answer = await new NlpBrain(chatReq.botName, topics[chatReq.origin])
     .respond(chatReq.message, chatReq.topMessages);
   if (answer.message != null)
     answer.message = await fillWords(answer.message);

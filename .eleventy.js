@@ -6,9 +6,7 @@ module.exports = function (config) {
     config.addWatchTarget('./lib/');
     // Do not ghost events across browsers - defeats the point of m-ld
     config.setBrowserSyncConfig({ ghostMode: false });
-    config.setLiquidOptions({
-        dynamicPartials: true
-    });
+    config.setLiquidOptions({ dynamicPartials: true });
     return {
         dir: { input: 'src' },
         templateFormats: ['liquid', 'html', 'svg', 'png', 'md', '11ty.js']

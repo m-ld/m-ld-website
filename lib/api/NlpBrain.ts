@@ -1,4 +1,4 @@
-import { FaqIndexEntry } from '../dto';
+import { TopicIndexEntry } from '../dto';
 import nlp from 'compromise';
 import { BotBrain, Sentiment, Answer, selectRandom } from '../BotBrain';
 
@@ -17,13 +17,13 @@ export class NlpBrain implements BotBrain {
 
   constructor(
     private readonly botName: string,
-    faqs: FaqIndexEntry[]) {
+    topics: TopicIndexEntry[]) {
     this.botName = botName;
     // TODO: Limit message size for recursion
-    const faqBrain: MiniBrain[] = faqs.map(faq => ({
-      patterns: ['(m-ld|mld|meld)'].concat(faq.patterns),
-      respond: () => ans(2, faq.summary,
-        `<a href="/#${faq.id}">See the FAQ</a> (right-click to follow).`)
+    const topicBrain: MiniBrain[] = topics.map(topic => ({
+      patterns: ['(m-ld|mld|meld)'].concat(topic.patterns),
+      respond: () => ans(2, topic.summary,
+        `<a href="/#${topic.id}">See the website</a> (right-click to follow).`)
     }));
     const chatBrain: MiniBrain[] = [{
       patterns: [`[#Expression] .? ${this.botName}`],
@@ -75,7 +75,7 @@ export class NlpBrain implements BotBrain {
       patterns: [`new box`],
       respond: () => ans(1, '')
     }];
-    this.brain = (faqBrain).concat(chatBrain);
+    this.brain = (topicBrain).concat(chatBrain);
   }
 
   async respond(message: string, topMessages: string[]): Promise<Answer> {

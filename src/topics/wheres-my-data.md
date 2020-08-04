@@ -1,8 +1,8 @@
 ---
 tags:
+  - topic
   - faq
-  - front-page-faq
-question: Where is my data?
+title: Where is my data?
 patterns:
   - where * (data|state)
 summary: <b>m-ld</b> data is physically in clones.

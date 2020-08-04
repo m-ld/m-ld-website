@@ -6,6 +6,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>m-ld</title>
   <link rel="stylesheet" href="main.css">
+  <script>
+    // Re-direct faq questions to the faq page
+    {% for faq in collections.faq %}
+    if (window.location.hash === '#{{ faq.fileSlug }}')
+      window.location = '/faq/#{{ faq.fileSlug }}'
+    {% endfor %}
+  </script>
 </head>
 
 <body>
@@ -32,13 +39,13 @@
   <section id="streams" class="section">
     <div class="columns has-text-centered">
       <div class="column">
-        <div class="box" style="height: 100%">
+        <a class="box" href="/doc/#architecture" style="height: 100%">
           <h1 class="title is-4">architecture</h1>
-          <img src="narrative.svg#svgView(viewBox(360, 50, 400, 570))" />
-        </div>
+          <img src="architecture.svg#svgView(viewBox(360, 50, 400, 570))" />
+        </a>
       </div>
       <div class="column">
-        <div class="box" style="height: 100%">
+        <a class="box" href="http://spec.m-ld.org/" style="height: 100%">
           <h1 class="title is-4">api</h1>
           <div class="content has-text-left">
             <pre>{% include 'api-example-1.json' %}</pre>
@@ -46,18 +53,24 @@
           <div class="content has-text-left">
             <pre>{% include 'api-example-2.json' %}</pre>
           </div>
-        </div>
+        </a>
       </div>
       <div class="column">
         <div class="box" style="height: 100%">
           <h1 class="title is-4">platforms</h1>
           <div class="buttons are-medium">
             {%- for platform in index.platforms -%}
-            <a class="button is-static is-light is-fullwidth">
+            {% if platform.url %}
+            <a class="button is-light is-fullwidth" href="{{platform.url}}">
+            {% else %}
+            <a class="button is-light is-fullwidth is-static">
+            {% endif %}
               <span class="icon"><i class="{{platform.icon}}"></i></span>
               <span class="has-text-dark">{{platform.name}}</span>
               {% if platform.soon %}
-              <span class="tag is-primary" style="margin-left: 1em;">Soon!</span>
+              <span class="tag is-warning" style="margin-left: 1em;">soon!</span>
+              {% elsif platform.request %}
+              <span class="tag is-primary" style="margin-left: 1em;">request</span>
               {% endif %}
             </a>
             {%- endfor -%}
@@ -66,38 +79,27 @@
       </div>
     </div>
   </section>
-  <section id="faq" class="section">
+  <section id="why">
     <div class="columns">
       <div class="column is-8-desktop is-offset-2-desktop">
-        <h1 class="title has-text-centered">frequently asked questions</h1>
-        {%- for faq in collections['front-page-faq'] -%}
-        <div id="{{ faq.fileSlug }}" class="content has-text-weight-bold is-medium">
-          {{ faq.data.question }}
+        <h1 class="title is-4 has-text-centered">why?</h1>
+        {%- for why in collections.why -%}
+        <div id="{{ why.fileSlug }}" class="content has-text-weight-bold is-medium">
+          {{ why.data.title }}
         </div>
         <div class="content">
-          <blockquote>{{ faq.templateContent }}</blockquote>
+          <blockquote>{{ why.templateContent }}</blockquote>
         </div>
         {%- endfor -%}
       </div>
     </div>
   </section>
-  <footer class="footer level">
-    <div class="level-left">
-      <div class="level-item">
-        <p><b>m-ld</b> source code licensed
-          <a target="_blank" href="http://opensource.org/licenses/mit-license.php">MIT</a>,
-          website content licensed
-          <a target="_blank" href="http://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY NC SA
-            4.0</a>.
-        </p>
-      </div>
+  <section class="hero is-light mt-5">
+    <div class="hero-body">
+      {% include 'navbar', indexPage: true %}
+      {% include 'footer' %}
     </div>
-    <div class="level-right">
-      <div class="level-item">
-        <p><a href="privacy/">privacy policy</a></p>
-      </div>
-    </div>
-  </footer>
+  </section>
 </body>
 
 </html>
