@@ -1,7 +1,7 @@
 ---
 tags:
-  - topic
-  - faq
+  - topic # mandatory
+  - faq # 1th tag is page
 title: To use m-ld, what do I need?
 patterns:
   - what * (you|I) need

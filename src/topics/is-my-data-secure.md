@@ -1,7 +1,7 @@
 ---
 tags:
-  - topic
-  - faq
+  - topic # mandatory
+  - faq # 1th tag is page
 title: Is my data secure?
 patterns:
   - '(secure|security|secured)'

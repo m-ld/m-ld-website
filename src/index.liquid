@@ -7,10 +7,12 @@
   <title>m-ld</title>
   <link rel="stylesheet" href="main.css">
   <script>
-    // Re-direct faq questions to the faq page
-    {% for faq in collections.faq %}
-    if (window.location.hash === '#{{ faq.fileSlug }}')
-      window.location = '/faq/#{{ faq.fileSlug }}'
+    // Re-direct faq and news questions to the relevant pages
+    {% for topic in collections.topic %}
+    {% unless topic.data.tags[1] == 'why' %}
+    if (window.location.hash === '#{{ topic.fileSlug }}')
+      window.location = '/{{ topic.data.tags[1] }}/#{{ topic.fileSlug }}'
+    {% endunless %}
     {% endfor %}
   </script>
 </head>
@@ -33,6 +35,15 @@
         <div class="has-text-centered">
           <a class="button is-info is-large" href="demo/">show me</a>
         </div>
+      </div>
+    </div>
+  </section>
+  <section class="hero is-primary">
+    <div class="hero-body">
+      <div class="container content has-text-centered is-size-5">
+        The Developer Preview is ready! -
+        <a href="/news/#developer-preview">Read more</a> -
+        <a href="/doc/">Dive in</a>
       </div>
     </div>
   </section>
@@ -79,7 +90,7 @@
       </div>
     </div>
   </section>
-  <section id="why">
+  <section id="why" class="section">
     <div class="columns">
       <div class="column is-8-desktop is-offset-2-desktop">
         <h1 class="title is-4 has-text-centered">why?</h1>

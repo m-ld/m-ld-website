@@ -1,7 +1,7 @@
 ---
 tags:
-  - topic
-  - faq
+  - topic # mandatory
+  - faq # 1th tag is page
 title: Where is my data?
 patterns:
   - where * (data|state)

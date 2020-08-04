@@ -1,0 +1,36 @@
+---
+layout: doc.liquid
+---
+<h1 class="title">news</h1>
+{%- for news in collections.news reversed -%}
+<article id="{{ news.fileSlug }}" class="media box">
+  <figure class="media-left">
+    <p class="image is-64x64">
+      <img src="https://github.com/{{news.data.author.git}}.png?size=64"/>
+    </p>
+  </figure>
+  <div class="media-content">
+    <div class="level">
+      <div class="level-left">
+        <div class="level-item">
+          <strong>{{ news.data.author.name}}</strong>
+        </div>
+        <div class="level-item">
+          <small>
+            <a href="https://github.com/{{news.data.author.git}}">{{ news.data.author.git }}</a>
+          </small>
+        </div>
+      </div>
+      <div class="level-right">
+        {{ news.date | date: "%d-%b-%y" }}
+      </div>
+    </div>
+    <div class="has-text-weight-medium content">
+      {{ news.data.title }} - {{ news.data.summary }}
+    </div>
+    <div class="content">
+      {{ news.templateContent }}
+    </div>
+  </div>
+</article>
+{%- endfor -%}
