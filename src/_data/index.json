@@ -20,18 +20,18 @@
       "name": "xamarin",
       "icon": "fab fa-microsoft",
       "request": true,
-      "url": "mailto:info@m-ld.io?subject=Xamarin platform"
+      "url": "https://github.com/m-ld/feedback/issues/3"
     },
     {
       "name": "flutter",
       "icon": "fab fa-google",
       "request": true,
-      "url": "mailto:info@m-ld.io?subject=Flutter platform"
+      "url": "https://github.com/m-ld/feedback/issues/4"
     },
     {
-      "name": "...",
+      "name": "what do you need?",
       "icon": "fas fa-edit",
-      "url": "mailto:info@m-ld.io"
+      "url": "https://github.com/m-ld/feedback/issues"
     }
   ]
 }
