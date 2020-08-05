@@ -6,7 +6,7 @@ title: Is my data secure?
 patterns:
   - '(secure|security|secured)'
 summary: <b>m-ld</b> data can be secured in motion and at rest.
-date: 2020-01-02
+date: 2020-01-02 # For sort order
 ---
 **m-ld** data can be secured _in motion_ and _at rest_.
 

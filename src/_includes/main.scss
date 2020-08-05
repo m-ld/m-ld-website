@@ -15,6 +15,14 @@ dl {
   }
 }
 
+figure svg {
+  fill: $grey;
+}
+
+.content blockquote {
+  @extend .has-background-warning-light
+}
+
 html#demo {
   // Needs to be on the html element for Firefox
   overflow: hidden;

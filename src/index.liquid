@@ -95,12 +95,21 @@
       <div class="column is-8-desktop is-offset-2-desktop">
         <h1 class="title is-4 has-text-centered">why?</h1>
         {%- for why in collections.why -%}
-        <div id="{{ why.fileSlug }}" class="content has-text-weight-bold is-medium">
-          {{ why.data.title }}
-        </div>
-        <div class="content">
-          <blockquote>{{ why.templateContent }}</blockquote>
-        </div>
+        <article id="{{ why.fileSlug }}" class="media">
+          <figure class="media-left">
+            <svg viewBox="0 0 512 512" width="64">
+              {% include why.data.icon %}
+            </svg>
+          </figure>
+          <div class="media-content">
+            <div class="content has-text-weight-bold is-medium">
+              {{ why.data.title }}
+            </div>
+            <div class="content">
+              {{ why.templateContent }}
+            </div>
+          </div>
+        </article>
         {%- endfor -%}
       </div>
     </div>
