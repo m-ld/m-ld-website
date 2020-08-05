@@ -5,7 +5,7 @@ tags:
 title: Architecture
 patterns:
   - architecture
-summary: '<b>m-ld</b> is a decentralised (multi-master) graph data store with a JSON-based API'
+summary: '<b>m-ld</b> is a decentralised (multi-master) graph data store with a JSON-based API.'
 date: 2020-01-01 # Used for sort order
 ---
 **m-ld** is a decentralised (multi-master) graph data store with a JSON-based
@@ -22,8 +22,8 @@ Communication between clones is via a messaging layer, for example MQTT
 (publish-subscribe).
 
 A clone can be deployed on any platform that has a network connection and for
-which an engine implementation exists. At least one clone would have to use
-reliable storage if any data persistence guarantee is required.
+which an engine exists. At least one clone would have to use reliable storage if
+any data persistence guarantee is required.
 
 The data may at any moment differ between clones, but in the absence of any
 writes and with a live connection, then all clones will converge on some state.

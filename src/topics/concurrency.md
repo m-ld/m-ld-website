@@ -5,7 +5,7 @@ tags:
 title: Concurrency
 patterns:
   - concurrency
-summary: '<b>m-ld</b> makes a strong distinction between data *consistency* and *integrity*.'
+summary: '<b>m-ld</b> offers an eventual consistency guarantee in principle.'
 date: 2020-05-01 # Used for sort order
 ---
 **m-ld** makes a strong distinction between data *consistency* and *integrity*.

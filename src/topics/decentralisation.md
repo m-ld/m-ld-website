@@ -6,7 +6,7 @@ tags:
 title: Decentralisation
 patterns:
   - decentralise
-summary: '<b>m-ld</b> data is decentralised in principle'
+summary: '<b>m-ld</b> data is decentralised in principle.'
 date: 2020-03-01 # Used for sort order
 ---
 In principle, **m-ld** clones are low-cost replicates and can be created and
