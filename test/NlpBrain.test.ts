@@ -22,7 +22,7 @@ expect.extend({
   }
 });
 
-it('answers an FAQ question', async () => {
+it('answers a website question', async () => {
   const answer = await new NlpBrain('Fred', [{
     title: 'About Security',
     patterns: ['security'],
@@ -31,7 +31,7 @@ it('answers an FAQ question', async () => {
   }]).respond('security', []);
   expect(answer).answerWith(/Security matters/);
   expect(answer).answerWith(/about-security/);
-  expect(answer).answerWith(/FAQ/);
+  expect(answer).answerWith(/See the website/);
 });
 
 it('answers with the correct FAQ', async () => {

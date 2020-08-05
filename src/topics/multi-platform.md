@@ -6,7 +6,7 @@ tags:
 title: Multi-Platform
 patterns:
   - platforms
-summary: '<b>m-ld</b>'s protocol is platform-independent in principle.'
+summary: 'The <b>m-ld</b> protocol is platform-independent in principle.'
 date: 2020-06-01 # Used for sort order
 ---
 The **m-ld** protocol is specified without reference to a platform. This allows
