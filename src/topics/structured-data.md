@@ -10,7 +10,7 @@ patterns:
 summary: '<b>m-ld</b> data is structured in principle.'
 date: 2020-04-01 # Used for sort order
 ---
-In principle, a **m-ld** domain contains *structured* data comprised of *linked*
+In principle, a **m-ld** domain contains structured data comprised of linked
 'subjects' having properties of interest.
 
 This model is fundamentally a *graph* of data, and is represented in the app
@@ -22,7 +22,7 @@ can be embedded in the data, and enforced by the app.
 
 These principles are realised by the internal adoption of the Resource
 Description Framework ([RDF](https://www.w3.org/RDF/)) as a data representation.
-Through the application of sane defaults and the consistent JSON syntax, an app
+Because of the consistent JSON syntax and the use of some sane defaults, an app
 does not typically need to be aware of the RDF; but it helps with
 interoperability, and ensures that future developments (for example, to
 supported data types) do not break compatibility.

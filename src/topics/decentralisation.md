@@ -35,19 +35,19 @@ failures. In this respect and others, clones are similar to microservices.
 In the absence of necessary centralisation, an app is at liberty (and has a
 responsibility) to decide an authority model that works best for the domain.
 **m-ld** is generally agnostic to who owns data and decides data correctness.
-However, it does have supporting features to help secure the data against
+However, it does collaborate with the app to secure the data against
 [unauthorised&nbsp;access](/doc/#security).
 
 ### Realisation
-This principle is realised by a foundational protocol for data sharing which
+Decentralisation is realised by a foundational protocol for data sharing which
 is:
 - convergent: all clones will eventually have the same data.
 - automatic: the app never needs to request or react to synchronisation with the
   domain (it does need to react to individual data changes, but this is
   irrespective of where they arise).
 - efficient: a new clone or a re-starting clone is able to quickly rev-up to
-  equivalence with other live clones. Further, it can accept updates *before*
-  this process completes.
+  equivalence with other live clones. Furthermore, it can accept updates
+  *before* this process completes.
 
 More detail on data sharing is found in the [concurrency](/doc/#concurrency)
 section.
