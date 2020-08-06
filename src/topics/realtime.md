@@ -11,7 +11,7 @@ date: 2020-06-01 # Used for sort order
 ---
 In principle, a **m-ld** clone contains realtime domain data. There is no
 supported way to deliberately switch off the publication and receipt of updates
-(note that [access&nbsp;control](/doc/#access-control) is addressed separately).
+(note that [access&nbsp;control](/doc/#security) is addressed separately).
 A clone may be *offline*, temporarily or for an extended period, but this is not
 logically distinct from extraordinary network latency.
 

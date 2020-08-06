@@ -26,7 +26,7 @@ This principle means that the permanent loss of an individual clone only leads
 to data loss in the rare case that clone has updates that have yet not been
 published, by being offline. There is no way to deliberately prevent the
 publication of updates – note this is not about
-[access&nbsp;control](/doc/#access-control), which is addressed separately.
+[access&nbsp;control](/doc/#security), which is addressed separately.
 
 A domain with sufficient clones is therefore *resilient* to infrastructure
 failures. In this respect and others, clones are similar to microservices.
@@ -36,8 +36,7 @@ In the absence of necessary centralisation, an app is at liberty (and has a
 responsibility) to decide an authority model that works best for the domain.
 **m-ld** is generally agnostic to who owns data and decides data correctness.
 However, it does have supporting features to help secure the data against
-[unauthorised&nbsp;access](/doc/#access-control), and
-[bad&nbsp;actors](/doc/#concurrency).
+[unauthorised&nbsp;access](/doc/#security).
 
 ### Realisation
 This principle is realised by a foundational protocol for data sharing which

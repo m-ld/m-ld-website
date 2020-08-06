@@ -10,7 +10,7 @@ date: 2020-05-01 # Used for sort order
 ---
 **m-ld** makes a strong distinction between data *consistency* and *integrity*.
 
-Consistency is meant slightly more broadly than the 'C' in the
+"Consistency" is meant slightly more broadly than the 'C' in the
 [CAP&nbsp;theorem](https://people.eecs.berkeley.edu/~brewer/cs262b-2004/PODC-keynote.pdf)
 (conceived by Eric Brewer in 2000), as the property that *there could be a
 hypothetical single data store for the domain, and if no new updates are made,
@@ -20,7 +20,8 @@ eventually all clones would report the same last updated value as this store*.
 absence of updates and network partitions, all clones will have the same data
 (will *converge*).**
 
-Integrity is meant as adherence of the domain data to a set of rules like:
+"Integrity" is meant as adherence of the domain data to a set of semantic rules
+like:
 - This property has one and only one value
 - This property is of a specific data type
 - This property refers to some other entity which exists
@@ -35,9 +36,9 @@ As a result, it is important for an app's code to implement whatever integrity
 constraints are important for the domain.
 
 ### Constraints
-> 🚧 *Inclusion of some declarative integrity constraints in **m-ld** is the
-> subject of active research.* Please [get in touch](mailto:info@m-ld.io) if
-> this is of interest you for your use-case.
+> 🚧 Inclusion of declarative integrity constraints in **m-ld** is the subject
+> of active research. Please [get in touch](mailto:info@m-ld.io) if this is of
+> interest you for your use-case.
 
 Data constraints in a decentralised system are complicated by the potential
 to require conflict resolution, in the event that two concurrent updates are

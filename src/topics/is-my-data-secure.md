@@ -4,7 +4,8 @@ tags:
   - faq # 1th tag is page
 title: Is my data secure?
 patterns:
-  - '(secure|security|secured)'
+  - '(secure|security|secured) * @hasQuestionMark'
+  - '(security && @hasQuestionMark)'
 summary: <b>m-ld</b> data can be secured in motion and at rest.
 date: 2020-01-02 # For sort order
 ---
