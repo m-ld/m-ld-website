@@ -77,7 +77,7 @@
             <a class="button is-light is-fullwidth is-static">
             {% endif %}
               <span class="icon"><i class="{{platform.icon}}"></i></span>
-              <span class="has-text-dark">{{platform.name}}</span>
+              <span class="has-text-dark">{{platform.name | downcase}}</span>
               {% if platform.soon %}
               <span class="tag is-warning" style="margin-left: 1em;">soon!</span>
               {% elsif platform.request %}

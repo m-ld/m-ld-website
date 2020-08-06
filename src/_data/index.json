@@ -2,36 +2,42 @@
   "tagline": "decentralised shared state",
   "platforms": [
     {
-      "name": "javascript",
+      "name": "Javascript",
       "icon": "fab fa-js",
-      "url": "https://js.m-ld.org/"
+      "url": "https://js.m-ld.org/",
+      "summary": "For node.js, modern browsers and other Javascript engines. Typescript is supported and recommended."
     },
     {
-      "name": "java",
+      "name": "Java",
       "icon": "fab fa-java",
-      "soon": true
+      "soon": true,
+      "summary": "For Java environments, typically servers."
     },
     {
-      "name": "docker",
+      "name": "Docker",
       "icon": "fab fa-docker",
-      "soon": true
+      "soon": true,
+      "summary": "For microservice, serverless and some native environments."
     },
     {
-      "name": "xamarin",
+      "name": "Xamarin",
       "icon": "fab fa-microsoft",
       "request": true,
-      "url": "https://github.com/m-ld/feedback/issues/3"
+      "url": "https://github.com/m-ld/feedback/issues/3",
+      "summary": "For client application environments including on mobiles."
     },
     {
-      "name": "flutter",
+      "name": "Flutter",
       "icon": "fab fa-google",
       "request": true,
-      "url": "https://github.com/m-ld/feedback/issues/4"
+      "url": "https://github.com/m-ld/feedback/issues/4",
+      "summary": "For client environments including browsers and mobiles."
     },
     {
-      "name": "what do you need?",
+      "name": "What do you need?",
       "icon": "fas fa-edit",
-      "url": "https://github.com/m-ld/feedback/issues"
+      "url": "https://github.com/m-ld/feedback/issues",
+      "summary": "Please create a ticket for the platform you need."
     }
   ]
 }
