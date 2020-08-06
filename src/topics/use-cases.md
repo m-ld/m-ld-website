@@ -21,10 +21,10 @@ data editing features.
 ### Robotics
 Robotics and AI are enabling labour-saving opportunities in industry. Fully
 centralised control of such devices is impractical as decisions must be made
-based on data with liveness in the millisecond range. **m-ld** can be used to
-support a 'shared-consciousness' model, in which autonomous units are able to
-keep each other instantly appraised of changes in their environment and to their
-common objectives.
+based on data with a high degree of liveness. **m-ld** can be used to support a
+'shared-consciousness' model of derived knowledge, in which autonomous units are
+able to keep each other instantly appraised of changes in their environment and
+to their common objectives.
 
 ### Edge Computing
 An approach to managing the deluge of data from traditional and IoT devices is

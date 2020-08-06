@@ -38,7 +38,7 @@ constraints are important for the domain.
 ### Constraints
 > 🚧 Inclusion of declarative integrity constraints in **m-ld** is the subject
 > of active research. Please [get in touch](mailto:info@m-ld.io) if this is of
-> interest you for your use-case.
+> interest to you for your use-case.
 
 Data constraints in a decentralised system are complicated by the potential
 to require conflict resolution, in the event that two concurrent updates are

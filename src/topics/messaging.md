@@ -27,7 +27,7 @@ relevant configuration.
 
 Message-layer protocols are currently specified for:
 - [MQTT](http://mqtt.org/): a machine-to-machine (M2M)/"Internet of Things"
-  connectivity protocol. Convenient to use it for local development or if the
+  connectivity protocol. Convenient to use for local development or if the
   deployment environment has an MQTT broker available.
 - [Ably](https://www.ably.io/): provides infrastructure and APIs to power
   realtime experiences at scale. It is a managed service, and includes
