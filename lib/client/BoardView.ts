@@ -22,21 +22,23 @@ export class BoardView extends InfiniteView {
     private readonly welcomeId: string) {
     super(selectSvg);
 
+    const getAllMessages = model.transact<Describe, Message>({
+      '@describe': '?s',
+      '@where': { '@id': '?s', '@type': 'Message' }
+    });
+    // Follow changes to messages as soon as the transaction has executed
+    getAllMessages.tick.then(() => model.follow().subscribe(update => {
+      // Construct subject updates from the group updates
+      this.sync(MeldApi.asSubjectUpdates(update));
+    }));
     // Sync all the messages in the given board now
-    model.transact<Describe, Message>({
-      '@describe': '?s', '@where': { '@id': '?s', '@type': 'Message' }
-    }).then(messages => this.sync(MeldApi.asSubjectUpdates({
-      '@insert': messages, '@delete': []
-    }))).then(anyMessages => {
+    getAllMessages.then(messages => {
+      const anyMessages = this.sync(MeldApi.asSubjectUpdates({
+        '@insert': messages, '@delete': []
+      }));
       if (anyMessages && this.zoomToExtent())
         showWarning('Tip: You can look more closely by double-clicking.');
     }, showWarning);
-
-    // Follow changes to messages
-    model.follow().subscribe(update => {
-      // Construct subject updates from the group updates
-      this.sync(MeldApi.asSubjectUpdates(update));
-    });
   }
 
   async linksTo(id: string): Promise<string[]> {
@@ -64,9 +66,7 @@ export class BoardView extends InfiniteView {
       });
       if (updated.empty()) {
         // New message
-        const msg: Resource<Message> =
-          { '@id': id, '@type': 'Message', text: [], x: [], y: [], linkTo: [] };
-        MeldApi.update(msg, update);
+        const msg = <Resource<Message>>update['@insert'];
         this.addMessageView(msg).each(
           this.withThisMessage(mv => this.updateViewFromData(mv, msg)));
       }

@@ -7,7 +7,7 @@ title: Realtime
 patterns:
   - realtime
 summary: '<b>m-ld</b> data is realtime in principle.'
-date: 2020-06-01 # Used for sort order
+date: 2020-05-01 # Used for sort order
 ---
 In principle, a **m-ld** clone contains realtime domain data. There is no
 supported way to deliberately switch off the publication and receipt of updates

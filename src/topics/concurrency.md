@@ -6,19 +6,33 @@ title: Concurrency
 patterns:
   - concurrency
 summary: '<b>m-ld</b> offers an eventual consistency guarantee in principle.'
-date: 2020-05-01 # Used for sort order
+date: 2020-06-01 # Used for sort order
 ---
-**m-ld** makes a strong distinction between data *consistency* and *integrity*.
+Any clone operation may be occurring concurrently with operations on other
+clones. Transaction operations combine to realise the final convergent state of
+every clone.
+
+A helpful way to think about this, is to consider any gathering of human beings
+with an information goal; like a conference. At any moment, each participant
+could be receiving information or formulating information, or frequently, both.
+There could be multiple channels along which information flows. But ideally,
+everyone will eventually converge on the same set of information. **m-ld**
+applies this model to the information stored in clones.
+
+...
+
+**m-ld** makes a distinction between data *consistency* and *integrity*.
 
 "Consistency" is meant slightly more broadly than the 'C' in the
 [CAP&nbsp;theorem](https://people.eecs.berkeley.edu/~brewer/cs262b-2004/PODC-keynote.pdf)
-(conceived by Eric Brewer in 2000), as the property that *there could be a
-hypothetical single data store for the domain, and if no new updates are made,
-eventually all clones would report the same last updated value as this store*.
+conceived by Eric Brewer in 2000.
 
-**A m-ld domain is *eventually consistent*, with the guarantee that, in the
-absence of updates and network partitions, all clones will have the same data
-(will *converge*).**
+**m-ld guarantees *eventual consistency*. In the absence of updates and network
+partitions, all clones will report the same data (will *converge*).**
+
+Another viewpoint is to posit a hypothetical single data store for the domain.
+If no new updates are made, eventually all clones' responses to any query would
+be indistinguishable from the responses from this store.
 
 "Integrity" is meant as adherence of the domain data to a set of semantic rules
 like:
@@ -85,11 +99,12 @@ them.
     the candidate winner, or else competing corrections would mean all values
     are deleted.
 
+  ---
 - *Mandatory Property*: A subject must have a value for a property.
 
   RDB: `NOT NULL`
 
-  Scenario: If one app instance removes a subject in its entirely at the same
+  Scenario: If one app instance removes a subject in its entirety at the same
   time as another app instance updates a property, then the updated property
   value remains in the converged domain – all other properties are now missing,
   even if mandatory. (Note that neither app instance violated the rule locally.)
@@ -98,6 +113,7 @@ them.
   invalid subject. Invalidity can be fixed later (*ignore*), or immediately, by
   deleting the subject.
 
+  ---
 - *Unique field*: All subjects in the domain (possibly of a specific type) must
   have unique values for a property (besides their identity).
 
@@ -110,3 +126,5 @@ them.
   to receive the conflicting value. Delete the other subject's property. If the
   property is mandatory, revert the value to the previous (it must exist in the
   same transaction).
+
+  ---
