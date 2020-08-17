@@ -30,7 +30,7 @@ export class BoardView extends InfiniteView {
     getAllMessages.tick.then(() => model.follow().subscribe(update => {
       // Construct subject updates from the group updates
       this.sync(MeldApi.asSubjectUpdates(update));
-    }));
+    }), showWarning);
     // Sync all the messages in the given board now
     getAllMessages.then(messages => {
       const anyMessages = this.sync(MeldApi.asSubjectUpdates({
@@ -313,6 +313,8 @@ export class BoardView extends InfiniteView {
       linkTo: [{ '@id': id }]
     };
     this.model.transact<Update>({ '@insert': [newMessage, newLink] })
+      // Yield to the event loop so that we have definitely processed the update
+      .then(() => new Promise(done => setTimeout(done)))
       .then(() => this.withThatMessage(id, mv => node(mv.content).focus()), showWarning);
   }
 
