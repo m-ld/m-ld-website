@@ -15,12 +15,12 @@ date: 2020-02-01 # Used for sort order
 App data rarely exists in isolation on a single device, but in-house
 collaboration solutions are expensive and take years to get right. **m-ld** can
 be a solution to data sharing in collaborative apps. It can also be incorporated
-into existing architectures with entrenched database solutions, to support live
-data editing features.
+into architectures with existing database components, to support live data
+editing features.
 
 ### Robotics
 Robotics and AI are enabling labour-saving opportunities in industry. Fully
-centralised control of such devices is impractical as decisions must be made
+centralised control of such devices can be impractical as decisions must be made
 based on data with a high degree of liveness. **m-ld** can be used to support a
 'shared-consciousness' model of derived knowledge, in which autonomous units are
 able to keep each other instantly appraised of changes in their environment and

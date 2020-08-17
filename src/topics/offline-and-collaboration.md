@@ -19,6 +19,6 @@ Fulfilling these needs is a difficult problem, and a distraction from your focus
 on the business functionality of your software. So most apps just lock the data
 that is being edited so no-one else can work on it.
 
-[**m-ld** is different](/doc/#concurrency). It starts from
-the position that the most important thing about this kind of data is the
-freedom to edit it safely.
+[**m-ld** is different](/doc/#realtime). It starts from the position that the
+most important thing about this kind of data is the freedom to edit it safely,
+live.

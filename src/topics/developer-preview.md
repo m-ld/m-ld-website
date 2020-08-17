@@ -9,12 +9,12 @@ summary: The first <b>m-ld</b> engineering milestone!
 author:
   git: gsvarovsky
   name: George
-date: 2020-08-10
+date: 2020-08-17
 ---
-We have reached our first engineering milestone, the developer preview! It's
+We have reached our first engineering milestone, the developer preview. It's
 right here. Thanks for visiting! On this website you'll find information about
-**m-ld**, including why and how to use it. There's also a super-cool demo app
-(press the big blue button) which shows one possible use-case for **m-ld**.
+**m-ld**, including why and how to use it. There's also a cool demo app (press
+the big blue button) which shows one possible use-case for **m-ld**.
 
 And of course, the main event is the
 [Javascript&nbsp;engine](https://js.m-ld.org/), which you can download and begin

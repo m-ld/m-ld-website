@@ -16,14 +16,15 @@ from a handful to hundreds.
 <img src="/architecture.svg" alt="clone environments" width="500"/>
 
 All clones of the data can accept reads and writes with no waits for other
-clones (consensus-free). Atomic read and write transactions are effected via a
-JSON API, which is presented suitably for the clone engine environment.
-Communication between clones is via a messaging layer, for example MQTT
-(publish-subscribe).
+clones (consensus- and lock-free). Atomic read and write transactions are
+effected via a JSON API, which is presented suitably for the clone engine
+environment. Communication between clones is via a publish-subscribe messaging
+layer, for example MQTT.
 
 A clone can be deployed on any platform that has a network connection and for
-which an engine exists. At least one clone would have to use reliable storage if
-any data persistence guarantee is required.
+which an engine exists. To guarantee data persistence, at least one clone must
+use reliable storage, or else enough clones must exist for a statistical
+assurance.
 
 The data may at any moment differ between clones, but in the absence of any
 writes and with a live connection, then all clones will converge on some state.
