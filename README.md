@@ -12,8 +12,7 @@ The `master` branch deploys to the live website, https://m-ld.org. This should
 only change by pull request. The `edge` branch is for live development and
 deploys to https://edge.m-ld.org.
 
-`edge` currently has the environment variable `LIVE_DEMO=YES`, and its domain is
-set in the [reCAPTCHA admin
+The domains are set in the [reCAPTCHA admin
 console](https://www.google.com/u/1/recaptcha/admin/site/350626045).
 
 ## dev
@@ -25,6 +24,8 @@ To run locally:
 1. Install [now](https://vercel.com/download)
 1. Create a local file ".env" in the root and add any vars found under `env` in
    [now.json](now.json) (MQTT_URL=ws://localhost:8888).
+1. Add `NODE_ENV=development` to enable source-maps.
+1. Add a log level, e.g. `LOG=DEBUG`.
 1. `npm run local`
 
 Note that `NPM_TOKEN` in [.env.build](./.env.build) is empty to pass through to
