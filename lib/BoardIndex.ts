@@ -1,5 +1,5 @@
 import type RBush from 'rbush';
-import { Resource, Reference } from '@m-ld/m-ld';
+import { Resource, Reference, array } from '@m-ld/m-ld';
 import { Message } from './Message';
 import { Rectangle } from './Shapes';
 
@@ -139,7 +139,7 @@ export class MessageItem extends Rectangle implements Message {
   }
 
   get linkTo(): Reference[] {
-    return this.src.linkTo;
+    return array(this.src.linkTo);
   }
 
   get resource(): Resource<Message> {
@@ -147,17 +147,17 @@ export class MessageItem extends Rectangle implements Message {
   }
 
   get deleted(): boolean {
-    return !this.src.text.length && this.src.text !== '';
+    return !array(this.src.text).length;
   }
 
-  static mergeText(value: string | string[]): string {
-    return Array.isArray(value) ? value.join('<br>') : value;
+  static mergeText(value: Resource<Message>['text']): string {
+    return array(value).join('<br>');
   }
 
-  static mergePosition([xs, ys]: [number | number[], number | number[]]): [number, number] {
+  static mergePosition([xs, ys]: [Resource<Message>['x'], Resource<Message>['y']]): [number, number] {
     return [
-      Array.isArray(xs) ? Math.min(...xs) : xs,
-      Array.isArray(ys) ? Math.min(...ys) : ys
+      Math.min.apply(Math, array(xs)),
+      Math.min.apply(Math, array(ys))
     ];
   }
 }

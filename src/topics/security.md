@@ -26,6 +26,7 @@ The attack surface of an engine generally comprises:
 - The network between the engine and other clones
 - The clone API presented to the app
 
+### Trust Model
 A decentralised data store does not have a privileged, trusted central authority
 (although the trust model of such a central authority may never have been as
 straightforward as it seemed, as evidenced by damaging data leakages by such

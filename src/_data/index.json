@@ -17,7 +17,7 @@
       "name": "Docker",
       "icon": "fab fa-docker",
       "soon": true,
-      "summary": "For microservice, serverless and some native environments."
+      "summary": "For microservice, serverless and server environments."
     },
     {
       "name": "Xamarin",
@@ -27,11 +27,11 @@
       "summary": "For client application environments including on mobiles."
     },
     {
-      "name": "Flutter",
-      "icon": "fab fa-google",
+      "name": "Python",
+      "icon": "fab fa-python",
       "request": true,
       "url": "https://github.com/m-ld/feedback/issues/4",
-      "summary": "For client environments including browsers and mobiles."
+      "summary": "For scripting, data science and general computing environments."
     },
     {
       "name": "What do you need?",

@@ -79,5 +79,7 @@ async function ablyToken(domain: string, clientId: string): Promise<string> {
  * Get a Bot name if none is specified in the request
  */
 async function newBotName() {
-  return nlp(await randomWord('proper-noun')).toTitleCase().text();
+  return nlp(await randomWord({
+    includePartOfSpeech: 'proper-noun', maxLength: 5
+  })).toTitleCase().text();
 }

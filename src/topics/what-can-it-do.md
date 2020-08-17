@@ -9,10 +9,10 @@ patterns:
   - what is (m-ld|mld|meld) for
 summary: <b>m-ld</b> helps implement data sharing in an application.
 ---
-**m-ld** is a protocol with implementing library engines to help software
-engineers deliver sharing of strutured data. Using **m-ld** allows features such
-as online collaboration, offline editing, and data synchronisation to be
-delivered in less time, with less cost, and more reliably.
+**m-ld** is a protocol and a set of engines to help software engineers deliver
+sharing of structured data. Using **m-ld** allows features such as online
+collaboration, offline editing, and data synchronisation to be delivered in less
+time, with less cost, and more reliably.
 
 Within the scope of the **m-ld** protocol it is possible to achieve different
 [trade-offs](/doc/#trade-offs), to support a range of data and knowledge sharing

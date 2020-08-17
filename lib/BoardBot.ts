@@ -1,7 +1,7 @@
 import { MeldApi, Update, shortId, Subject, Resource } from '@m-ld/m-ld';
 import { BoardIndex, MessageItem, MIN_MESSAGE_SIZE } from './BoardIndex';
 import { Message } from './Message';
-import { MeldUpdate } from '@m-ld/m-ld/dist/m-ld';
+import { MeldUpdate } from '@m-ld/m-ld';
 import { BotBrain, Sentiment, selectRandom } from './BotBrain';
 import * as striptags from 'striptags';
 

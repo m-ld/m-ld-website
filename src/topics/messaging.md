@@ -19,11 +19,11 @@ the **m-ld** specification.
 > 🚧 The precise meaning of 'reliable' is specified in the **m-ld** clone protocol,
 > documentation coming soon.
 
-Unfortunately, message publishing with the required guarantees is not publicly
-available as part of the internet, so it is necessary for an app to provide a
-compliant service for its domain. This should not be onerous, as the clone
-engine is responsible for connecting, typically with only a URL and some
-relevant configuration.
+Until message publishing with the required guarantees is publicly available as
+part of the internet, it is necessary for an app to provide a compliant service
+for its domain. This should be straightforward, as the clone engine is
+responsible for connecting, typically with only a URL and some relevant
+configuration.
 
 Message-layer protocols are currently specified for:
 - [MQTT](http://mqtt.org/): a machine-to-machine (M2M)/"Internet of Things"
@@ -35,5 +35,5 @@ Message-layer protocols are currently specified for:
   convenient to use for global deployments without the need to self-manage a
   broker.
 
-Check the clone engine documentation for its supported message layer and
-configuration details.
+Check the clone [engine](/doc/#platforms) documentation for its supported
+message layer and configuration details.

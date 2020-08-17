@@ -6,14 +6,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>m-ld</title>
   <link rel="stylesheet" href="/main.css">
-  {% if env.LIVE_DEMO %}
   <script src="../modernizr-custom.js"></script>
   <script src="https://www.google.com/recaptcha/api.js?render={{ env.RECAPTCHA_SITE }}"></script>
   <script src="demo.js"></script>
-  {% endif %}
 </head>
 
-{% if env.LIVE_DEMO %}
 <body>
   <div id="loading" class="modal is-active">
     <div class="modal-background"></div>
@@ -153,10 +150,5 @@
     please email <samp>info@m-ld.io</samp>.
   </div>
 </body>
-{% else %}
-<body>
-  {% include 'popup.liquid', id: 'no-demo', classes: 'is-active', content: 'no-demo.html' %}
-</body>
-{% endif %}
 
 </html>

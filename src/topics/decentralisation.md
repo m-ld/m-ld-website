@@ -19,17 +19,15 @@ individual database instances.
 replication. The natural deployment pattern is to keep the clone engine close to
 the app, usually in-process, and so there is no need for a central database. In
 many deployments it may be desireable to have some clones on servers, to ensure
-data safety – but these are more akin to backups.
+data safety – but these are more like backups.
 
 ### Resilience
-This principle means that the permanent loss of an individual clone only leads
-to data loss in the rare case that clone has updates that have yet not been
-published, by being offline. There is no way to deliberately prevent the
-publication of updates – note this is not about
-[access&nbsp;control](/doc/#security), which is addressed separately.
+A domain with sufficient clones is *resilient* to infrastructure failures. In
+this respect and others, clones are similar to microservices.
 
-A domain with sufficient clones is therefore *resilient* to infrastructure
-failures. In this respect and others, clones are similar to microservices.
+The permanent loss of an individual clone is typically inconsequential to the
+data safety of the domain. Updates are published and received by clones on a
+continuous basis, interruptible only by network unavailability.
 
 ### Authority
 In the absence of necessary centralisation, an app is at liberty (and has a

@@ -13,4 +13,4 @@ a number of indications of forthcoming features. Also see the
 [feedback&nbsp;repository](https://github.com/m-ld/feedback/issues) for other
 active requests.
 
-**m-ld** should not yet be used in production scenarios or for sensitive data.
+**m-ld** should not be used in production scenarios or for sensitive data, yet.
