@@ -25,7 +25,7 @@ We're working really hard on the ergonomics, the performance and the security.
 We especially know that you're not going to settle for anything less than
 absolute data safety. We're not there yet, but we're ready for your feedback.
 
-If you're unsure where to start or you'd just like to talk, we're here! You can
-join the discussion on the Issues page of our dedicated GitHub
+If you're unsure where to start or you'd just like to talk, you can join the
+discussion on the Issues page of our dedicated GitHub
 [feedback&nbsp;repo](https://github.com/m-ld/feedback/issues), or
-[email&nbsp;us](mailto:info@m-ld.io) anytime.
+[email&nbsp;us](mailto:info@m-ld.io) any time.

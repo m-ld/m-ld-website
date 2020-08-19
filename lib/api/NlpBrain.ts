@@ -82,8 +82,10 @@ export class NlpBrain implements BotBrain {
     // At the moment only use top messages to prevent repeats
     const previous: string[] = [];
     topMessages.forEach(prev => {
-      // https://github.com/spencermountain/compromise/issues/768
-      previous.push.apply(previous, nlp(prev).map((ph: any) => ph.text('reduced')));
+      const prevDoc = nlp(prev);
+      if (prevDoc.wordCount() > 2)
+        // https://github.com/spencermountain/compromise/issues/768
+        previous.push.apply(previous, prevDoc.map((ph: any) => ph.text('reduced')));
     });
     // Also remove a direct address from the message
     const body = message.replace(new RegExp(`^\\s*${this.botName}[^\\w]+`), '');

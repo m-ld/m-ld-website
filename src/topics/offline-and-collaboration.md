@@ -16,8 +16,8 @@ while changes are processed. Custom solutions are expensive and fraught with
 hard-to-detect bugs.
 
 Fulfilling these needs is a difficult problem, and a distraction from your focus
-on the business functionality of your software. So most apps just lock the data
-that is being edited so no-one else can work on it.
+on the business functionality of your software. In the end, most apps just lock
+the data that is being edited so no-one else can work on it.
 
 [**m-ld** is different](/doc/#realtime). It starts from the position that the
 most important thing about this kind of data is the freedom to edit it safely,

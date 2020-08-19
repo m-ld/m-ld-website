@@ -19,8 +19,7 @@ const FIRST_GREETING: Topic = {
   text: bot => `
     Hi! I'm a bot. My name is ${bot.name}.<br>
     I'm here to talk about <b>m-ld</b>.<br>
-    I'll start by explaining how this app works.<br>
-    I'll also try to answer any questions.`,
+    You can stop me by deleting this message!`,
   size: [2, 1.5]
 };
 const RETURN_GREETING: Topic = {
@@ -132,23 +131,14 @@ export class BoardBot {
       await pause();
       await this.say(SEE_HELP);
       await pause(4);
-      await this.say([this.greetingId, FIRST_GREETING], false);
-      // Topics
-      for (let appTopic of APP_TOPICS) {
-        await pause(4);
-        const msgId = shortId(appTopic.id);
-        const afterId = appTopic.linkFrom != null ?
-          shortId(appTopic.linkFrom) : this.greetingId;
-        if ((await this.meld.get(afterId)) != null)
-          await this.say([msgId, appTopic], true, afterId);
-        else
-          break; // User is deleting messages, probably doesn't want us around
-      }
+      await this.say([this.greetingId('initial'), FIRST_GREETING], false);
     }
-    if ((await this.meld.get(this.greetingId)) == null) {
+    if ((await Promise.all(['initial', 'return']
+      .map((id: 'initial' | 'return') => this.meld.get(this.greetingId(id)))))
+      .every(greeting => greeting == null)) {
       // At startup, we might be a different bot on the same board.
       await pause();
-      this.say([this.greetingId, RETURN_GREETING]);
+      await this.say([this.greetingId('return'), RETURN_GREETING]);
     }
     // Set up chat in response to messages
     this.meld.follow().subscribe(update => {
@@ -159,6 +149,31 @@ export class BoardBot {
           .finally(() => this.thinking = false);
       }
     });
+    await pause(4);
+    // Keep going with the exposition if desired
+    this.sayTopics();
+  }
+
+  private async sayTopics() {
+    const initialGreetingId = this.greetingId('initial');
+    for (let appTopic of APP_TOPICS) {
+      const msgId = shortId(appTopic.id);
+      const afterId = appTopic.linkFrom != null ?
+        shortId(appTopic.linkFrom) : initialGreetingId;
+
+      const [greeting, msg, after] = await Promise.all(
+        [initialGreetingId, msgId, afterId].map(id => this.meld.get(id)));
+      
+      if (greeting != null && after != null) {
+        if (msg == null) {
+          await this.say([msgId, appTopic], true, afterId);
+          await pause(4); // Pause after saying anything
+        }
+      } else {
+        // User is deleting messages, probably doesn't want us around
+        break;
+      }
+    }
   }
 
   private async maybeAnswer(update: MeldUpdate) {
@@ -185,8 +200,8 @@ export class BoardBot {
     return text.match(`(?:^|\\s)${this.name}(?:$|[^\\w])`);
   }
 
-  private get greetingId(): string {
-    return shortId(`${this.name}/intro`);
+  private greetingId(initial: 'initial' | 'return'): string {
+    return shortId(`${this.name}/intro/${initial}`);
   }
 
   /**

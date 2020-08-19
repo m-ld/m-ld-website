@@ -64,7 +64,7 @@ export class BoardView extends InfiniteView {
         MeldApi.update(msg, update);
         this.updateViewFromData(mv, msg);
       });
-      if (updated.empty()) {
+      if (updated.empty() && update['@insert'] != null) {
         // New message
         const msg = <Resource<Message>>update['@insert'];
         this.addMessageView(msg).each(
