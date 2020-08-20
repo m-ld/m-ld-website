@@ -32,7 +32,7 @@ A decentralised data store does not have a privileged, trusted central authority
 straightforward as it seemed, as evidenced by damaging data leakages by such
 authorities). Since an app must be free to decide its own security model, and
 since the **m-ld** engine is not itself afforded any special privilege because
-of its deployment, an engine trusts the *app* in principle. The consequences of
+of its deployment, an engine *trusts the app* in principle. The consequences of
 this are explained in the sections below.
 
 ### Authentication & Authorisation
@@ -44,7 +44,7 @@ app from storing user information in **m-ld**, so long as it has suitable access
 controls.)
 
 This means an app is free to authenticate its users by any chosen means, such as
-device native login, or using a third-party single sign-on system. The app
+device-native login, or using a third-party single sign-on system. The app
 should gate access, using the authentication, to its functions which access the
 **m-ld** engine.
 
@@ -54,14 +54,35 @@ should gate access, using the authentication, to its functions which access the
 > - selectively encrypt data in storage and on the network (see below)
 > - identify and suppress malware (see below)
 >
-> A specification document for this feature will shortly be available in this
-> portal. Please [feed-back](https://github.com/m-ld/feedback/issues) any
-> specific concerns you have.
+> A specification document for future security features will shortly be
+> available in this portal. Please
+> [feed-back](https://github.com/m-ld/feedback/issues) any specific concerns you
+> have.
+
+### Auditing & Non-Repudiation
+Once a user is authorised to the application, it may be important to record
+their activity, as well as that of any other system actor such as a bot, in
+tamper-proof way, for later auditing. This can generally be achieved with the
+use of audit stamps (time & user) on updates. If necessary, these stamps could
+be digitally signed by the app.
+
+Clones maintain a 'journal' of updates, so audit data of this kind is
+effectively distributed in the domain. However, the journal is subject to
+truncation based on a clone-internal strategy for managing storage. To ensure
+long-term archival, an app-specific strategy can be adopted to stream update
+events to some other storage.
+
+> 🚧 The clone journal is currently an internal feature with no API access.
+> Continuous updates are available via the `follow` API.
+> 
+> Furthermore, **m-ld** has been designed from the outset to be able to
+> *natively* track app/user activity in a cryptographically-verifiable way.
+> Details will be included in the forthcoming security specification.
 
 ### Storage & Network
 A **m-ld** engine may use storage to automatically persist data between and
 during app sessions (depending on its documented transaction guarantees). Since
-this storage will frequently be local to the device, it can be vulnerable to
+this will frequently be local to the device, the storage could be vulnerable to
 attack on a side channel, such as direct access through the local operating
 system.
 
@@ -86,18 +107,14 @@ device without credentials.
 > 🚧 The app's ownership of storage and network handles could be combined with
 > its authentication mechanism to control access *per user*. For example, a
 > local user not being authorised to see some data belonging to another user.
-> However, this approach is not ideal because:
-> - It requires the app to have knowledge of the engine's storage data format,
->   and the **m-ld** protocol's data format. These are published, but may not
->   be easy to manipulate.
-> - It requires the app instance to have privileges above that of the local
->   user. On some devices this may not be possible.
+> However, this approach requires the app to have knowledge of the engine's
+> storage data format, and the **m-ld** protocol's data format. These may not be
+> easy to manipulate. It also requires the app instance to have privileges above
+> that of the local user. On some devices this may not be possible.
 >
 > We are working on an entension to the **m-ld** protocol that will support
-> automatic application of selective data encryption. A specification document
-> for this feature will shortly be available in this portal. Please
-> [feed-back](https://github.com/m-ld/feedback/issues) any specific concerns you
-> have.
+> automatic application of selective data encryption. Details will be included
+> in the forthcoming security specification.
 
 ### Malware
 In common with other decentralised technologies, in principle **m-ld** has no
@@ -121,7 +138,5 @@ the compute platform.
 > the peers of a decentralised system.
 >
 > We are working on an entension to the **m-ld** protocol that will support
-> early identification and suppression of malware and suspicious activity. A
-> specification document for this feature will shortly be available in this
-> portal. Please [feed-back](https://github.com/m-ld/feedback/issues) any
-> specific concerns you have.
+> early identification and suppression of malware and suspicious activity.
+> Details will be included in the forthcoming security specification.

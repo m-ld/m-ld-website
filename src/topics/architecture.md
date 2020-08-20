@@ -18,13 +18,19 @@ from a handful to hundreds.
 All clones of the data can accept reads and writes with no waits for other
 clones (consensus- and lock-free). Atomic read and write transactions are
 effected via a JSON API, which is presented suitably for the clone engine
-environment. Communication between clones is via a publish-subscribe messaging
-layer, for example MQTT.
-
-A clone can be deployed on any platform that has a network connection and for
-which an engine exists. To guarantee data persistence, at least one clone must
-use reliable storage, or else enough clones must exist for a statistical
-assurance.
+environment. Communication between clones is via a pluggable publish-subscribe
+messaging layer, for example MQTT.
 
 The data may at any moment differ between clones, but in the absence of any
 writes and with a live connection, then all clones will converge on some state.
+
+A clone can be deployed on any platform that has a network connection and for
+which an engine exists. It is intended to be co-deployed with components of an
+application (app), typically in-process with a data consumer such as the user
+interface.
+
+To guarantee data persistence, at least one clone in a data 'domain' must use
+reliable storage, or else enough clones must exist for a statistical assurance.
+Similarly, the app design must consider how the data is to be partitioned among
+and within domains. These are similar considerations to a traditional
+centralised database model, but applied more widely to the app architecture.

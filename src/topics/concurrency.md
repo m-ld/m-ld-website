@@ -43,12 +43,12 @@ like:
 - This property refers to some other entity which exists
 
 In a programming language, you might find these rules expressed in the type
-system. In a relational database, the rules called "constraints".
+system. In a relational database, the rules are called "constraints".
 
 In **m-ld**, integrity is a collaboration between the domain, engine, app and
-user. While **m-ld** does support constraints (see below), it is first
-important to consider how integrity of this kind applies to a collaborative
-system and to your use-case.
+user. **m-ld** supports constraints (see below), but first it is important to
+consider how integrity of this kind applies to a collaborative system and to
+your use-case.
 
 ### App Integrity
 Like most apps, those using **m-ld** will validate inputs. The validation rules
