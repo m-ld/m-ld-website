@@ -31,6 +31,5 @@ interface.
 
 To guarantee data persistence, at least one clone in a data 'domain' must use
 reliable storage, or else enough clones must exist for a statistical assurance.
-Similarly, the app design must consider how the data is to be partitioned among
-and within domains. These are similar considerations to a traditional
-centralised database model, but applied more widely to the app architecture.
+Apps can choose to use one or more domains to partition the data, where different
+clones may subscribe to different combinations of domains.
