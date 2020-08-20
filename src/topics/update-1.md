@@ -23,7 +23,7 @@ An elevator pitch: [https://bit.ly/m-ld-pitch-video](https://bit.ly/m-ld-pitch-v
 
 In engineering, we're working hard on two main deliverables that will drop next month: the live demo app, and the developer preview. The demo app will give everyone a flavour of just one kind of software where **m-ld** fits perfectly, though it's not the only one of course! You get a quick feel for it in our demo video: [https://bit.ly/m-ld-demo-app-video](https://bit.ly/m-ld-demo-app-video).
 
-The developer preview will let you try out a **m-ld** engine in your own code. First will be the engine for Javascript platforms, and it'll be quickly followed by Java and Docker, because we're committed to having good platform coverage early on. All the engines will be open-source.
+The developer preview will let you try out a **m-ld** engine in your own code. First will be the engine for Javascript platforms, and it'll be quickly followed by Java and Docker, because we're committed to having good platform coverage early on. **All the engines will be open-source**.
 
 If you're interested in **m-ld** and would like to get more involved, brilliant! Here are some ideas...
 
