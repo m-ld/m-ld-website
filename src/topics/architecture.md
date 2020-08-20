@@ -17,9 +17,8 @@ from a handful to hundreds.
 
 All clones of the data can accept reads and writes with no waits for other
 clones (consensus- and lock-free). Atomic read and write transactions are
-effected via a JSON API, which is presented suitably for the clone engine
-environment. Communication between clones is via a pluggable publish-subscribe
-messaging layer, for example MQTT.
+effected via a JSON API. Communication between clones is via a pluggable
+messaging layer, for which several implementations are provided.
 
 The data may at any moment differ between clones, but in the absence of any
 writes and with a live connection, then all clones will converge on some state.
