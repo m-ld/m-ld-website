@@ -9,7 +9,7 @@ patterns:
 summary: '<b>m-ld</b> data is decentralised in principle.'
 date: 2020-03-01 # Used for sort order
 ---
-In principle, **m-ld** clones are low-cost replicates and can be created and
+**m-ld** clones are low-cost replicates and can be created and
 destroyed with impunity. They are
 ["cattle,&nbsp;not&nbsp;pets"](http://cloudscaling.com/blog/cloud-computing/the-history-of-pets-vs-cattle/).
 This is unlike the traditional database approach of carefully looking after
