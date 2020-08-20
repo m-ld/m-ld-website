@@ -18,7 +18,7 @@ from a handful to hundreds.
 All clones of the data can accept reads and writes with no waits for other
 clones (consensus- and lock-free). Atomic read and write transactions are
 effected via a JSON API. Communication between clones is via a pluggable
-messaging layer, for which several implementations are provided.
+messaging layer, with implementations provided.
 
 The data may at any moment differ between clones, but in the absence of any
 writes and with a live connection, then all clones will converge on some state.
@@ -30,5 +30,4 @@ interface.
 
 To guarantee data persistence, at least one clone in a data 'domain' must use
 reliable storage, or else enough clones must exist for a statistical assurance.
-Apps can choose to use one or more domains to partition the data, where different
-clones may subscribe to different combinations of domains.
+Apps can choose to use one or more domains to partition the data.
