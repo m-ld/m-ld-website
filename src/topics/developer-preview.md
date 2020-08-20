@@ -20,10 +20,9 @@ And of course, the main event is the
 [Javascript&nbsp;engine](https://js.m-ld.org/), which you can download and begin
 to experiment with.
 
-We're excited about the many interesting use cases for **m-ld**!
+We're excited about the many interesting use-cases for **m-ld**!
 We're working really hard on the ergonomics, the performance and the security.
-
-This is a pre-release preview. It's not quite finished but we're eager for your feedback.
+This is a pre-release preview, and we're eager for your feedback.
 
 If you have a request or a question to share, go to the Issues page of our
 dedicated GitHub [feedback&nbsp;repo](https://github.com/m-ld/feedback/issues).
