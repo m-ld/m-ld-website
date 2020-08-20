@@ -35,6 +35,5 @@ temporary compute nodes, while guaranteeing data consistency.
 
 ### Personal Data
 Consumer concerns about personal data include increasing awareness of data
-ownership. The characteristics of **m-ld** support apps that allow consumers to
-keep control over their data while still being able to safely keep it backed-up
-in a choice of locations.
+ownership. **m-ld** allows consumers to keep control over their data while still
+being able to safely keep it backed-up in a choice of locations.
