@@ -8,18 +8,43 @@ $fa-font-path: "/webfonts";
 @import "../../node_modules/@fortawesome/fontawesome-free/scss/brands.scss";
 @import "../../node_modules/@fortawesome/fontawesome-free/scss/solid.scss";
 
+dl {
+  font-size: smaller;
+  dt {
+    font-weight: bold;
+  }
+}
+
+figure svg {
+  fill: $grey;
+}
+
+.content blockquote {
+  @extend .has-background-warning-light
+}
+
+html#demo {
+  // Needs to be on the html element for Firefox
+  overflow: hidden;
+  body {
+    height: 100%;
+    overflow: hidden;
+    width: 100%;
+    position: fixed;
+  }
+}
+
+#board {
+  cursor: grab;
+}
+
 .board-message-box {
   fill: $light;
-  stroke: none;
+  stroke: $light;
   stroke-width: 3;
-
-  &.link-target {
-    stroke: $link;
-  }
-
-  &.unlink-target {
-    stroke: $danger;
-  }
+  filter: url(#shadow);
+  // highlights fade away, see link-target, remove-target & new-message
+  transition: stroke 1s;
 }
 
 .board-message-button {
@@ -37,6 +62,13 @@ $fa-font-path: "/webfonts";
 .board-message.active {
   .board-message-button {
     visibility: visible;
+  }
+}
+
+.board-message.active {
+  .board-message-box:not(.remove-target) {
+    stroke: $primary;
+    transition: none;
   }
 }
 
@@ -62,6 +94,100 @@ $fa-font-path: "/webfonts";
   stroke: $link;
 }
 
+.link-target {
+  stroke: $link;
+  transition: none;
+}
+
+.remove-target {
+  stroke: $danger;
+  transition: none;
+}
+
+.new-message {
+  stroke: $primary;
+  transition: none;
+}
+
 #link-arrowhead {
   fill: $link;
+}
+
+.corner-control {
+  position: absolute;
+  margin: 1em;
+}
+
+#warning {
+  @extend .corner-control;
+  top: 0;
+  right: 0;
+
+  box-shadow: $box-shadow;
+}
+
+#board-buttons {
+  @extend .corner-control;
+  top: 0;
+  left: 0;
+
+  & > :not(:first-child) {
+    padding-top: 0.5em;
+  }
+}
+
+#board-menu {
+  & table {
+    margin: 0;
+  }
+
+  & td {
+    padding-left: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    border: none;
+    vertical-align: middle;
+  }
+}
+
+.boards-pane {
+  max-height: 10em;
+  overflow-y: scroll;
+}
+
+#help {
+  @extend .corner-control;
+  top: 0;
+  right: 0;
+
+  box-shadow: $box-shadow;
+
+  & .message-body {
+    div {
+      white-space: nowrap;
+    }
+
+    & > :not(:first-child) {
+      margin-top: 0.5em;
+    }
+  }
+
+  & .how {
+    @extend .is-pulled-right;
+    margin-left: 1em;
+  }
+
+  & .board-message-button {
+    visibility: visible;
+  }
+}
+
+#smallprint {
+  @extend .is-size-7;
+  position: fixed;
+  bottom: 0;
+  width: 90%;
+  background: none;
+  pointer-events: none;
+  margin: 0.5em;
 }

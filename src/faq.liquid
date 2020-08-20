@@ -1,0 +1,12 @@
+---
+layout: doc.liquid
+---
+<h1 class="title">frequently asked questions</h1>
+{%- for faq in collections.faq -%}
+<div id="{{ faq.fileSlug }}" class="content has-text-weight-bold is-medium">
+  {{ faq.data.title }}
+</div>
+<div class="content">
+  {{ faq.templateContent }}
+</div>
+{%- endfor -%}

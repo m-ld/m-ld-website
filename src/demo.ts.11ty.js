@@ -4,6 +4,9 @@
 const { join } = require('path');
 const browserify = require('browserify');
 const { promisify } = require('util');
+const tsconfig = require('../tsconfig.json');
+const minify = require('minify-stream');
+const concat = require('concat-stream');
 
 module.exports = class {
   data() {
@@ -14,14 +17,19 @@ module.exports = class {
   };
 
   async render({ tsPath }) {
-    if (process.env.LIVE_DEMO) {
-      var b = browserify(tsPath, {
-        debug: true // TODO: Remove for production
-      }).plugin("tsify", {
-        noImplicitAny: true,
-        target: 'es5'
-      }).transform(require('envify'));
-      return promisify(b.bundle.bind(b))();
-    }
+    const dev = process.env.NODE_ENV == 'development';
+    let b = browserify(tsPath, { debug: dev })
+      .plugin('tsify', tsconfig.compilerOptions)
+      .transform('envify', { global: true });
+    
+    return new Promise((resolve, reject) => {
+      const demoJs = concat(resolve);
+      let demoStream = b.bundle();
+      if (!dev)
+        demoStream = demoStream.pipe(minify({ sourceMap: false }));
+
+      demoStream.on('error', reject);
+      demoStream.pipe(demoJs);
+    });
   }
 }

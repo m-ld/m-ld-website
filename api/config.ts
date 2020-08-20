@@ -1,71 +1,85 @@
-import { NowRequest, NowResponse } from '@now/node'
-import { Config } from '../src/_includes/config';
-import SetupFetch from '@zeit/fetch';
-import { URL } from 'url';
-const fetch = SetupFetch();
+import { Config } from '../lib/dto';
+import { LOG, randomWord, responder, fetch } from '../lib/api/common';
+import nlp from 'compromise';
+import { sign } from 'jsonwebtoken';
 
-export default async (req: NowRequest, res: NowResponse) => {
-  const configReq = req.body as Config.Request;
-  if (!configReq.token)
-    return res.status(400).send('No token in request!');
+export default responder<Config.Request, Config.Response>('recaptcha', async configReq => {
+  const { domain, genesis } = await newDomain(configReq['@domain']);
+  const config: Partial<Config.Response> = {
+    '@id': configReq['@id'],
+    '@domain': domain,
+    genesis,
+    logLevel: LOG.getLevel()
+  };
+  if (!genesis) {
+    // Try to load a custom config for this domain
+    Object.assign(config, await loadCustomConfig(domain));
+  }
+  // Tokens are Ably JWTs - used for both our config and Ably's
+  config.token = await ablyToken(domain, configReq['@id']);
+  config.ably = Object.assign(config.ably ?? {}, { token: config.token, maxRate: 20 });
+  // Check if bot is explicitly disabled in the custom config
+  if (config.botName !== false) {
+    // Bot name is browser-specific, so just look for truthiness
+    if (config.botName != null) // Every browser has a bot!
+      config.botName = configReq.botName || await newBotName();
+    else // New bot if genesis, otherwise keep whatever we had before
+      config.botName = genesis ? await newBotName() : configReq.botName;
+  }
+  // We're now sure we have everything, even if Typescript isn't
+  return <Config.Response>config;
+});
 
-  // Validate the token, see https://developers.google.com/recaptcha/docs/v3
-  const siteverify = await fetchJson<{ success: boolean, action: string, score: number }>(
-    'https://www.google.com/recaptcha/api/siteverify', {
-    secret: process.env.RECAPTCHA_SECRET,
-    response: configReq.token
-  }, 'POST');
+/**
+ * Load custom config for the domain from https://github.com/m-ld/message-board-demo.
+ * Failure-tolerant but will warn if error status is other than Not Found.
+ */
+async function loadCustomConfig(domain: string): Promise<object> {
+  const res = await fetch(
+    `https://raw.githubusercontent.com/m-ld/message-board-demo/master/config/${domain}.json`);
+  if (res.ok)
+    return res.json();
+  else if (res.status !== 404)
+    LOG.warn(`Fetch config failed with ${res.status}: ${res.statusText}`);
+  return {};
+}
 
-  if (typeof siteverify === 'string')
-    return res.status(500).send(`reCAPTCHA failed with ${siteverify}`);
-
-  if (!siteverify.success)
-    return res.status(400).send(`reCAPTCHA failed with ${siteverify['error-codes']}`);
-
-  if (siteverify.action != 'config')
-    return res.status(400).send(`reCAPTCHA action mismatch, received '${siteverify.action}'`);
-  
-  if (siteverify.score < 0.5)
-    return res.status(403).send(`reCAPTCHA check failed`);
-
-  // Get a new domain name if none is specified
-  let domain = configReq['@domain'];
+/**
+ * Get a new domain name if none is specified in the request
+ */
+async function newDomain(domain: string) {
+  let genesis = !domain;
   if (!domain) {
-    const part1 = await fetchWord('adjective'), part2 = await fetchWord('noun');
-    if (typeof part1 === 'string' || typeof part2 === 'string')
-      return res.status(500).send('Domain name generation failed');
-
-    domain = `${part1.word}-${part2.word}.m-ld.org`;
+    const [part1, part2] = await Promise.all([
+      randomWord('adjective'), randomWord('noun')]);
+    domain = `${part1}-${part2}.m-ld.org`;
   }
-
-  // Get MQTT connection settings
-  const { protocol, username, password, hostname: host, port } = new URL(process.env.MQTT_URL);
-  const mqttOpts = { protocol: protocol.replace(/:$/, ''), username, password, host, port: Number(port) };
-  Object.keys(mqttOpts).forEach(key => mqttOpts[key] || delete mqttOpts[key]);
-
-  res.json({ '@domain': domain, mqttOpts } as Config.Response);
+  return { domain, genesis };
 }
 
-async function fetchWord(part: 'noun' | 'adjective') {
-  const rtn = await fetchJson<{
-    word: string;
-  }>('http://api.wordnik.com/v4/words.json/randomWord', {
-    api_key: process.env.WORDNIK_API_KEY,
-    includePartOfSpeech: part
+/**
+ * Get an Ably token for the client
+ */
+async function ablyToken(domain: string, clientId: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    if (process.env.ABLY_KEY == null)
+      throw 'Bad lambda configuration';
+    const [keyName, secret] = process.env.ABLY_KEY.split(':');
+    sign({
+      'x-ably-capability': JSON.stringify({ [`${domain}:*`]: ['subscribe', 'publish', 'presence'] }),
+      'x-ably-clientId': clientId
+    }, secret, {
+      keyid: keyName,
+      expiresIn: '10m'
+    }, (err, token) => err ? reject(err) : resolve(token));
   });
-  return typeof rtn === 'string' ? rtn :
-    // Only accept alphabet and hyphen characters
-    /^[a-z\-]+$/.test(rtn.word) ? rtn : fetchWord(part);
 }
 
-async function fetchJson<T extends object>(urlString: string, params: { [name: string]: string }, method: string = 'GET'): Promise<T | string> {
-  const url = new URL(urlString);
-  Object.entries(params).forEach(([name, value]) => url.searchParams.append(name, value));
-  const res = await fetch(url.toString(), { method });
-  if (res.status !== 200) {
-    console.debug(`Fetch from ${url} failed with ${res.statusText}`);
-    return res.statusText;
-  } else {
-    return (await res.json()) || 'No JSON returned';
-  }
+/**
+ * Get a Bot name if none is specified in the request
+ */
+async function newBotName() {
+  return nlp(await randomWord({
+    includePartOfSpeech: 'proper-noun', maxLength: 5
+  })).toTitleCase().text();
 }

@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html id="demo">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>m-ld</title>
+  <link rel="stylesheet" href="/main.css">
+  <script src="../modernizr-custom.js"></script>
+  <script src="https://www.google.com/recaptcha/api.js?render={{ env.RECAPTCHA_SITE }}"></script>
+  <script src="demo.js"></script>
+</head>
+
+<body>
+  <div id="loading" class="modal is-active">
+    <div class="modal-background"></div>
+    <div class="modal-content">
+      <progress class="progress" max="100">Loading...</progress>
+    </div>
+  </div>
+  <svg id="board">
+    <defs>
+      <g id="board-message-template" cursor="default">
+        <!-- box and body must be locked to the same size, used to detect zoom, see
+        MessageView#update -->
+        <rect class="board-message-box" rx="10" width="10" height="10" />
+        <foreignObject class="board-message-body" width="10" height="10" cursor="text">
+          <div xmlns="http://www.w3.org/1999/xhtml" contenteditable="true"
+            style="display: inline-block; padding: 15px; white-space: nowrap; outline: none">
+          </div>
+        </foreignObject>
+        <g transform="translate(10, -10)">
+          {% include 'buttons/close-button.svg', x: 0 %}
+          {% include 'buttons/add-button.svg', x: 25 %}
+          {% include 'buttons/move-button.svg', x: 50 %}
+          {% include 'buttons/code-button.svg', x: 75 %}
+        </g>
+      </g>
+      <line id="link-line-template" marker-end="url(#link-arrowhead)" />
+      <marker id="link-arrowhead" viewBox="0 0 4 4" refX="2" refY="2" markerWidth="4"
+        markerHeight="4" orient="auto">
+        <path d="M 0 0 L 4 2 L 0 4 z"></path>
+      </marker>
+      <filter id="shadow">
+        <feDropShadow dx="1" dy="1" stdDeviation="2" flood-opacity="30%" />
+      </filter>
+    </defs>
+    <g id="link-lines"></g>
+    <g id="messages"></g>
+  </svg>
+  {% include 'popup.liquid', id: 'cant-demo', content: 'cant-demo.html' %}
+  {% include 'popup.liquid', id: 'error', content: 'error.html' %}
+  <div id="warning" class="notification is-warning is-hidden">
+    <button class="delete"></button>
+    <p class="warning-text">Something went wrong</p>
+  </div>
+  <div id="board-buttons">
+    <div id="board-menu" class="dropdown">
+      <div class="dropdown-trigger">
+        <button class="button" aria-haspopup="true" aria-controls="dropdown-menu" title="Menu">
+          <span class="icon">
+            <i class="fas fa-bars" aria-hidden="true"></i>
+          </span>
+        </button>
+      </div>
+      <div class="dropdown-menu" id="dropdown-menu" role="menu">
+        <div class="dropdown-content">
+          <div class="dropdown-item">
+            <i>Boards you have visited from this browser:</i>
+          </div>
+          <div class="boards-pane">
+            <table class="table is-narrow">
+              <tbody id="boards">
+                <!-- pick-board rows -->
+              </tbody>
+            </table>
+          </div>
+          <hr class="dropdown-divider">
+          <a id="new-board" class="dropdown-item">New...</a>
+        </div>
+      </div>
+    </div>
+    <div>
+      <a id="feedback" class="button" href="https://github.com/m-ld/message-board-demo/issues" title="Feedback" target="_blank">
+        <span class="icon">
+          <i class="fas fa-comment"></i>
+        </span>
+      </a>
+    </div>
+    <div>
+      <button id="show-help" class="button" title="Help">
+        <span class="icon">
+          <i class="fas fa-question"></i>
+        </span>
+      </button>
+    </div>
+  </div>
+  <article id="help" class="message is-info is-hidden">
+    <div class="message-header">
+      <p>Help</p>
+      <button class="delete" aria-label="delete"></button>
+    </div>
+    <div class="message-body">
+      <div>Zoom in/out:
+        <span class="how">mouse-wheel</span>
+      </div>
+      <div><a id="reset-zoom">Reset zoom</a>:
+        <span class="how">double-click on background</span>
+      </div>
+      <div><a id="zoom-all">Zoom to see all</a>:
+        <span class="how"><span class="tag">Shift</span>+ double-click</span>
+      </div>
+      <div>Pan board:
+        <span class="how">drag the background</span>
+      </div>
+      <div>Move a message:
+        <span class="how">drag {% include 'buttons/button-ref.svg', button:
+        'buttons/move-button.svg' %}</span>
+      </div>
+      <div>Add a message:
+        <span class="how">click {% include
+        'buttons/button-ref.svg', button: 'buttons/add-button.svg' %}</span>
+      </div>
+      <div>Add a message at a specific place:
+        <span class="how">drag and release {% include
+        'buttons/button-ref.svg', button: 'buttons/add-button.svg' %}</span>
+      </div>
+      <div>Link to another message:
+        <span class="how">drag {% include 'buttons/button-ref.svg', button:
+        'buttons/add-button.svg' %} to it</span>
+      </div>
+      <div>Remove a message:
+        <span class="how">click {% include
+        'buttons/button-ref.svg', button: 'buttons/close-button.svg' %}</span>
+      </div>
+      <div>Remove linked messages:
+        <span class="how"><span class="tag">Shift</span>+{% include
+        'buttons/button-ref.svg', button: 'buttons/close-button.svg' %}</span>
+      </div>
+      <div>Remove a link:
+        <span class="how">drag {% include 'buttons/button-ref.svg', button:
+        'buttons/close-button.svg' %} to the linked message</span>
+      </div>
+      <div>Commit text change:
+        <span class="how"><span class="tag">Enter</span></span>
+      </div>
+      <div>New text line:
+        <span class="how"><span class="tag">Shift</span>+<span class="tag">Enter</span></span>
+      </div>
+  </article>
+  <div id="smallprint">
+    Content that you add to this message board is not stored by m-ld.io Ltd.
+    Internet users can view and edit the board content, without restriction, by
+    navigating to <samp id="board-href"></samp>. This page is for demonstration
+    purposes only and is not intended for sharing private data.
+    See <samp>m-ld.io/privacy</samp>. To discuss your use-case for <b>m-ld</b>
+    please email <samp>info@m-ld.io</samp>.
+  </div>
+</body>
+
+</html>

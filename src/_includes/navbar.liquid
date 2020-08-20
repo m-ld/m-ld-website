@@ -1,0 +1,63 @@
+<nav class="navbar mb-3" role="navigation" aria-label="main navigation">
+  <div class="container is-fluid">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="/">
+        <img src="/m-ld.svg" width="112" />
+      </a>
+      <a role="button" class="navbar-burger burger" aria-label="menu" aria-expanded="false" data-target="navbarMenu">
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+      </a>
+    </div>
+    <div id="navbarMenu" class="navbar-menu">
+      <div class="navbar-start">
+        <a class="navbar-item" href="/news/">
+          news
+        </a>
+        <a class="navbar-item" href="/doc/">
+          documentation
+        </a>
+        <a class="navbar-item" href="https://spec.m-ld.org/">
+          specification
+        </a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          {% unless indexPage %}
+          <a class="navbar-link">
+            platforms
+          </a>
+          {% endunless %}
+          <div class="navbar-dropdown">
+            {%- for platform in index.platforms -%}
+            {% if platform.url %}
+            <a class="navbar-item" href="{{platform.url}}">
+            {% else %}
+            <a class="navbar-item is-static">
+            {% endif %}
+              <span class="icon"><i class="{{platform.icon}}"></i></span>
+              <span class="has-text-dark">{{platform.name | downcase}}</span>
+              {% if platform.soon %}
+              <span class="tag is-warning" style="margin-left: 1em;">soon!</span>
+              {% elsif platform.request %}
+              <span class="tag is-primary" style="margin-left: 1em;">request</span>
+              {% endif %}
+            </a>
+            {%- endfor -%}
+          </div>
+        </div>
+      </div>
+      <div class="navbar-end">
+        <div class="navbar-item">
+          <div class="buttons">
+            <a class="button is-info" href="/faq/">
+              <strong>FAQ</strong>
+            </a>
+            <a href="https://github.com/m-ld/feedback/issues" class="button is-primary">
+              <strong>feedback</strong>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>m-ld</title>
+  <link rel="stylesheet" href="main.css">
+  <script>
+    // Re-direct faq and news questions to the relevant pages
+    {% for topic in collections.topic %}
+    {% unless topic.data.tags[1] == 'why' %}
+    if (window.location.hash === '#{{ topic.fileSlug }}')
+      window.location = '/{{ topic.data.tags[1] }}/#{{ topic.fileSlug }}'
+    {% endunless %}
+    {% endfor %}
+  </script>
+</head>
+
+<body>
+  <section class="hero is-medium is-light">
+    <div class="hero-body">
+      <div class="container has-text-centered">
+        <img src="m-ld.svg" width="400em" />
+      </div>
+    </div>
+  </section>
+  <section id="intro" class="section">
+    <div class="columns">
+      <div class="column is-8-desktop is-offset-2-desktop">
+        <h1 class="title has-text-centered">{{index.tagline}}</h1>
+        <div class="content has-text-justified">
+          {% include 'intro.html' %}
+        </div>
+        <div class="has-text-centered">
+          <a class="button is-info is-large" href="demo/">demo</a>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section class="hero is-primary">
+    <div class="hero-body">
+      <div class="container content has-text-centered is-size-5">
+        The Developer Preview is ready! -
+        <a href="/news/#developer-preview">Read the news</a> -
+        <a href="/doc/">Dive in</a>
+      </div>
+    </div>
+  </section>
+  <section id="streams" class="section">
+    <div class="columns has-text-centered">
+      <div class="column">
+        <a class="box" href="/doc/#architecture" style="height: 100%">
+          <h1 class="title is-4">architecture</h1>
+          <img src="architecture.svg" />
+        </a>
+      </div>
+      <div class="column">
+        <a class="box" href="http://spec.m-ld.org/" style="height: 100%">
+          <h1 class="title is-4">api</h1>
+          <div class="content has-text-left">
+            <pre>{% include 'api-example-1.json' %}</pre>
+          </div>
+          <div class="content has-text-left">
+            <pre>{% include 'api-example-2.json' %}</pre>
+          </div>
+        </a>
+      </div>
+      <div class="column">
+        <div class="box" style="height: 100%">
+          <h1 class="title is-4">platforms</h1>
+          <div class="buttons are-medium">
+            {%- for platform in index.platforms -%}
+            {% if platform.url %}
+            <a class="button is-light is-fullwidth" href="{{platform.url}}">
+            {% else %}
+            <a class="button is-light is-fullwidth is-static">
+            {% endif %}
+              <span class="icon"><i class="{{platform.icon}}"></i></span>
+              <span class="has-text-dark">{{platform.name | downcase}}</span>
+              {% if platform.soon %}
+              <span class="tag is-warning" style="margin-left: 1em;">soon!</span>
+              {% elsif platform.request %}
+              <span class="tag is-primary" style="margin-left: 1em;">request</span>
+              {% endif %}
+            </a>
+            {%- endfor -%}
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section id="why" class="section">
+    <div class="columns">
+      <div class="column is-8-desktop is-offset-2-desktop">
+        <h1 class="title is-4 has-text-centered">why?</h1>
+        {%- for why in collections.why -%}
+        <article id="{{ why.fileSlug }}" class="media">
+          <figure class="media-left">
+            <svg viewBox="0 0 512 512" width="64">
+              {% include why.data.icon %}
+            </svg>
+          </figure>
+          <div class="media-content">
+            <div class="content has-text-weight-bold is-medium">
+              {{ why.data.title }}
+            </div>
+            <div class="content">
+              {{ why.templateContent }}
+            </div>
+          </div>
+        </article>
+        {%- endfor -%}
+      </div>
+    </div>
+  </section>
+  <section class="hero is-light mt-5">
+    <div class="hero-body">
+      {% include 'navbar', indexPage: true %}
+      {% include 'footer', indexPage: true %}
+    </div>
+  </section>
+</body>
+
+</html>

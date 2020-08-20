@@ -1,0 +1,4 @@
+<g transform="translate({{ x }}, 0)" class="board-message-button board-message-move">
+  <circle r="10" cx="10" cy="10" cursor="grab" />
+  <text x="3.5" y="15">&#xf0b2;</text>
+</g>
