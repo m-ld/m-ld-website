@@ -55,9 +55,8 @@ should gate access, using the authentication, to its functions which access the
 > - identify and suppress malware (see below)
 >
 > A specification document for future security features will shortly be
-> available in this portal. Please
-> [feed-back](https://github.com/m-ld/feedback/issues) any specific concerns you
-> have.
+> available in this portal. Please [feed-back](/hello/) any specific concerns
+> you have.
 
 ### Auditing & Non-Repudiation
 Once a user is authorised to the application, it may be important to record
