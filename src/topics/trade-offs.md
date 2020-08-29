@@ -42,5 +42,4 @@ engine implementations, this means that all the data must be stored locally
 
 > 🚧 Clones which do not store all the data locally are the subject of active
 > research. A proposal document for this feature will shortly be available in
-> this portal. Please [feed-back](https://github.com/m-ld/feedback/issues) any
-> specific concerns you have.
+> this portal. Please [feed-back](/hello/) any specific concerns you have.
