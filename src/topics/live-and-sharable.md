@@ -145,7 +145,7 @@ implementing engines, for distributing data in a distributed application.
 
 1. The 'truth' is the local data exposed to the app by **m-ld**.
 1. The data is automatically distributed by **m-ld** with the guarantee that
-   all instances will converge on the same 'truth'.
+   all its instances will converge on the same 'truth'.
 1. We use an open standard for encoding data with its meaning, and communicating
    changes to it.
 
