@@ -12,6 +12,14 @@ author:
   name: George
 date: 2020-09-01
 ---
+
+> 1. The 'truth' should be the data nearest the user, not the data in distant
+>    storage.
+> 1. Distribute the data automatically, with the guarantee that all of it will
+>    converge on the same 'truth'.
+> 1. Use a published open standard for encoding data with its meaning, and
+>    communicating changes to it.
+
 Hi, I'm George. This year I left my day job as a software engineering leader,
 and plunged into lockdown under a mountain of work, uncertainty and risk. Last
 week, I pushed the button to launch the **m-ld** Developer Preview. In between
@@ -46,17 +54,8 @@ and frequently goes awry; resulting in software bugs which are very hard to
 reproduce, let alone fix.
 
 In this blog, I'll argue that with recent advances in computer science we can
-make improvements to this, for many applications. Let's turn the pecularities we
-identified on their heads, and set out our manifesto:
-
-> 1. The 'truth' should be the data that is being used, not the data in distant
->    storage.
-> 1. Distribute the data automatically, with the guarantee that all of it will
->    converge on the same 'truth'.
-> 1. Use a published open standard for encoding data with its meaning, and
->    communicating changes to it.
-
-Following this manifesto, an improved pattern might look like this instead:
+make improvements to this, for many applications. In setting out our manifesto,
+we turned these pecularities on their head:
 
 ![centralised data](/live-sharable-data.svg)
 
@@ -144,9 +143,9 @@ computer science.
 The approach that we've taken with **m-ld** is to provide a protocol, with
 implementing engines, for distributing data in a distributed application.
 
-1. The 'truth' is the data exposed to the app by the engine.
-1. The data is automatically distributed by the engine with the guarantee that
-   all engines will converge on the same 'truth'.
+1. The 'truth' is the local data exposed to the app by **m-ld**.
+1. The data is automatically distributed by **m-ld** with the guarantee that
+   all instances will converge on the same 'truth'.
 1. We use an open standard for encoding data with its meaning, and communicating
    changes to it.
 
