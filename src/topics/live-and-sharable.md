@@ -31,8 +31,8 @@ Motivations include properties of security, integrity, consistency, operational
 efficiency and cost. However, there are some other peculiar properties that
 stand out:
 
-1. The 'truth' is on the far right; but the data is being *used* throughout,
-   with particular value being realised on the far left.
+1. The 'truth' is on the far right-hand side; but the data is being *used*
+   throughout, with particular value being realised on the left.
 1. The software application is responsible for both distributing the data and
    for operating on it.
 1. Every encoding syntax is specific to a technology, and does not expose the
@@ -152,5 +152,9 @@ implementing engines, for distributing data in a distributed application.
 
 For now, we're proving out the tech, and filling out the corners that we think
 are essential for collaboration and autonomy use-cases. But we think we're onto
-something important to data architectures in general. We'd love to hear what
-[you](/hello/) think.
+something important to data architectures in general.
+
+**We'd love to hear what [you](/hello/) think.**
+
+If you're ready to try **m-ld** out, you can work with the
+[Developer&nbsp;Preview](/doc/) right now. Let us know what you're building!
