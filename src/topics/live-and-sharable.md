@@ -12,6 +12,13 @@ author:
   name: George
 date: 2020-09-01
 ---
+> - The 'truth' should be the data that is being used, not the data in distant
+>   storage.
+> - Distribute the data automatically, with the guarantee that all of it will
+>   converge on the same 'truth'.
+> - Use a published open standard for encoding data with its meaning, and
+>   communicating changes to it.
+
 Hi, I'm George. This year I left my day job as a software engineering leader,
 and plunged into lockdown under a mountain of work, uncertainty and risk. Last
 week, I pushed the button to launch the **m-ld** Developer Preview. In between
@@ -31,12 +38,12 @@ Motivations include properties of security, integrity, consistency, operational
 efficiency and cost. However, there are some other peculiar properties that
 stand out:
 
-1. The 'truth' is on the far right-hand side; but the data is being *used*
-   throughout, with particular value being realised on the left.
-1. The software application is responsible for both distributing the data and
-   for operating on it.
-1. Every encoding syntax is specific to a technology, and does not expose the
-   data's meaning enough to be independently understood.
+- The 'truth' is on the far right-hand side; but the data is being *used*
+  throughout, with particular value being realised on the left.
+- The software application is responsible for both distributing the data and
+  for operating on it.
+- Every encoding syntax is specific to a technology, and does not expose the
+  data's meaning enough to be independently understood.
 
 The main consequence of these properties is application code complexity. We have
 to be incredibly careful to maintain an understanding, in the code, of how
@@ -46,19 +53,10 @@ and frequently goes awry; resulting in software bugs which are very hard to
 reproduce, let alone fix.
 
 In this blog, I'll argue that with recent advances in computer science we can
-make improvements to this, for many applications. Let's turn the pecularities we
-identified on their heads, and set out our manifesto:
+make improvements to this, for many applications. Applying our manifesto, we
+want our architecture to look more like this:
 
-> 1. The 'truth' should be the data that is being used, not the data in distant
->    storage.
-> 1. Distribute the data automatically, with the guarantee that all of it will
->    converge on the same 'truth'.
-> 1. Use a published open standard for encoding data with its meaning, and
->    communicating changes to it.
-
-Following this manifesto, an improved pattern might look like this instead:
-
-![centralised data](/live-sharable-data.svg)
+![live sharable data](/live-sharable-data.svg)
 
 *But how?*
 
