@@ -1,5 +1,5 @@
 import * as d3 from 'd3';
-import * as Level from 'level-js';
+// import * as Level from 'level-js';
 import { BoardLocal } from './BoardLocal';
 
 export function showCantDemo(missing: string[]) {
@@ -71,17 +71,17 @@ export function initControls(local: BoardLocal) {
   }
 
   function deleteDomain(domain: string) {
-    const localDomains = local.domains;
+    // const localDomains = local.domains;
     // Level typing is wrong - destroy is a static method
-    (<any>Level).destroy(domain, (err: any) => {
-      if (err) {
-        showError(err);
-      } else {
-        local.removeDomain(domain);
-        showWarning(`Board ${domain} has been removed from this browser.`);
-        updateBoardPicks();
-      }
-    });
+    // (<any>Level).destroy(domain, (err: any) => {
+    //   if (err) {
+    //     showError(err);
+    //   } else {
+    //     local.removeDomain(domain);
+    //     showWarning(`Board ${domain} has been removed from this browser.`);
+    //     updateBoardPicks();
+    //   }
+    // });
   }
 }
 

@@ -1,6 +1,7 @@
 import { BoardView } from '../../lib/client/BoardView';
 import { Message } from '../../lib/Message';
-import * as Level from 'level-js';
+// import * as Level from 'level-js';
+import MemDown from 'memdown';
 import { clone, shortId, uuid } from '@m-ld/m-ld';
 import { Config, Chat, AuthorisedRequest, ID_HEADER, DOMAIN_HEADER } from '../../lib/dto';
 import * as d3 from 'd3';
@@ -55,7 +56,7 @@ window.onload = function () {
       history.replaceState(null, '', '#' + domain);
 
       // Initialise the m-ld clone
-      const meld = await clone(Level(domain), AblyRemotes, config);
+      const meld = await clone(new MemDown, AblyRemotes, config);
       window.addEventListener('unload', () => meld.close());
 
       // Wait for the latest state from the clone

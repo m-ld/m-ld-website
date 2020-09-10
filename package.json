@@ -46,6 +46,7 @@
     "@types/jsonwebtoken": "^8.5.0",
     "@types/level-js": "^4.0.1",
     "@types/local-storage": "^1.4.0",
+    "@types/memdown": "^3.0.0",
     "@types/modernizr": "^3.5.3",
     "@types/node-fetch": "^2.5.7",
     "@types/rbush": "^3.0.0",
@@ -54,16 +55,20 @@
     "d3": "^5.16.0",
     "grecaptcha": "^1.0.3",
     "jsonwebtoken": "^8.5.1",
-    "level-js": "^5.0.2",
     "line-intersect": "^2.2.3",
     "line2": "^0.2.1",
     "local-storage": "^2.0.0",
     "loglevel-plugin-remote": "^0.6.8",
     "logzio-nodejs": "^2.0.1",
+    "memdown": "^5.1.0",
     "node-fetch": "^2.6.0",
+    "process": "github:tinchoz49/node-process#tinchoz49/add-queuemicrotask-support",
     "rbush": "^3.0.1",
     "rxjs": "^6.5.5",
     "striptags": "^3.1.1"
+  },
+  "browser": {
+    "process": "process"
   },
   "jest": {
     "roots": [
