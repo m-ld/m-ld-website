@@ -1,34 +1,34 @@
 import { Config } from '../lib/dto';
-import { LOG, randomWord, responder, fetch } from '../lib/api/common';
+import { LOG, randomWord, responder, fetch, RecaptchaAuth, signJwt } from '@m-ld/io-web-runtime/dist/lambda';
 import nlp from 'compromise';
-import { sign } from 'jsonwebtoken';
 
-export default responder<Config.Request, Config.Response>('recaptcha', async configReq => {
-  const { domain, genesis } = await newDomain(configReq['@domain']);
-  const config: Partial<Config.Response> = {
-    '@id': configReq['@id'],
-    '@domain': domain,
-    genesis,
-    logLevel: LOG.getLevel()
-  };
-  if (!genesis) {
-    // Try to load a custom config for this domain
-    Object.assign(config, await loadCustomConfig(domain));
-  }
-  // Tokens are Ably JWTs - used for both our config and Ably's
-  config.token = await ablyToken(domain, configReq['@id']);
-  config.ably = Object.assign(config.ably ?? {}, { token: config.token, maxRate: 20 });
-  // Check if bot is explicitly disabled in the custom config
-  if (config.botName !== false) {
-    // Bot name is browser-specific, so just look for truthiness
-    if (config.botName != null) // Every browser has a bot!
-      config.botName = configReq.botName || await newBotName();
-    else // New bot if genesis, otherwise keep whatever we had before
-      config.botName = genesis ? await newBotName() : configReq.botName;
-  }
-  // We're now sure we have everything, even if Typescript isn't
-  return <Config.Response>config;
-});
+export default responder<Config.Request, Config.Response>(
+  new RecaptchaAuth(process.env.RECAPTCHA_SECRET), async configReq => {
+    const { domain, genesis } = await newDomain(configReq['@domain']);
+    const config: Partial<Config.Response> = {
+      '@id': configReq['@id'],
+      '@domain': domain,
+      genesis,
+      logLevel: LOG.getLevel()
+    };
+    if (!genesis) {
+      // Try to load a custom config for this domain
+      Object.assign(config, await loadCustomConfig(domain));
+    }
+    // Tokens are Ably JWTs - used for both our config and Ably's
+    config.token = await ablyToken(domain, configReq['@id']);
+    config.ably = Object.assign(config.ably ?? {}, { token: config.token, maxRate: 20 });
+    // Check if bot is explicitly disabled in the custom config
+    if (config.botName !== false) {
+      // Bot name is browser-specific, so just look for truthiness
+      if (config.botName != null) // Every browser has a bot!
+        config.botName = configReq.botName || await newBotName();
+      else // New bot if genesis, otherwise keep whatever we had before
+        config.botName = genesis ? await newBotName() : configReq.botName;
+    }
+    // We're now sure we have everything, even if Typescript isn't
+    return <Config.Response>config;
+  });
 
 /**
  * Load custom config for the domain from https://github.com/m-ld/message-board-demo.
@@ -61,17 +61,15 @@ async function newDomain(domain: string) {
  * Get an Ably token for the client
  */
 async function ablyToken(domain: string, clientId: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    if (process.env.ABLY_KEY == null)
-      throw 'Bad lambda configuration';
-    const [keyName, secret] = process.env.ABLY_KEY.split(':');
-    sign({
-      'x-ably-capability': JSON.stringify({ [`${domain}:*`]: ['subscribe', 'publish', 'presence'] }),
-      'x-ably-clientId': clientId
-    }, secret, {
-      keyid: keyName,
-      expiresIn: '10m'
-    }, (err, token) => err ? reject(err) : resolve(token));
+  if (process.env.ABLY_KEY == null)
+    throw 'Bad lambda configuration';
+  const [keyName, secret] = process.env.ABLY_KEY.split(':');
+  return signJwt({
+    'x-ably-capability': JSON.stringify({ [`${domain}:*`]: ['subscribe', 'publish', 'presence'] }),
+    'x-ably-clientId': clientId
+  }, secret, {
+    keyid: keyName,
+    expiresIn: '10m'
   });
 }
 
