@@ -32,8 +32,8 @@
     "typescript": "^3.9.3"
   },
   "dependencies": {
+    "@m-ld/io-web-runtime": "^0.1.1",
     "@m-ld/m-ld": "^0.2.6",
-    "@m-ld/io-web-runtime": "^0.1.0",
     "@types/d3": "^5.7.2",
     "@types/level-js": "^4.0.1",
     "@types/local-storage": "^1.4.0",

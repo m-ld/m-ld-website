@@ -12,6 +12,6 @@ module.exports = class {
     };
   }
   render() {
-    renderScss.apply(this, arguments);
+    return renderScss.apply(this, arguments);
   }
 }

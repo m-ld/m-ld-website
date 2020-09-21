@@ -13,6 +13,6 @@ module.exports = class {
     };
   }
   render() {
-    renderTs.apply(this, arguments);
+    return renderTs.apply(this, arguments);
   }
 }
