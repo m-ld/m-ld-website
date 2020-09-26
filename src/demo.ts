@@ -1,25 +1,25 @@
 import { BoardView } from '../lib/client/BoardView';
 import { Message } from '../lib/Message';
 import * as Level from 'level-js';
-import { clone, shortId, uuid } from '@m-ld/m-ld';
-import { AuthorisedRequest, configureLogging, setLogToken, modernizd, Grecaptcha } from '@m-ld/io-web-runtime/dist/client';
-import { Config, Chat } from '../lib/dto';
+import { clone, shortId } from '@m-ld/m-ld';
+import { AblyRemotes } from '@m-ld/m-ld/dist/ably';
+import { modernizd, Grecaptcha, configureLogging } from '@m-ld/io-web-runtime/dist/client';
 import * as d3 from 'd3';
 import { BoardLocal } from '../lib/client/BoardLocal'
-import {
-  showError, showCantDemo, initControls, showWarning
-} from '../lib/client/BoardControls';
-import { AblyRemotes } from '@m-ld/m-ld/dist/ably';
+import { initPopupControls, showError, showNotModern, showWarning } from '../lib/client/PopupControls';
+import { initBoardControls} from '../lib/client/BoardControls';
 import { BoardBot } from '../lib/BoardBot';
+import { fetchAnswer, fetchConfig } from '../lib/client/Api';
 
 window.onload = async function () {
   try {
     await modernizd(['indexeddb']);
   } catch (err) {
-    showCantDemo(err);
+    return showNotModern(err);
   }
+  initPopupControls();
   const local = new BoardLocal();
-  initControls(local);
+  initBoardControls(local);
 
   await Grecaptcha.ready;
 
@@ -34,19 +34,10 @@ window.onload = async function () {
     }
 
     // Get the configuration for the domain
-    const config = await fetchConfig(domain, uuid());
-    config.ably.token = config.token;
-    config.ably.authCallback = async (_, cb) =>
-      fetchConfig(config['@domain'], config['@id'])
-        .then(reconfig => {
-          setLogToken(reconfig.token);
-          config.token = reconfig.token;
-          return cb('', reconfig.token);
-        })
-        .catch(err => cb(err, ''));
-    domain = config['@domain'];
+    const config = await fetchConfig(domain, local.getBotName(domain));
     configureLogging(config);
-    const botName = config.botName;
+    domain = config['@domain'];
+    const botName = config.botName ?? false;
     local.setBotName(domain, botName);
     history.replaceState(null, '', '#' + domain);
 
@@ -97,34 +88,14 @@ window.onload = async function () {
     // Unleash the board's resident bot
     if (botName)
       await new BoardBot(botName, welcomeId, meld, boardView.index, {
-        respond: async (message: string, topMessages: string[]) =>
-          (await fetchJson<Chat.Request, Chat.Response>('/api/chat', {
-            '@id': config['@id'], '@domain': domain,
-            origin: window.location.origin, token: config.token,
-            message, topMessages, botName
-          }))
+        respond: (message: string, topMessages: string[]) =>
+          fetchAnswer(config, message, topMessages)
       }).start(isNew);
   } catch (err) {
     showError(err);
-  }
-
-  async function fetchConfig(domain: string | '', id: string) {
-    const token = await Grecaptcha.execute('config');
-    return await fetchJson<Config.Request, Config.Response>('/api/config', {
-      origin: window.location.origin,
-      '@id': id, '@domain': domain, token, botName: local.getBotName(domain)
-    });
   }
 }
 window.onhashchange = function () {
   location.reload();
 };
-
-async function fetchJson<Q extends AuthorisedRequest, S>(api: string, req: Q): Promise<S> {
-  return await d3.json(api, {
-    method: 'post',
-    headers: { 'Content-type': 'application/json; charset=UTF-8' },
-    body: JSON.stringify(req)
-  }) as S;
-}
 

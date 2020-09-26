@@ -19,7 +19,7 @@ export default responder<Config.Request, Config.Response>(
     config.token = await ablyToken(domain, configReq['@id']);
     config.ably = Object.assign(config.ably ?? {}, { token: config.token, maxRate: 20 });
     // Check if bot is explicitly disabled in the custom config
-    if (config.botName !== false) {
+    if (config.botName !== false && configReq.botName != null) {
       // Bot name is browser-specific, so just look for truthiness
       if (config.botName != null) // Every browser has a bot!
         config.botName = configReq.botName || await newBotName();

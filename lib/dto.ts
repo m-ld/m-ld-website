@@ -12,7 +12,7 @@ export namespace Config {
     /**
      * Domain active bot name, or false if none yet exists
      */
-    botName: string | false;
+    botName?: string | false;
     /**
      * Google reCAPTCHA token
      */
@@ -23,7 +23,7 @@ export namespace Config {
     /**
      * Domain active bot, or `false` to disable the bot
      */
-    botName: string | false;
+    botName?: string | false;
     /**
      * JWT token, must be Ably-compatible
      * @see https://www.ably.io/documentation/core-features/authentication#ably-jwt
