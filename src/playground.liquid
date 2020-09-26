@@ -28,19 +28,22 @@
     #txn-pane {
       padding: 1em; flex: 1; overflow: scroll;
     }
-    .min-json {
+    .card-json {
       height: 200px;
     }
     .vflow-item:not(:last-child) {
       margin-bottom: 16px;
     }
-    .fit-json {
+    .fill-down {
       flex: 1;
     }
     .card-preview {
-      max-width: 30em;
+      max-width: 25em;
       overflow: hidden;
       text-overflow: ellipsis;
+    }
+    .update-card .card-header-title {
+      font-weight: unset;
     }
     #domain-input {
       min-width: 300px;
@@ -101,7 +104,7 @@
   </nav>
   <section id="playground-ide">
     <div id="data-pane">
-      <div class="card is-fullwidth vflow-item">
+      <div id="query-card" class="card is-fullwidth vflow-item">
         <header class="card-header">
           <p class="card-header-title">Query</p>
           <pre class="card-preview"></pre>
@@ -110,13 +113,13 @@
           </a>
         </header>
         <div class="card-content is-hidden">
-          <div id="query-jsoneditor" class="min-json vflow-item"></div>
+          <div class="card-json vflow-item"></div>
           <nav class="level vflow-item">
             <div class="level-left">
               <button id="query-apply" class="level-item button is-primary requires-domain">apply</button>
             </div>
             <div class="level-right">
-              <div class="level-item dropdown is-hoverable">
+              <div class="level-item dropdown is-right is-hoverable">
                 <div class="dropdown-trigger">
                   <button class="button" aria-haspopup="true" aria-controls="query-templates-menu">
                     <span>templates</span>
@@ -125,7 +128,7 @@
                     </span>
                   </button>
                 </div>
-                <div class="dropdown-menu" id="query-templates-menu" role="menu">
+                <div class="dropdown-menu templates-menu" id="query-templates-menu" role="menu">
                   <div class="dropdown-content">
                   </div>
                 </div>
@@ -142,10 +145,10 @@
           </a>
         </header>
       </div>
-      <div id="data-jsoneditor" class="fit-json vflow-item"></div>
+      <div id="data-jsoneditor" class="vflow-item fill-down"></div>
     </div>
     <div id="txn-pane">
-      <div class="card is-fullwidth vflow-item">
+      <div id="txn-card" class="card is-fullwidth vflow-item">
         <header class="card-header">
           <p class="card-header-title">Transact</p>
           <a class="card-header-icon card-toggle">
@@ -153,13 +156,13 @@
           </a>
         </header>
         <div class="card-content">
-          <div id="txn-jsoneditor" class="min-json vflow-item"></div>
+          <div class="card-json vflow-item"></div>
           <nav class="level vflow-item">
             <div class="level-left">
               <button id="txn-apply" class="level-item button is-primary requires-domain">apply</button>
             </div>
             <div class="level-right">
-              <div class="level-item dropdown is-hoverable">
+              <div class="level-item dropdown is-right is-hoverable">
                 <div class="dropdown-trigger">
                   <button class="button" aria-haspopup="true" aria-controls="txn-templates-menu">
                     <span>templates</span>
@@ -168,15 +171,31 @@
                     </span>
                   </button>
                 </div>
-                <div class="dropdown-menu" id="txn-templates-menu" role="menu">
+                <div class="dropdown-menu templates-menu" id="txn-templates-menu" role="menu">
                   <div class="dropdown-content">
-                    <a class="dropdown-item">Insert</a>
                   </div>
                 </div>
               </div>
             </div>
           </nav>
         </div>
+      </div>
+      <div id="update-template" class="card update-card is-fullwidth vflow-item is-hidden">
+        <header class="card-header">
+          <p class="card-header-title">just now</p>
+          <pre class="card-preview"></pre>
+          <a class="card-header-icon card-toggle">
+            <i class="fa fa-angle-down"></i>
+          </a>
+        </header>
+        <div class="card-content is-hidden">
+          <div class="card-json vflow-item"></div>
+        </div>
+      </div>
+      <div id="updates-log" class="vflow-item">
+      </div>
+      <div id="more-button" class="buttons has-addons vflow-item is-centered is-hidden">
+        <button class="button">more...</button>
       </div>
     </div>
   </section>

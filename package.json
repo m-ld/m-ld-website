@@ -50,7 +50,8 @@
     "memdown": "^5.1.0",
     "rbush": "^3.0.1",
     "rxjs": "^6.5.5",
-    "striptags": "^3.1.1"
+    "striptags": "^3.1.1",
+    "timeago.js": "^4.0.2"
   },
   "jest": {
     "roots": [

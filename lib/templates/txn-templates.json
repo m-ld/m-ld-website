@@ -1,0 +1,70 @@
+{
+  "Insert new subject properties": {
+    "@id": "<identity>",
+    "property1": 1,
+    "property2": "<value>"
+  },
+  "Insert multiple subjects": {
+    "@graph": [
+      {
+        "@id": "<id1>",
+        "property1": 1
+      },
+      {
+        "@id": "<id2>",
+        "property1": 2
+      }
+    ]
+  },
+  "Delete a subject property": {
+    "@delete": {
+      "@id": "<identity>",
+      "property1": 1
+    }
+  },
+  "Update a subject property": {
+    "@delete": {
+      "@id": "<identity>",
+      "property1": 1
+    },
+    "@insert": {
+      "@id": "<identity>",
+      "property1": 2
+    }
+  },
+  "Replace all subject properties": {
+    "@delete": {
+      "@id": "<identity>",
+      "?p": "?o"
+    },
+    "@insert": {
+      "@id": "<identity>",
+      "property1": 10,
+      "property2": "<new value>"
+    }
+  },
+  "Delete a subject & all references": {
+    "@delete": [
+      {
+        "@id": "<identity>",
+        "?p1": "?o1"
+      },
+      {
+        "@id": "?s2",
+        "?p2": "<identity>"
+      }
+    ],
+    "@where": {
+      "@union": [
+        {
+          "@id": "<identity>",
+          "?p1": "?o1"
+        },
+        {
+          "@id": "?s2",
+          "?p2": "<identity>"
+        }
+      ]
+    }
+  }
+}

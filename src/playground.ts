@@ -1,13 +1,16 @@
 import * as d3 from 'd3';
 import JSONEditor, { JSONEditorOptions } from 'jsoneditor';
 import { D3View } from '../lib/client/D3View';
-import { parentWithClass } from '../lib/client/d3Util';
+import { d3Selection } from '../lib/client/d3Util';
 import { Grecaptcha, modernizd } from '@m-ld/io-web-runtime/dist/client';
 import { initPopupControls, showNotModern, showWarning } from '../lib/client/PopupControls';
 import { fetchConfig } from '../lib/client/Api';
-import { clone, MeldApi, isRead, isWrite, Read, Describe } from '@m-ld/m-ld';
+import { clone, MeldApi, isRead, isWrite } from '@m-ld/m-ld';
 import { AblyRemotes } from '@m-ld/m-ld/dist/ably';
 import MemDown from 'memdown';
+import { render as renderTime } from 'timeago.js';
+const queryTemplates = require('../lib/templates/query-templates.json');
+const txnTemplates = require('../lib/templates/txn-templates.json');
 
 window.onload = async function () {
   try {
@@ -25,45 +28,48 @@ window.onload = async function () {
 
 const NOT_A_READ = 'Query pattern is not a read operation';
 const NOT_A_WRITE = 'Transaction pattern is not a write operation';
-const QUERY_TEMPLATES: { [key: string]: Read } = {
-  'Describe all': {
-    '@describe': '?s',
-    '@where': { '@id': '?s' }
-  } as Describe
-};
 
 class Playground {
   queryCard: JsonEditorCard;
   txnCard: JsonEditorCard;
   dataEditor: JSONEditor;
   meld?: MeldApi;
+  updateCards: JsonEditorCard[] = [];
 
   constructor() {
-    this.queryCard = new JsonEditorCard('query-jsoneditor', {
+    this.queryCard = new JsonEditorCard(d3.select('#query-card'), queryTemplates, {
       mode: 'code', mainMenuBar: false, statusBar: false, onValidate: json =>
         isRead(json) ? [] : [{ path: [], message: NOT_A_READ }]
-    }, QUERY_TEMPLATES['Describe all']);
-    this.txnCard = new JsonEditorCard('txn-jsoneditor', {
+    }, queryTemplates['Describe all subjects']);
+    this.txnCard = new JsonEditorCard(d3.select('#txn-card'), txnTemplates, {
       mode: 'code', mainMenuBar: false, statusBar: false, onValidate: json =>
         isWrite(json) ? [] : [{ path: [], message: NOT_A_WRITE }]
     });
-    this.dataEditor = new JSONEditor(jsonEditorNode('data-jsoneditor'), {
-      mode: 'view'
+    this.dataEditor = new JSONEditor(d3.select('#data-jsoneditor').node() as HTMLElement, {
+      modes: ['view', 'code'], enableTransform: false, enableSort: false, onEditable: () => false
     }, []);
     this.domainInput.on('keydown', () => {
       if (d3.event.key === 'Enter')
         this.loadDomain();
     });
-    d3.select('#query-templates-menu .dropdown-content')
-      .selectAll('.dropdown-item').data(Object.entries(QUERY_TEMPLATES))
-      .join('a').classed('dropdown-item', true).text(e => e[0])
-      .on('click', e => this.queryCard.jsonEditor.set(e[1]));
     this.newDomainButton.on('click', () => {
       this.domainInput.property('value', '');
       this.loadDomain();
     });
     d3.select('#query-apply').on('click', () => {
       this.runQuery('warn');
+    });
+    d3.select('#txn-apply').on('click', async () => {
+      if (this.meld != null) {
+        try {
+          const pattern = this.txnCard.jsonEditor.get();
+          if (!isWrite(pattern))
+            throw NOT_A_WRITE;
+          await this.meld.transact(pattern);
+        } catch (err) {
+          showWarning(err);
+        }
+      }
     });
     this.loading = false;
   }
@@ -81,9 +87,19 @@ class Playground {
       const config = await fetchConfig(this.domainInput.property('value'));
       this.domainInput.property('value', config['@domain']);
       this.meld = await clone(new MemDown, AblyRemotes, config);
-      this.meld.follow().subscribe(() => {
+      this.meld.follow().subscribe(update => {
         this.runQuery();
-        // TODO prepend to log
+        const editorCard = new JsonEditorCard(
+          d3.select('#updates-log')
+            .append(this.newUpdateCardNode).lower()
+            .classed('is-hidden', false), {}, {
+          mode: 'code', mainMenuBar: false, statusBar: false, onEditable: () => false
+        }, update);
+        editorCard.title.attr('datetime', new Date().toISOString());
+        renderTime(editorCard.title.node() ?? [], 'en_US', { minInterval: 10 });
+
+        // Prepend the update to the log
+        this.updateCards.push(editorCard);
       });
       await this.meld.status.becomes({ outdated: false });
       this.runQuery('warn');
@@ -120,6 +136,14 @@ class Playground {
     return d3.select('#domain-new');
   }
 
+  newUpdateCardNode(): HTMLDivElement {
+    const cardDiv = <HTMLDivElement>d3.select
+      <HTMLDivElement, unknown>('#update-template').node()?.cloneNode(true);
+    if (cardDiv == null)
+      throw 'Missing card template';
+    return cardDiv;
+  }
+
   set loading(loading: boolean) {
     d3.select('#domain-spinner').classed('is-hidden', !loading);
     d3.selectAll('.requires-domain').property('disabled', loading || !this.meld);
@@ -134,10 +158,14 @@ class Playground {
 
 class JsonEditorCard extends D3View<HTMLDivElement> {
   jsonEditor: JSONEditor;
+  created = Date.now();
 
-  constructor(jsonEditorId: string, options?: JSONEditorOptions, json?: any) {
-    const editorNode = jsonEditorNode(jsonEditorId);
-    super(d3.select(parentWithClass<HTMLDivElement>(editorNode, 'card')));
+  constructor(
+    cardNode: d3Selection<HTMLDivElement>,
+    templates: object,
+    options?: JSONEditorOptions,
+    json?: any) {
+    super(cardNode);
 
     this.toggle.on('click', () => {
       const show = this.content.classed('is-hidden');
@@ -169,8 +197,19 @@ class JsonEditorCard extends D3View<HTMLDivElement> {
       };
     }
 
-    this.jsonEditor = new JSONEditor(editorNode, options, json);
+    this.jsonEditor = new JSONEditor(
+      this.d3.select('.card-json').node() as HTMLElement, options, json);
+
+    this.templatesContent
+      .selectAll('.dropdown-item').data(Object.entries(templates))
+      .join('a').classed('dropdown-item', true).text(e => e[0])
+      .on('click', e => this.jsonEditor.set(e[1]));
+
     options?.onChange?.();
+  }
+
+  get title() {
+    return this.d3.select<HTMLDivElement>('.card-header-title');
   }
 
   get content() {
@@ -188,12 +227,12 @@ class JsonEditorCard extends D3View<HTMLDivElement> {
   get icon() {
     return this.toggle.select('.fa');
   }
+
+  get templatesContent() {
+    return this.d3.select('.templates-menu .dropdown-content');
+  }
 }
 
 function previewErrHtml(err: any): string {
   return `<i class="fas fa-exclamation-triangle" title="${err}"></i>`;
-}
-
-function jsonEditorNode(jsonEditorId: string) {
-  return d3.select(`#${jsonEditorId}`).node() as HTMLDivElement;
 }

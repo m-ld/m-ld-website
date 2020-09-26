@@ -1,0 +1,8 @@
+{
+  "Describe all subjects": {
+    "@describe": "?s",
+    "@where": {
+      "@id": "?s"
+    }
+  }
+}
