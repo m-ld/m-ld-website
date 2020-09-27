@@ -35,7 +35,7 @@
   "Replace all subject properties": {
     "@delete": {
       "@id": "<identity>",
-      "?p": "?o"
+      "?prop": "?value"
     },
     "@insert": {
       "@id": "<identity>",
@@ -47,22 +47,22 @@
     "@delete": [
       {
         "@id": "<identity>",
-        "?p1": "?o1"
+        "?prop1": "?value"
       },
       {
-        "@id": "?s2",
-        "?p2": "<identity>"
+        "@id": "?id2",
+        "?ref": "<identity>"
       }
     ],
     "@where": {
       "@union": [
         {
           "@id": "<identity>",
-          "?p1": "?o1"
+          "?prop1": "?value"
         },
         {
-          "@id": "?s2",
-          "?p2": "<identity>"
+          "@id": "?id2",
+          "?ref": "<identity>"
         }
       ]
     }

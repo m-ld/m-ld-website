@@ -5,8 +5,8 @@ import { d3Selection } from '../lib/client/d3Util';
 import { Grecaptcha, modernizd } from '@m-ld/io-web-runtime/dist/client';
 import { initPopupControls, showNotModern, showWarning } from '../lib/client/PopupControls';
 import { fetchConfig } from '../lib/client/Api';
-import { clone, MeldApi, isRead, isWrite } from '@m-ld/m-ld';
-import { AblyRemotes } from '@m-ld/m-ld/dist/ably';
+import { clone, MeldApi, isRead, isWrite, Context, MeldUpdate } from '@m-ld/m-ld';
+import { AblyRemotes, MeldAblyConfig } from '@m-ld/m-ld/dist/ably';
 import MemDown from 'memdown';
 import { render as renderTime } from 'timeago.js';
 const queryTemplates = require('../lib/templates/query-templates.json');
@@ -23,17 +23,78 @@ window.onload = async function () {
   await Grecaptcha.ready;
 
   const pg = new Playground();
+  window.addEventListener('beforeunload', e => {
+    if (pg.unsaved) {
+      e.preventDefault();
+      e.returnValue = '';
+    }
+  });
   window.onunload = () => pg.close();
 };
 
+function validContext(context: any): boolean {
+  return context != null && typeof context == 'object' && !Array.isArray(context);
+}
+
+class OptionsDialog extends D3View<HTMLDivElement> {
+  contextEditor: JSONEditor;
+  prevContext: any = {};
+
+  constructor() {
+    super(d3.select('#options-dialog'));
+    this.contextEditor = new JSONEditor(d3.select('#context-jsoneditor').node() as HTMLElement, {
+      mode: 'code', mainMenuBar: false, statusBar: false,
+      onChange: () => this.applyButton.property('disabled', !this.valid),
+      onValidate: json => validContext(json) ? [] : [{ path: [], message: NOT_A_CONTEXT }]
+    }, {}); // Default empty context
+    this.applyButton.on('click', () => {
+      this.d3.classed('is-active', false);
+    });
+    this.cancelButton.on('click', () => {
+      this.d3.classed('is-active', false);
+      this.contextEditor.set(this.prevContext);
+    });
+  }
+
+  get context() {
+    return this.contextEditor.get();
+  }
+
+  get valid(): boolean {
+    try {
+      const context = this.contextEditor.get();
+      return validContext(context);
+    } catch (err) {
+      return false;
+    }
+  }
+
+  get applyButton() {
+    return d3.select('#options-apply');
+  }
+
+  get cancelButton() {
+    return d3.select('#options-cancel');
+  }
+
+  show() {
+    this.d3.classed('is-active', true);
+    this.prevContext = this.contextEditor.get();
+  }
+}
+
 const NOT_A_READ = 'Query pattern is not a read operation';
 const NOT_A_WRITE = 'Transaction pattern is not a write operation';
+const NOT_A_CONTEXT = 'A m-ld context must be a JSON object';
+const CONFIRM_CHANGE_DOMAIN = 'You may have unsaved data. Continue changing domain?';
 
 class Playground {
   queryCard: JsonEditorCard;
   txnCard: JsonEditorCard;
   dataEditor: JSONEditor;
-  meld?: MeldApi;
+  clone?: MeldApi;
+  config?: MeldAblyConfig;
+  options: OptionsDialog;
 
   constructor() {
     this.queryCard = new JsonEditorCard(d3.select('#query-card'), queryTemplates, {
@@ -52,54 +113,52 @@ class Playground {
         this.loadDomain();
     });
     this.newDomainButton.on('click', () => {
-      this.domainInput.property('value', '');
+      this.domain = '';
       this.loadDomain();
     });
     d3.select('#query-apply').on('click', () => {
       this.runQuery('warn');
     });
     d3.select('#txn-apply').on('click', async () => {
-      if (this.meld != null) {
+      if (this.clone != null) {
         try {
           const pattern = this.txnCard.jsonEditor.get();
           if (!isWrite(pattern))
             throw NOT_A_WRITE;
-          await this.meld.transact(pattern);
+          await this.clone.transact(pattern);
         } catch (err) {
           showWarning(err);
         }
       }
     });
+    d3.select('#show-options').on('click', () => this.options.show());
+    this.options = new OptionsDialog();
     this.loading = false;
   }
 
   async close() {
-    if (this.meld != null)
-      await this.meld.close();
-    this.meld = undefined;
+    if (this.clone != null)
+      await this.clone.close();
+    this.clone = undefined;
+  }
+
+  get unsaved() {
+    return this.clone?.status.value.silo;
   }
 
   async loadDomain() {
+    if (this.unsaved && !window.confirm(CONFIRM_CHANGE_DOMAIN))
+      return this.domain = this.config?.['@domain'] ?? '';
     try {
       this.loading = true;
       await this.close();
-      const config = await fetchConfig(this.domainInput.property('value'));
-      this.domainInput.property('value', config['@domain']);
-      this.meld = await clone(new MemDown, AblyRemotes, config);
-      this.meld.follow().subscribe(update => {
-        this.runQuery();
-        const editorCard = new JsonEditorCard(
-          this.updatesLog
-            .insert(this.newUpdateCardNode, ':first-child')
-            .attr('id', null).classed('is-hidden', false), {}, {
-          mode: 'code', mainMenuBar: false, statusBar: false, onEditable: () => false
-        }, update);
-        editorCard.title.attr('datetime', new Date().toISOString());
-        renderTime(editorCard.title.node() ?? [], 'en_US', { minInterval: 10 });
-        // Starting with the next sibling, group cards by time unless they are expanded
-        editorCard.mergeFollowing('skip');
-      });
-      await this.meld.status.becomes({ outdated: false });
+      this.updatesLog.selectAll('.update-card').remove();
+      this.config = await fetchConfig(this.domain);
+      this.domain = this.config['@domain'];
+      this.config['@context'] = { ...this.config['@context'], ...this.options.context };
+      this.clone = await clone(new MemDown, AblyRemotes, this.config);
+      this.clone.follow().subscribe(update => this.onUpdate(update));
+      await this.clone.status.becomes({ outdated: false });
       this.runQuery('warn');
     } catch (err) {
       showWarning(err);
@@ -108,16 +167,28 @@ class Playground {
     }
   }
 
-
+  private onUpdate(update: MeldUpdate) {
+    this.runQuery();
+    const editorCard = new JsonEditorCard(
+      this.updatesLog
+        .insert(this.newUpdateCardNode, ':first-child')
+        .attr('id', null).classed('is-hidden', false), {}, {
+      mode: 'code', mainMenuBar: false, statusBar: false, onEditable: () => false
+    }, update);
+    editorCard.title.attr('datetime', new Date().toISOString());
+    renderTime(editorCard.title.node() ?? [], 'en_US', { minInterval: 10 });
+    // Starting with the next sibling, group cards by time unless they are expanded
+    editorCard.mergeFollowing('skip');
+  }
 
   async runQuery(warn?: 'warn') {
-    if (this.meld != null) {
+    if (this.clone != null) {
       try {
         this.querying = true;
         const pattern = this.queryCard.jsonEditor.get();
         if (!isRead(pattern))
           throw NOT_A_READ;
-        const subjects = await this.meld.transact(pattern);
+        const subjects = await this.clone.transact(pattern);
         this.dataEditor.update(subjects);
       } catch (err) {
         if (warn)
@@ -126,6 +197,14 @@ class Playground {
         this.querying = false;
       }
     }
+  }
+
+  get domain(): string {
+    return this.domainInput.property('value');
+  }
+
+  set domain(domain: string) {
+    this.domainInput.property('value', domain);
   }
 
   get domainInput() {
@@ -150,7 +229,7 @@ class Playground {
 
   set loading(loading: boolean) {
     d3.select('#domain-spinner').classed('is-hidden', !loading);
-    d3.selectAll('.requires-domain').property('disabled', loading || !this.meld);
+    d3.selectAll('.requires-domain').property('disabled', loading || !this.clone);
     this.newDomainButton.property('disabled', loading);
     this.domainInput.property('disabled', loading);
   }
