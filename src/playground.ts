@@ -34,7 +34,6 @@ class Playground {
   txnCard: JsonEditorCard;
   dataEditor: JSONEditor;
   meld?: MeldApi;
-  updateCards: JsonEditorCard[] = [];
 
   constructor() {
     this.queryCard = new JsonEditorCard(d3.select('#query-card'), queryTemplates, {
@@ -90,16 +89,15 @@ class Playground {
       this.meld.follow().subscribe(update => {
         this.runQuery();
         const editorCard = new JsonEditorCard(
-          d3.select('#updates-log')
-            .append(this.newUpdateCardNode).lower()
-            .classed('is-hidden', false), {}, {
+          this.updatesLog
+            .insert(this.newUpdateCardNode, ':first-child')
+            .attr('id', null).classed('is-hidden', false), {}, {
           mode: 'code', mainMenuBar: false, statusBar: false, onEditable: () => false
         }, update);
         editorCard.title.attr('datetime', new Date().toISOString());
         renderTime(editorCard.title.node() ?? [], 'en_US', { minInterval: 10 });
-
-        // Prepend the update to the log
-        this.updateCards.push(editorCard);
+        // Starting with the next sibling, group cards by time unless they are expanded
+        editorCard.mergeFollowing('skip');
       });
       await this.meld.status.becomes({ outdated: false });
       this.runQuery('warn');
@@ -109,6 +107,8 @@ class Playground {
       this.loading = false;
     }
   }
+
+
 
   async runQuery(warn?: 'warn') {
     if (this.meld != null) {
@@ -136,6 +136,10 @@ class Playground {
     return d3.select('#domain-new');
   }
 
+  get updatesLog() {
+    return d3.select('#updates-log');
+  }
+
   newUpdateCardNode(): HTMLDivElement {
     const cardDiv = <HTMLDivElement>d3.select
       <HTMLDivElement, unknown>('#update-template').node()?.cloneNode(true);
@@ -159,6 +163,7 @@ class Playground {
 class JsonEditorCard extends D3View<HTMLDivElement> {
   jsonEditor: JSONEditor;
   created = Date.now();
+  expanded: boolean = false;
 
   constructor(
     cardNode: d3Selection<HTMLDivElement>,
@@ -166,14 +171,15 @@ class JsonEditorCard extends D3View<HTMLDivElement> {
     options?: JSONEditorOptions,
     json?: any) {
     super(cardNode);
+    cardNode.datum(this);
 
     this.toggle.on('click', () => {
-      const show = this.content.classed('is-hidden');
-      this.icon.classed('fa-angle-up', show);
-      this.icon.classed('fa-angle-down', !show);
-      this.content.classed('is-hidden', !show);
-      this.preview.classed('is-hidden', show);
-      if (show)
+      this.expanded = this.content.classed('is-hidden');
+      this.icon.classed('fa-angle-up', this.expanded);
+      this.icon.classed('fa-angle-down', !this.expanded);
+      this.content.classed('is-hidden', !this.expanded);
+      this.preview.classed('is-hidden', this.expanded);
+      if (this.expanded)
         this.jsonEditor.focus();
     });
 
@@ -182,16 +188,7 @@ class JsonEditorCard extends D3View<HTMLDivElement> {
       options = {
         ...options,
         onChange: async () => {
-          try {
-            const pattern = this.jsonEditor.get();
-            const errs = await options?.onValidate?.(pattern);
-            if (errs != null && errs.length > 0)
-              this.preview.html(previewErrHtml(errs.map(err => err.message)));
-            else
-              this.preview.html(JSON.stringify(pattern));
-          } catch (err) {
-            this.preview.html(previewErrHtml('JSON not valid'));
-          }
+          this.updatePreview(options);
           prevOnChange?.();
         }
       };
@@ -206,6 +203,39 @@ class JsonEditorCard extends D3View<HTMLDivElement> {
       .on('click', e => this.jsonEditor.set(e[1]));
 
     options?.onChange?.();
+  }
+
+  private async updatePreview(options?: JSONEditorOptions) {
+    try {
+      const pattern = this.jsonEditor.get();
+      const errs = await options?.onValidate?.(pattern);
+      if (errs != null && errs.length > 0)
+        this.preview.html(previewErrHtml(errs.map(err => err.message)));
+      else
+        this.preview.html(JSON.stringify(pattern));
+    } catch (err) {
+      this.preview.html(previewErrHtml('JSON not valid'));
+    }
+  }
+
+  mergeFollowing(skip?: 'skip') {
+    const nextSibling = this.element.nextElementSibling;
+    if (nextSibling != null) {
+      const next = d3.select<Element, JsonEditorCard>(nextSibling).datum();
+      if (skip || this.expanded || this.title.text() !== next.title.text()) {
+        next.mergeFollowing();
+      } else {
+        try {
+          const json = [].concat(this.jsonEditor.get()).concat(next.jsonEditor.get());
+          this.jsonEditor.set(json);
+          this.preview.html(JSON.stringify(json));
+          next.d3.remove();
+          this.mergeFollowing();
+        } catch (err) {
+          next.mergeFollowing();
+        }
+      }
+    }
   }
 
   get title() {
