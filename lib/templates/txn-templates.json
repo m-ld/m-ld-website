@@ -22,6 +22,17 @@
       "property1": 1
     }
   },
+  "Delete where a property": {
+    "@delete": {
+      "@id": "?id",
+      "property2": "?any"
+    },
+    "@where": {
+      "@id": "?id",
+      "property1": 1,
+      "property2": "?any"
+    }
+  },
   "Update a subject property": {
     "@delete": {
       "@id": "<identity>",

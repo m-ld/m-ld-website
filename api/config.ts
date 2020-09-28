@@ -9,7 +9,8 @@ export default responder<Config.Request, Config.Response>(
       '@id': configReq['@id'],
       '@domain': domain,
       genesis,
-      logLevel: LOG.getLevel()
+      logLevel: LOG.getLevel(),
+      maxDeltaSize: 16 * 1024
     };
     if (!genesis) {
       // Try to load a custom config for this domain

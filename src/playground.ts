@@ -279,7 +279,10 @@ class JsonEditorCard extends D3View<HTMLDivElement> {
     this.templatesContent
       .selectAll('.dropdown-item').data(Object.entries(templates))
       .join('a').classed('dropdown-item', true).text(e => e[0])
-      .on('click', e => this.jsonEditor.set(e[1]));
+      .on('click', e => {
+        this.jsonEditor.set(e[1]);
+        this.updatePreview(options);
+      });
 
     options?.onChange?.();
   }
