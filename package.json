@@ -20,8 +20,8 @@
   },
   "homepage": "https://github.com/m-ld/m-ld-website#readme",
   "devDependencies": {
-    "@m-ld/io-web-build": "^0.1.0",
     "@11ty/eleventy": "^0.11.0",
+    "@m-ld/io-web-build": "^0.1.1",
     "@types/jest": "^26.0.4",
     "@types/readable-stream": "2.3.5",
     "bulma": "^0.9.0",
@@ -32,8 +32,8 @@
     "typescript": "^3.9.3"
   },
   "dependencies": {
-    "@m-ld/io-web-runtime": "^0.1.1",
-    "@m-ld/m-ld": "^0.2.6",
+    "@m-ld/io-web-runtime": "^0.1.2",
+    "@m-ld/m-ld": "^0.2.9-0",
     "@types/d3": "^5.7.2",
     "@types/jsoneditor": "^8.6.0",
     "@types/level-js": "^4.0.1",
