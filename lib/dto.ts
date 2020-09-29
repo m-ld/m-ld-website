@@ -1,26 +1,6 @@
 import { MeldAblyConfig } from '@m-ld/m-ld/dist/ably';
 import { Answer } from './BotBrain';
-import { JsonLog } from 'loglevel-plugin-remote';
-import { MeldConfig } from '@m-ld/m-ld';
-
-export type AuthType = 'recaptcha' | 'jwt';
-
-export const ID_HEADER = 'm-ld-id';
-export const DOMAIN_HEADER = 'm-ld-domain';
-
-export interface AuthorisedRequest extends Pick<MeldConfig, '@domain' | '@id'> {
-  /**
-   * window.location.origin
-   */
-  origin: string;
-  /**
-   * Token content varies depending on the end-point, see below.
-   */
-  token: string;
-}
-
-type JwtToken = string;
-type RecaptchaToken = string;
+import { AuthorisedRequest, Session } from '@m-ld/io-web-runtime/dist/dto';
 
 export namespace Config {
   export interface Request
@@ -32,23 +12,23 @@ export namespace Config {
     /**
      * Domain active bot name, or false if none yet exists
      */
-    botName: string | false;
+    botName?: string | false;
     /**
      * Google reCAPTCHA token
      */
-    token: RecaptchaToken;
+    token: string;
   }
 
-  export type Response = MeldAblyConfig & {
+  export type Response = MeldAblyConfig & Session & {
     /**
      * Domain active bot, or `false` to disable the bot
      */
-    botName: string | false;
+    botName?: string | false;
     /**
      * JWT token, must be Ably-compatible
      * @see https://www.ably.io/documentation/core-features/authentication#ably-jwt
      */
-    token: JwtToken;
+    token: string;
   };
 }
 
@@ -61,7 +41,7 @@ export namespace Chat {
     /**
      * JWT token returned from Config request
      */
-    token: JwtToken;
+    token: string;
   }
 
   export type Response = Answer;
@@ -72,13 +52,4 @@ export interface TopicIndexEntry {
   patterns: string[];
   summary: string;
   id: string;
-}
-
-export namespace Log {
-  export interface Request
-    extends AuthorisedRequest {
-    logs: JsonLog[];
-  }
-
-  export type Response = void;
 }

@@ -1,0 +1,15 @@
+{
+  "Describe all subjects": {
+    "@describe": "?id",
+    "@where": {
+      "@id": "?id"
+    }
+  },
+  "Select values of a property": {
+    "@select": ["?id", "?value"],
+    "@where": {
+      "@id": "?id",
+      "<property>": "?value"
+    }
+  }  
+}

@@ -1,0 +1,18 @@
+{% include 'popup.liquid', id: 'not-modern', content: 'not-modern.html' %}
+{% include 'popup.liquid', id: 'error', content: 'error.html' %}
+<div id="warning" class="notification is-warning is-hidden">
+  <button class="delete"></button>
+  <p>
+    <i class="fas fa-exclamation-triangle"></i>
+    <span class="warning-text">Something went wrong</span>
+  </p>
+</div>
+<article id="help" class="message is-info is-hidden">
+  <div class="message-header">
+    <p>Help</p>
+    <button class="delete" aria-label="delete"></button>
+  </div>
+  <div class="message-body">
+    {% include help %}
+  </div>
+</article>
