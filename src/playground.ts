@@ -131,6 +131,14 @@ class Playground {
         }
       }
     });
+    d3.select('#txn-import').on('click', async () => {
+      try {
+        const json = await d3.json(d3.select('#txn-import-url').property('value'));
+        this.txnCard.jsonEditor.set(json);
+      } catch (err) {
+        showWarning(err);
+      }
+    });
     d3.select('#show-options').on('click', () => this.options.show());
     this.options = new OptionsDialog();
     this.loading = false;
