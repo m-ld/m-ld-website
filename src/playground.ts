@@ -141,7 +141,15 @@ class Playground {
     });
     d3.select('#show-options').on('click', () => this.options.show());
     this.options = new OptionsDialog();
+    this.intro.select('.delete').on('click', () =>
+      this.intro.classed('is-hidden', true));
+    d3.select('#show-intro').on('click', () =>
+      this.intro.classed('is-hidden', false));
     this.loading = false;
+  }
+
+  private get intro() {
+    return d3.select('#playground-intro');
   }
 
   async close() {

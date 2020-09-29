@@ -107,6 +107,21 @@
       </div>
     </div>
   </nav>
+  <section id="playground-intro" class="section notification is-info is-light">
+    <button class="delete"></button>
+    <div class="columns">
+      <div class="column content">
+        {% include 'playground-intro.html' %}
+      </div>
+      <div class="column">
+        <div style="position: relative; padding-bottom: 66.66666666666666%; height: 0;">
+          <iframe src="https://www.loom.com/embed/06d96690de194017823212506ff3ae61" frameborder="0"
+            webkitallowfullscreen mozallowfullscreen allowfullscreen
+            style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe>
+        </div>
+      </div>
+    </div>
+  </section>
   <section id="playground-ide">
     <div id="data-pane">
       <div id="query-card" class="card is-fullwidth vflow-item">
@@ -212,7 +227,7 @@
     </div>
   </section>
   {% include 'popup.liquid', id: 'options-dialog', content: 'playground-options.html' %}
-  {% include 'popups.liquid', help: 'board-help.liquid' %}
+  {% include 'popups.liquid', help: 'playground-help.html' %}
 </body>
 
 </html>
