@@ -35,5 +35,8 @@ temporary compute nodes, while guaranteeing data consistency.
 
 ### Personal Data
 Consumer concerns about personal data include increasing awareness of data
-ownership. **m-ld** allows consumers to keep control over their data while still
-being able to safely keep it backed-up in a choice of locations.
+ownership. **m-ld** helps consumers to keep control over their data. This is
+because apps that use m-ld can provide useful features without having to always
+store the data in a single, central location controlled only by the app
+provider. Instead, they can allow the user to choose where data is stored; and
+can easily move it from place to place on their request.
