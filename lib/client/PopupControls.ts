@@ -11,6 +11,7 @@ export function showError(err: any) {
 }
 
 export function showWarning(warn: any, action?: () => void) {
+  console.warn(warn);
   const notification = d3.select('#warning').classed('is-hidden', false).raise();
   const text = `${warn}`;
   notification.select('.warning-text').text(text);

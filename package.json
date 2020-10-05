@@ -33,7 +33,7 @@
   },
   "dependencies": {
     "@m-ld/io-web-runtime": "^0.1.2",
-    "@m-ld/m-ld": "^0.2.9-0",
+    "@m-ld/m-ld": "^0.3.0-0",
     "@types/d3": "^5.7.2",
     "@types/jsoneditor": "^8.6.0",
     "@types/level-js": "^4.0.1",

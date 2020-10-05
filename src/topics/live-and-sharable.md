@@ -12,6 +12,8 @@ author:
   name: George
 date: 2020-09-01
 ---
+*Also published on [codeburst.io](https://codeburst.io/a-manifesto-for-live-sharable-data-4869362dfea5).*
+
 > - The 'truth' should be the data that is being used, not the data in distant
 >   storage.
 > - Distribute the data automatically, with the guarantee that all of it will
