@@ -30,7 +30,7 @@ and *integrity*.
 conceived by Eric Brewer in 2000.
 
 **m-ld guarantees *eventual consistency*. In the absence of updates and network
-partitions, all clones will report the same data (will *converge*).**
+partitions, all clones will report the same data** (they will *converge*).
 
 Another viewpoint is to imagine a hypothetical single data store for the domain.
 If no new updates are made, eventually all clones' responses to any query would

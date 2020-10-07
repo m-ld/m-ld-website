@@ -1,14 +1,11 @@
+const { join } = require('path');
+const { default11tyConfig, packageDir } = require('@m-ld/io-web-build');
+
 module.exports = function (config) {
-    config.addPassthroughCopy({
-        './node_modules/@fortawesome/fontawesome-free/webfonts': 'webfonts'
-    });
-    config.addPassthroughCopy('./src/modernizr-custom.js');
-    config.addWatchTarget('./lib/');
-    // Do not ghost events across browsers - defeats the point of m-ld
-    config.setBrowserSyncConfig({ ghostMode: false });
-    config.setLiquidOptions({ dynamicPartials: true });
-    return {
-        dir: { input: 'src' },
-        templateFormats: ['liquid', 'html', 'svg', 'png', 'md', '11ty.js']
-    }
-}
+  const jsoneditorDist = join(packageDir('jsoneditor', require), 'dist');
+  config.addPassthroughCopy({
+    [join(jsoneditorDist, 'jsoneditor.min.css')]: 'jsoneditor.min.css',
+    [join(jsoneditorDist, 'img', 'jsoneditor-icons.svg')]: 'img/jsoneditor-icons.svg'
+  });
+  return default11tyConfig(config);
+};

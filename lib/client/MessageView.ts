@@ -1,5 +1,5 @@
 import * as d3 from 'd3';
-import { setAttr, d3Selection, node } from './d3Util';
+import { setAttr, d3Selection, node, parentWithClass } from './d3Util';
 import { BoardView } from './BoardView';
 import { Rectangle } from '../Shapes';
 import { GroupView } from './D3View';
@@ -12,7 +12,7 @@ export class MessageView extends GroupView<MessageItem> {
   readonly boardView: BoardView;
 
   constructor(node: Element, boardView: BoardView) {
-    super(MessageView.messageParent(node));
+    super(parentWithClass(node, 'board-message'));
     this.boardView = boardView;
   }
 
@@ -173,13 +173,6 @@ export class MessageView extends GroupView<MessageItem> {
 
   get size(): [number, number] {
     return [Number(this.box.attr('width')), Number(this.box.attr('height'))];
-  }
-
-  static messageParent(node: Element | null): SVGGElement {
-    if (node == null)
-      throw new Error('Message parent expected');
-    return d3.select(node).classed('board-message') ?
-      <SVGGElement>node : this.messageParent(node.parentElement);
   }
 
   static same(mv1?: MessageView, mv2?: MessageView) {

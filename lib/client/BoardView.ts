@@ -8,7 +8,7 @@ import { Rectangle, Circle, Shape, Line } from '../Shapes';
 import { MeldApi } from '@m-ld/m-ld';
 import { shortId, Subject, Select, Describe, Update, Reference, Resource } from '@m-ld/m-ld';
 import { LinkView } from './LinkView';
-import { showWarning } from './BoardControls';
+import { showWarning } from './PopupControls';
 import { BoardBushIndex, BoardIndex } from '../BoardIndex';
 
 const CLICK_DRAG_DISTANCE = 3;

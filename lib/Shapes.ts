@@ -1,6 +1,6 @@
-import { checkIntersection, colinearPointWithinSegment } from 'line-intersect';
 import { BBox } from 'rbush';
 const InfiniteLine = require('line2');
+const { checkIntersection, colinearPointWithinSegment } = require('line-intersect');
 
 export interface Shape {
   readonly centre: [number, number];

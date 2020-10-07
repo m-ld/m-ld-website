@@ -41,3 +41,11 @@ export function svgParent(el: SVGElement): SVGElement {
   else
     throw new Error('SVG parent expected');
 }
+
+export function parentWithClass<T extends Element>(node: Element | null, className: string): T {
+  if (node == null)
+    throw new Error('Parent expected');
+  return d3.select(node).classed(className) ?
+    <T>node : parentWithClass(node.parentElement, className);
+}
+

@@ -9,6 +9,12 @@
     "inlineSourceMap": true,
     "inlineSources": true,
     "declaration": true,
-    "strictNullChecks": true
+    "strictNullChecks": true,
+    "baseUrl": ".",
+    "paths": {
+      "loglevel-plugin-remote": [
+        "node_modules/@m-ld/io-web-runtime/types/loglevel-plugin-remote.d.ts"
+      ]
+    }
   }
 }

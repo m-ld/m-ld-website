@@ -1,5 +1,5 @@
 /**
- * 'Template' that runs browserify to generate demo/demo.js
+ * 'Template' that runs browserify to generate playground/playground.js
  */
 const { join } = require('path');
 const { renderTs } = require('@m-ld/io-web-build');
@@ -7,8 +7,8 @@ const { renderTs } = require('@m-ld/io-web-build');
 module.exports = class {
   data() {
     return {
-      permalink: 'demo/demo.js',
-      tsPath: join(__dirname, 'demo.ts'),
+      permalink: 'playground/playground.js',
+      tsPath: join(__dirname, 'playground.ts'),
       tsConfig: require('../tsconfig.json')
     };
   }

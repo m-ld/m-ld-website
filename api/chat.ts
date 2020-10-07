@@ -1,22 +1,23 @@
 import { Chat, TopicIndexEntry } from '../lib/dto';
-import { fetchJson, responder, HttpError, fetchJsonUrl } from '../lib/api/common';
+import { fetchJson, responder, HttpError, fetchJsonUrl, JwtAuth } from '@m-ld/io-web-runtime/dist/lambda';
 import { NlpBrain } from '../lib/api/NlpBrain';
 import { selectRandom } from '../lib/BotBrain';
 import { URL } from 'url';
 
 const topics: { [origin: string]: TopicIndexEntry[] } = {};
 
-export default responder<Chat.Request, Chat.Response>('jwt', async chatReq => {
-  // Load the topics json from the origin, see src/topics.11ty.js
-  if (topics[chatReq.origin] == null)
-    topics[chatReq.origin] = await fetchJson<TopicIndexEntry[]>(
-      new URL('topics.json', chatReq.origin).toString());
-  const answer = await new NlpBrain(chatReq.botName, topics[chatReq.origin])
-    .respond(chatReq.message, chatReq.topMessages);
-  if (answer.message != null)
-    answer.message = await fillWords(answer.message);
-  return answer;
-});
+export default responder<Chat.Request, Chat.Response>(
+  new JwtAuth(process.env.ABLY_KEY?.split(':')[1]), async chatReq => {
+    // Load the topics json from the origin, see src/topics.11ty.js
+    if (topics[chatReq.origin] == null)
+      topics[chatReq.origin] = await fetchJson<TopicIndexEntry[]>(
+        new URL('topics.json', chatReq.origin).toString());
+    const answer = await new NlpBrain(chatReq.botName, topics[chatReq.origin])
+      .respond(chatReq.message, chatReq.topMessages);
+    if (answer.message != null)
+      answer.message = await fillWords(answer.message);
+    return answer;
+  });
 
 async function fillWords(message: string): Promise<string> {
   if (process.env.WORDNIK_API_KEY == null)

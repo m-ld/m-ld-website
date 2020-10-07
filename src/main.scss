@@ -1,12 +1,6 @@
 @charset "utf-8";
 
-@import "../../node_modules/bulma/bulma";
-
-$fa-font-path: "/webfonts";
-
-@import "../../node_modules/@fortawesome/fontawesome-free/scss/fontawesome.scss";
-@import "../../node_modules/@fortawesome/fontawesome-free/scss/brands.scss";
-@import "../../node_modules/@fortawesome/fontawesome-free/scss/solid.scss";
+@import "../node_modules/@m-ld/io-web-build/style";
 
 dl {
   font-size: smaller;
@@ -122,7 +116,7 @@ html#demo {
   @extend .corner-control;
   top: 0;
   right: 0;
-
+  z-index: 100;
   box-shadow: $box-shadow;
 }
 
@@ -159,7 +153,7 @@ html#demo {
   @extend .corner-control;
   top: 0;
   right: 0;
-
+  z-index: 90; // below #warning
   box-shadow: $box-shadow;
 
   & .message-body {
