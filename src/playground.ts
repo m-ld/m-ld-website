@@ -163,23 +163,25 @@ class Playground {
   }
 
   async loadDomain() {
-    if (this.unsaved && !window.confirm(CONFIRM_CHANGE_DOMAIN))
-      return this.domain = this.config?.['@domain'] ?? '';
-    try {
-      this.loading = true;
-      await this.close();
-      this.updatesLog.selectAll('.update-card').remove();
-      this.config = await fetchConfig(this.domain);
-      this.domain = this.config['@domain'];
-      this.config['@context'] = { ...this.config['@context'], ...this.options.context };
-      this.clone = await clone(new MemDown, AblyRemotes, this.config);
-      this.clone.follow().subscribe(update => this.onUpdate(update));
-      await this.clone.status.becomes({ outdated: false });
-      this.runQuery('warn');
-    } catch (err) {
-      showWarning(err);
-    } finally {
-      this.loading = false;
+    if (this.config?.['@domain'] !== this.domain) {
+      if (this.unsaved && !window.confirm(CONFIRM_CHANGE_DOMAIN))
+        return this.domain = this.config?.['@domain'] ?? '';
+      try {
+        this.loading = true;
+        await this.close();
+        this.updatesLog.selectAll('.update-card').remove();
+        this.config = await fetchConfig(this.domain);
+        this.domain = this.config['@domain'];
+        this.config['@context'] = { ...this.config['@context'], ...this.options.context };
+        this.clone = await clone(new MemDown, AblyRemotes, this.config);
+        this.clone.follow().subscribe(update => this.onUpdate(update));
+        await this.clone.status.becomes({ outdated: false });
+        this.runQuery('warn');
+      } catch (err) {
+        showWarning(err);
+      } finally {
+        this.loading = false;
+      }
     }
   }
 
