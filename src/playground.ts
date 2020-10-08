@@ -1,9 +1,9 @@
 import * as d3 from 'd3';
 import JSONEditor, { JSONEditorOptions } from 'jsoneditor';
 import { D3View } from '../lib/client/D3View';
-import { d3Selection } from '../lib/client/d3Util';
+import { d3Selection, fromTemplate } from '../lib/client/d3Util';
 import { Grecaptcha, modernizd } from '@m-ld/io-web-runtime/dist/client';
-import { initPopupControls, showNotModern, showWarning } from '../lib/client/PopupControls';
+import { initPopupControls, showInfo, showNotModern, showWarning } from '../lib/client/PopupControls';
 import { fetchConfig } from '../lib/client/Api';
 import { clone, MeldApi, isRead, isWrite, Context, MeldUpdate } from '@m-ld/m-ld';
 import { AblyRemotes, MeldAblyConfig } from '@m-ld/m-ld/dist/ably';
@@ -176,6 +176,7 @@ class Playground {
         this.clone = await clone(new MemDown, AblyRemotes, this.config);
         this.clone.follow().subscribe(update => this.onUpdate(update));
         await this.clone.status.becomes({ outdated: false });
+        showInfo(`Connected to ${this.config['@domain']}`);
         this.runQuery('warn');
       } catch (err) {
         showWarning(err);
@@ -189,7 +190,7 @@ class Playground {
     this.runQuery();
     const editorCard = new JsonEditorCard(
       this.updatesLog
-        .insert(this.newUpdateCardNode, ':first-child')
+        .insert(fromTemplate<HTMLDivElement>('update'), ':first-child')
         .attr('id', null).classed('is-hidden', false), {}, {
       mode: 'code', mainMenuBar: false, statusBar: false, onEditable: () => false
     }, update);
@@ -235,14 +236,6 @@ class Playground {
 
   get updatesLog() {
     return d3.select('#updates-log');
-  }
-
-  newUpdateCardNode(): HTMLDivElement {
-    const cardDiv = <HTMLDivElement>d3.select
-      <HTMLDivElement, unknown>('#update-template').node()?.cloneNode(true);
-    if (cardDiv == null)
-      throw 'Missing card template';
-    return cardDiv;
   }
 
   set loading(loading: boolean) {
