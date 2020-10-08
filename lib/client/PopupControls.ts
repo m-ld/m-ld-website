@@ -1,4 +1,5 @@
 import * as d3 from 'd3';
+import { fromTemplate } from './d3Util';
 
 export function showNotModern(missing: string[]) {
   d3.select('#not-modern').classed('is-active', true)
@@ -12,21 +13,27 @@ export function showError(err: any) {
 
 export function showWarning(warn: any, action?: () => void) {
   console.warn(warn);
-  const notification = d3.select('#warning').classed('is-hidden', false).raise();
-  const text = `${warn}`;
-  notification.select('.warning-text').text(text);
+  showMessage('warning', `${warn}`, action);
+}
+
+export function showInfo(info: any, action?: () => void) {
+  showMessage('info', `${info}`, action);
+}
+
+function showMessage(type: 'warning' | 'info', msg: string, action?: () => void) {
+  const message = d3.select('#popup-messages')
+    .insert(fromTemplate(type), ':first-child')
+    .classed('is-hidden', false).attr('id', null);
+  message.select('.delete').on('click', () => message.remove());
+  message.select('.popup-message-text').text(msg);
   if (action != null) {
-    notification.append('button').classed('button confirm', true).text('OK').on('click', () => {
-      hideWarning();
+    message.append('button').classed('button confirm', true).text('OK').on('click', () => {
+      message.remove();
       action();
     });
   } else {
-    setTimeout(hideWarning, text.length * 100);
+    setTimeout(() => message.remove(), msg.length * 200);
   }
-}
-
-export function hideWarning() {
-  d3.select('#warning').classed('is-hidden', true).select('.confirm').remove();
 }
 
 export function showHelp() {
@@ -36,7 +43,6 @@ export function showHelp() {
 
 export function initPopupControls() {
   // Un-show buttons
-  d3.select('#warning .delete').on('click', hideWarning);
   d3.select('#help .delete').on('click', showHelp);
   d3.select('#show-help').on('click', showHelp);
 }

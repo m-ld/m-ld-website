@@ -12,6 +12,15 @@ export function node<E extends d3.BaseType>(selection: d3Selection<E>): E {
   return node;
 }
 
+export function fromTemplate<E extends Element>(type: string): () => E {
+  return () => {
+    const node = <E>d3.select<E, unknown>(`#${type}-template`).node()?.cloneNode(true);
+    if (node == null)
+      throw `Missing ${type} template`;
+    return node;
+  }
+}
+
 export function setAttr(selection: d3Selection, attrs: object) {
   Object.entries(attrs).forEach(([key, value]) => selection.attr(key, value));
 }

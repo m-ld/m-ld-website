@@ -1,11 +1,19 @@
 {% include 'popup.liquid', id: 'not-modern', content: 'not-modern.html' %}
 {% include 'popup.liquid', id: 'error', content: 'error.html' %}
-<div id="warning" class="notification is-warning is-hidden">
-  <button class="delete"></button>
-  <p>
-    <i class="fas fa-exclamation-triangle"></i>
-    <span class="warning-text">Something went wrong</span>
-  </p>
+<div id="popup-messages">
+  <div id="warning-template" class="popup-message notification is-warning is-hidden">
+    <button class="delete"></button>
+    <p>
+      <i class="fas fa-exclamation-triangle"></i>
+      <span class="popup-message-text">Something went wrong</span>
+    </p>
+  </div>
+  <div id="info-template" class="popup-message notification is-info is-hidden">
+    <button class="delete"></button>
+    <p>
+      <span class="popup-message-text">Something went right</span>
+    </p>
+  </div>
 </div>
 <article id="help" class="message is-info is-hidden">
   <div class="message-header">
