@@ -121,10 +121,11 @@ html#demo {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-}
 
-.popup-message {
-  box-shadow: $box-shadow;
+  .popup-message {
+    pointer-events: all;
+    box-shadow: $box-shadow;
+  }
 }
 
 #board-buttons {
