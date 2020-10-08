@@ -12,7 +12,7 @@
   <script src="playground.js"></script>
   <style>
     body {
-      height: 100vh;
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
     }
@@ -23,10 +23,14 @@
       min-height: 0;
     }
     #data-pane {
-      padding: 1em; flex: 1; display: flex; flex-direction: column;
+      padding: 1em;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
     }
     #txn-pane {
-      padding: 1em; flex: 1; overflow: scroll;
+      padding: 1em;
+      flex: 1;
     }
     .card-json {
       height: 200px;
