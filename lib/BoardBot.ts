@@ -1,4 +1,4 @@
-import { MeldApi, Update, shortId, Subject, Resource } from '@m-ld/m-ld';
+import { MeldClone, Update, shortId, Subject, Resource } from '@m-ld/m-ld';
 import { BoardIndex, MessageItem, MIN_MESSAGE_SIZE } from './BoardIndex';
 import { Message } from './Message';
 import { MeldUpdate } from '@m-ld/m-ld';
@@ -120,7 +120,7 @@ export class BoardBot {
   constructor(
     readonly name: string,
     private readonly welcomeId: string,
-    private readonly meld: MeldApi,
+    private readonly meld: MeldClone,
     private readonly index: BoardIndex,
     private readonly brain: BotBrain) {
     this.prevId = welcomeId;
@@ -141,7 +141,7 @@ export class BoardBot {
       await this.say([this.greetingId('return'), RETURN_GREETING]);
     }
     // Set up chat in response to messages
-    this.meld.follow().subscribe(update => {
+    this.meld.follow(update => {
       if (!this.thinking) {
         this.thinking = true;
         this.maybeAnswer(update)
@@ -226,7 +226,7 @@ export class BoardBot {
       '@id': afterId, linkTo: [{ '@id': id }]
     };
     this.myIds.add(this.prevId = id);
-    await this.meld.transact<Update>({
+    await this.meld.write<Update>({
       '@insert': withLink ? [message, link] : message
     });
   }

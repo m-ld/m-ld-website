@@ -5,10 +5,10 @@ import { InfiniteView } from './InfiniteView';
 import { MessageView } from './MessageView';
 import { GroupView } from './D3View';
 import { Rectangle, Circle, Shape, Line } from '../Shapes';
-import { MeldApi } from '@m-ld/m-ld';
+import { MeldClone } from '@m-ld/m-ld';
 import { shortId, Subject, Select, Describe, Update, Reference, Resource } from '@m-ld/m-ld';
 import { LinkView } from './LinkView';
-import { showWarning } from './PopupControls';
+import { showError, showWarning } from './PopupControls';
 import { BoardBushIndex, BoardIndex } from '../BoardIndex';
 
 const CLICK_DRAG_DISTANCE = 3;
@@ -18,31 +18,32 @@ export class BoardView extends InfiniteView {
 
   constructor(
     selectSvg: string,
-    private readonly model: MeldApi,
+    private readonly model: MeldClone,
     private readonly welcomeId: string) {
     super(selectSvg);
 
-    const getAllMessages = model.transact<Describe, Message>({
-      '@describe': '?s',
-      '@where': { '@id': '?s', '@type': 'Message' }
-    });
-    // Follow changes to messages as soon as the transaction has executed
-    getAllMessages.tick.then(() => model.follow().subscribe(update => {
+    model.read(async state => {
+      try {
+        const messages = await state.read<Describe, Message>({
+          '@describe': '?s',
+          '@where': { '@id': '?s', '@type': 'Message' }
+        });
+        const anyMessages = this.updateView(MeldClone.asSubjectUpdates({
+          '@insert': messages, '@delete': []
+        }));
+        if (anyMessages && this.zoomToExtent())
+          showWarning('Tip: You can look more closely by double-clicking.');
+      } catch (err) {
+        showError(err);
+      }
+    }, update => {
       // Construct subject updates from the group updates
-      this.sync(MeldApi.asSubjectUpdates(update));
-    }), showWarning);
-    // Sync all the messages in the given board now
-    getAllMessages.then(messages => {
-      const anyMessages = this.sync(MeldApi.asSubjectUpdates({
-        '@insert': messages, '@delete': []
-      }));
-      if (anyMessages && this.zoomToExtent())
-        showWarning('Tip: You can look more closely by double-clicking.');
-    }, showWarning);
+      this.updateView(MeldClone.asSubjectUpdates(update));
+    });
   }
 
   async linksTo(id: string): Promise<string[]> {
-    const selection = await this.model.transact<Select>({
+    const selection = await this.model.read<Select>({
       '@select': '?s',
       '@where': { '@id': '?s', linkTo: { '@id': id } }
     });
@@ -57,11 +58,11 @@ export class BoardView extends InfiniteView {
     return this._index;
   }
 
-  private sync(updates: MeldApi.SubjectUpdates): boolean {
+  private updateView(updates: MeldClone.SubjectUpdates): boolean {
     Object.keys(updates).forEach(id => {
       const update = updates[id], updated = this.withThatMessage(id, mv => {
         const msg = mv.msg.resource;
-        MeldApi.update(msg, update);
+        MeldClone.update(msg, update);
         this.updateViewFromData(mv, msg);
       });
       if (updated.empty() && update['@insert'] != null) {
@@ -172,7 +173,7 @@ export class BoardView extends InfiniteView {
     mv.active = false;
     // Commit the change to the message if this isn't a spurious event
     if (mv.msg.text !== mv.text && !mv.msg.deleted) {
-      this.model.transact<Update>({
+      this.model.write<Update>({
         '@insert': { '@id': mv.msg['@id'], text: mv.text },
         '@delete': { '@id': mv.msg['@id'], text: mv.msg.resource.text }
       }).then(null, showWarning);
@@ -195,7 +196,7 @@ export class BoardView extends InfiniteView {
     d3.select(dragged).attr('cursor', 'grab');
     // Commit the change to the message
     const [x, y] = mv.position;
-    this.model.transact<Update>({
+    this.model.write<Update>({
       '@insert': { '@id': mv.msg['@id'], x, y },
       '@delete': { '@id': mv.msg['@id'], x: mv.msg.resource.x, y: mv.msg.resource.y }
     }).then(null, showWarning);
@@ -218,13 +219,13 @@ export class BoardView extends InfiniteView {
   private linkDragging(mv: MessageView) {
     this.btnDragging(
       mv, thatId => thatId != mv.msg['@id'] &&
-        !MeldApi.includesValue(mv.msg.linkTo, { '@id': thatId }), 'link-target');
+        !MeldClone.includesValue(mv.msg.linkTo, { '@id': thatId }), 'link-target');
   }
 
   private linkDragEnd(mv: MessageView, dragged: SVGElement) {
     this.btnDragEnd(dragged, mv, (thatId, position) => {
       if (thatId != null) {
-        this.model.transact<Update>({
+        this.model.write<Update>({
           '@insert': { '@id': mv.msg['@id'], linkTo: { '@id': thatId } }
         }).then(null, showWarning);
       } else {
@@ -236,7 +237,7 @@ export class BoardView extends InfiniteView {
   private unlinkDragging(mv: MessageView) {
     this.btnDragging(
       mv, thatId => thatId != mv.msg['@id'] &&
-        MeldApi.includesValue(mv.msg.linkTo, { '@id': thatId }), 'remove-target');
+        MeldClone.includesValue(mv.msg.linkTo, { '@id': thatId }), 'remove-target');
   }
 
   private unlinkDragStart(mv: MessageView, dragged: SVGElement) {
@@ -247,7 +248,7 @@ export class BoardView extends InfiniteView {
   private unlinkDragEnd(mv: MessageView, dragged: SVGElement) {
     this.btnDragEnd(dragged, mv, thatId => {
       if (thatId != null) {
-        this.model.transact<Update>({
+        this.model.write<Update>({
           '@delete': { '@id': mv.msg['@id'], linkTo: { '@id': thatId } }
         }).then(null, showWarning);
       }
@@ -312,7 +313,7 @@ export class BoardView extends InfiniteView {
       '@id': from.msg['@id'],
       linkTo: [{ '@id': id }]
     };
-    this.model.transact<Update>({ '@insert': [newMessage, newLink] })
+    this.model.write<Update>({ '@insert': [newMessage, newLink] })
       // Yield to the event loop so that we have definitely processed the update
       .then(() => new Promise(done => setTimeout(done)))
       .then(() => this.withThatMessage(id, mv => node(mv.content).focus()), showWarning);

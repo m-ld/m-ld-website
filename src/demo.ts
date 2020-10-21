@@ -76,7 +76,7 @@ window.onload = async function () {
     // Add the welcome message if not already there
     const isNew = (await meld.get(welcomeId)) == null;
     if (isNew) {
-      await meld.transact<Message>({
+      await meld.write<Message>({
         '@id': welcomeId,
         '@type': 'Message',
         text: `Welcome to ${domain}!`,
