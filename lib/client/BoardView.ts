@@ -5,7 +5,7 @@ import { InfiniteView } from './InfiniteView';
 import { MessageView } from './MessageView';
 import { GroupView } from './D3View';
 import { Rectangle, Circle, Shape, Line } from '../Shapes';
-import { MeldClone } from '@m-ld/m-ld';
+import { MeldClone, asSubjectUpdates, SubjectUpdates, updateSubject, includesValue } from '@m-ld/m-ld';
 import { shortId, Subject, Select, Describe, Update, Reference, Resource } from '@m-ld/m-ld';
 import { LinkView } from './LinkView';
 import { showError, showWarning } from './PopupControls';
@@ -28,7 +28,7 @@ export class BoardView extends InfiniteView {
           '@describe': '?s',
           '@where': { '@id': '?s', '@type': 'Message' }
         });
-        const anyMessages = this.updateView(MeldClone.asSubjectUpdates({
+        const anyMessages = this.updateView(asSubjectUpdates({
           '@insert': messages, '@delete': []
         }));
         if (anyMessages && this.zoomToExtent())
@@ -38,7 +38,7 @@ export class BoardView extends InfiniteView {
       }
     }, update => {
       // Construct subject updates from the group updates
-      this.updateView(MeldClone.asSubjectUpdates(update));
+      this.updateView(asSubjectUpdates(update));
     });
   }
 
@@ -58,11 +58,11 @@ export class BoardView extends InfiniteView {
     return this._index;
   }
 
-  private updateView(updates: MeldClone.SubjectUpdates): boolean {
+  private updateView(updates: SubjectUpdates): boolean {
     Object.keys(updates).forEach(id => {
       const update = updates[id], updated = this.withThatMessage(id, mv => {
         const msg = mv.msg.resource;
-        MeldClone.update(msg, update);
+        updateSubject(msg, update);
         this.updateViewFromData(mv, msg);
       });
       if (updated.empty() && update['@insert'] != null) {
@@ -219,7 +219,7 @@ export class BoardView extends InfiniteView {
   private linkDragging(mv: MessageView) {
     this.btnDragging(
       mv, thatId => thatId != mv.msg['@id'] &&
-        !MeldClone.includesValue(mv.msg.linkTo, { '@id': thatId }), 'link-target');
+        !includesValue(mv.msg.linkTo, { '@id': thatId }), 'link-target');
   }
 
   private linkDragEnd(mv: MessageView, dragged: SVGElement) {
@@ -237,7 +237,7 @@ export class BoardView extends InfiniteView {
   private unlinkDragging(mv: MessageView) {
     this.btnDragging(
       mv, thatId => thatId != mv.msg['@id'] &&
-        MeldClone.includesValue(mv.msg.linkTo, { '@id': thatId }), 'remove-target');
+        includesValue(mv.msg.linkTo, { '@id': thatId }), 'remove-target');
   }
 
   private unlinkDragStart(mv: MessageView, dragged: SVGElement) {
