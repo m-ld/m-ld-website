@@ -32,7 +32,7 @@ function showMessage(type: 'warning' | 'info', msg: string, action?: () => void)
       action();
     });
   } else {
-    setTimeout(() => message.remove(), msg.length * 200);
+    setTimeout(() => message.remove(), 5000);
   }
 }
 
