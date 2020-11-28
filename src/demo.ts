@@ -24,15 +24,7 @@ window.onload = async function () {
   await Grecaptcha.ready;
 
   try {
-    let domain: string = document.location.hash.slice(1) ?? '';
-    if (domain === 'new' || (!domain && !local.domains.length)) {
-      // Create a new domain
-      domain = '';
-    } else if (!domain) {
-      // Return to the last domain visited
-      domain = local.domains[0];
-    }
-
+    let domain: string = local.targetDomain(document.location.hash.slice(1) ?? '');
     // Get the configuration for the domain
     const config = await fetchConfig(domain, local.getBotName(domain));
     configureLogging(config);
@@ -50,13 +42,15 @@ window.onload = async function () {
     await meld.status.becomes({ outdated: false });
 
     // When the clone goes offline, show a suitable warning
+    let online = meld.status.value.online;
     const statusSub = meld.status.subscribe(status => {
-      if (!status.online) {
+      if (status.online !== online && !status.online) {
         showWarning('It looks like this browser is offline. ' +
           'You can keep working, but don\'t refresh the page.');
         meld.status.becomes({ online: true })
           .then(() => showWarning('Back online!'));
       }
+      online = status.online;
     });
     window.addEventListener('beforeunload', () => statusSub.unsubscribe());
 

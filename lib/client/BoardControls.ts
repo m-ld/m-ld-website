@@ -1,7 +1,7 @@
 import * as d3 from 'd3';
 import * as Level from 'level-js';
-import { BoardLocal } from './BoardLocal';
-import { showError, showWarning } from './PopupControls';
+import { BoardLocal, CURRENT_VERSION } from './BoardLocal';
+import { showError, showInfo, showWarning } from './PopupControls';
 
 export function initBoardControls(local: BoardLocal) {
   // Board menu dropdown
@@ -24,17 +24,22 @@ export function initBoardControls(local: BoardLocal) {
     boardPicks
       .append('td').append('a').classed('dropdown-item', true)
       .classed('is-active', (_, i) => i == 0)
-      .text(domain => domain)
-      .on('mousedown', domain => location.hash = domain);
+      .classed('is-disabled', domain => domain[0] !== CURRENT_VERSION)
+      .text(domain => domain[1])
+      .on('mousedown', domain => {
+        if (domain[0] === CURRENT_VERSION)
+          location.hash = domain[1];
+        else
+          showInfo('Sorry, we can\'t show that board, it was made with an older version.')
+      });
     boardPicks.filter((_, i) => i > 0)
       .append('td').append('a').classed('tag is-delete is-danger', true)
       .attr('title', 'Remove this board')
       .on('mousedown', domain => showWarning(
-        `Remove ${domain} from this browser?`, () => deleteDomain(domain)));
+        `Remove ${domain[1]} from this browser?`, () => deleteDomain(domain[1])));
   }
 
   function deleteDomain(domain: string) {
-    const localDomains = local.domains;
     // Level typing is wrong - destroy is a static method
     (<any>Level).destroy(domain, (err: any) => {
       if (err) {

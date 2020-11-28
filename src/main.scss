@@ -157,6 +157,10 @@ html#demo {
   overflow-y: scroll;
 }
 
+.is-disabled {
+  opacity: .65;
+}
+
 #help {
   @extend .corner-control;
   top: 0;

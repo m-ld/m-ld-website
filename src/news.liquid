@@ -31,6 +31,16 @@ layout: doc.liquid
     <div class="content">
       {{ news.templateContent }}
     </div>
+    {% if news.data.linkedin %}
+      <nav class="level">
+        <a class="level-item button is-info" href="https://www.linkedin.com/posts/{{ news.data.linkedin }}">
+          <span class="icon">
+            <i class="fab fa-linkedin"></i>
+          </span>
+          <span>Join the discussion</span>
+        </a>
+      </nav>
+    {% endif %}
   </div>
 </article>
 {%- endfor -%}
