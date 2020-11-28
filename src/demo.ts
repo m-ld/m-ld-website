@@ -10,6 +10,7 @@ import { initPopupControls, showError, showNotModern, showWarning } from '../lib
 import { initBoardControls} from '../lib/client/BoardControls';
 import { BoardBot } from '../lib/BoardBot';
 import { fetchAnswer, fetchConfig } from '../lib/client/Api';
+import * as LOG from 'loglevel';
 
 window.onload = async function () {
   try {
@@ -27,8 +28,9 @@ window.onload = async function () {
     let domain: string = local.targetDomain(document.location.hash.slice(1) ?? '');
     // Get the configuration for the domain
     const config = await fetchConfig(domain, local.getBotName(domain));
-    configureLogging(config);
+    configureLogging(config, LOG);
     domain = config['@domain'];
+    
     const botName = config.botName ?? false;
     local.setBotName(domain, botName);
     history.replaceState(null, '', '#' + domain);
