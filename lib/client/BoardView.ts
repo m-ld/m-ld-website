@@ -8,7 +8,7 @@ import { Rectangle, Circle, Shape, Line } from '../Shapes';
 import { MeldClone, asSubjectUpdates, SubjectUpdates, updateSubject, includesValue } from '@m-ld/m-ld';
 import { shortId, Subject, Select, Describe, Update, Reference, Resource } from '@m-ld/m-ld';
 import { LinkView } from './LinkView';
-import { showError, showWarning } from './PopupControls';
+import { showError, showInfo, showWarning } from './PopupControls';
 import { BoardBushIndex, BoardIndex } from '../BoardIndex';
 
 const CLICK_DRAG_DISTANCE = 3;
@@ -32,7 +32,7 @@ export class BoardView extends InfiniteView {
           '@insert': messages, '@delete': []
         }));
         if (anyMessages && this.zoomToExtent())
-          showWarning('Tip: You can look more closely by double-clicking.');
+          showInfo('Tip: You can look more closely by double-clicking.');
       } catch (err) {
         showError(err);
       }

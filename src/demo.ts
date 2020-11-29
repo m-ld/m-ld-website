@@ -6,7 +6,7 @@ import { AblyRemotes } from '@m-ld/m-ld/dist/ably';
 import { modernizd, Grecaptcha, configureLogging } from '@m-ld/io-web-runtime/dist/client';
 import * as d3 from 'd3';
 import { BoardLocal } from '../lib/client/BoardLocal'
-import { initPopupControls, showError, showNotModern, showWarning } from '../lib/client/PopupControls';
+import { initPopupControls, showError, showInfo, showNotModern, showWarning } from '../lib/client/PopupControls';
 import { initBoardControls} from '../lib/client/BoardControls';
 import { BoardBot } from '../lib/BoardBot';
 import { fetchAnswer, fetchConfig } from '../lib/client/Api';
@@ -50,10 +50,10 @@ window.onload = async function () {
         showWarning('It looks like this browser is offline. ' +
           'You can keep working, but don\'t refresh the page.');
         meld.status.becomes({ online: true })
-          .then(() => showWarning('Back online!'));
+          .then(() => showInfo('Back online!'));
       }
       online = status.online;
-    });
+    }, showError);
     window.addEventListener('beforeunload', () => statusSub.unsubscribe());
 
     // Add the domain to the local list of domains

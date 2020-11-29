@@ -15,6 +15,7 @@ export function initBoardControls(local: BoardLocal) {
     })
     .on('blur', () => d3.select('#board-menu').classed('is-active', false));
   d3.select('#new-board').on('mousedown', () => location.hash = 'new');
+  d3.select('#go-home').on('mousedown', () => location.pathname = '/');
 
   function updateBoardPicks() {
     const boardPicks = boardPicker.select('#boards')
@@ -30,12 +31,12 @@ export function initBoardControls(local: BoardLocal) {
         if (domain[0] === CURRENT_VERSION)
           location.hash = domain[1];
         else
-          showInfo('Sorry, we can\'t show that board, it was made with an older version.')
+          showWarning('Sorry, we can\'t show that board, it was made with an older version.')
       });
     boardPicks.filter((_, i) => i > 0)
       .append('td').append('a').classed('tag is-delete is-danger', true)
       .attr('title', 'Remove this board')
-      .on('mousedown', domain => showWarning(
+      .on('mousedown', domain => showInfo(
         `Remove ${domain[1]} from this browser?`, () => deleteDomain(domain[1])));
   }
 
@@ -46,7 +47,7 @@ export function initBoardControls(local: BoardLocal) {
         showError(err);
       } else {
         local.removeDomain(domain);
-        showWarning(`Board ${domain} has been removed from this browser.`);
+        showInfo(`Board ${domain} has been removed from this browser.`);
         updateBoardPicks();
       }
     });
