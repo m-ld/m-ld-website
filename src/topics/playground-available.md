@@ -10,6 +10,7 @@ author:
   git: gsvarovsky
   name: George
 date: 2020-10-05
+linkedin: m-ld-io_playground-activity-6719911989893718016-4tOv
 ---
 As we continue our work on the features of **m-ld**, we've found that you (and
 we too) often want to quickly try out the query and transaction syntax against a

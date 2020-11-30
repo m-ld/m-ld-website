@@ -5,6 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>m-ld</title>
+  {% include 'gtag.liquid' %}
   <link rel="stylesheet" href="/main.css" type="text/css">
   <link rel="stylesheet" href="/jsoneditor.min.css" type="text/css">
   <script src="../modernizr-custom.js"></script>
@@ -77,7 +78,14 @@
         <a href="/"><img src="/m-ld.svg" width="112" /></a>
         playground
       </div>
-      <a role="button" class="navbar-burger burger" aria-label="menu" aria-expanded="false" data-target="playground-navbar">
+      <script>
+      function playgroundNavbarToggle() {
+        document.querySelector('#playground-burger').classList.toggle('is-active');
+        document.querySelector('#playground-navbar').classList.toggle('is-active');
+      }
+      </script>
+      <a role="button" id="playground-burger" class="navbar-burger burger" onclick="playgroundNavbarToggle()"
+        aria-label="menu" aria-expanded="false" data-target="playground-navbar">
         <span aria-hidden="true"></span>
         <span aria-hidden="true"></span>
         <span aria-hidden="true"></span>

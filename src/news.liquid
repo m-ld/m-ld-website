@@ -31,6 +31,21 @@ layout: doc.liquid
     <div class="content">
       {{ news.templateContent }}
     </div>
+    {% if news.data.linkedin %}
+      <nav class="level">
+      {% if news.data.linkedin == 'TODO' %}
+        {% capture discussLink %}https://www.linkedin.com/company/m-ld-io/{% endcapture %}
+      {% else %}
+        {% capture discussLink %}https://www.linkedin.com/posts/{{ news.data.linkedin }}{% endcapture %}
+      {% endif %}
+        <a class="level-item button is-info" href="{{ discussLink }}">
+          <span class="icon">
+            <i class="fab fa-linkedin"></i>
+          </span>
+          <span>Join the discussion</span>
+        </a>
+      </nav>
+    {% endif %}
   </div>
 </article>
 {%- endfor -%}

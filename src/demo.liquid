@@ -5,6 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>m-ld</title>
+  {% include 'gtag.liquid' %}
   <link rel="stylesheet" href="/main.css">
   <script src="../modernizr-custom.js"></script>
   <script src="https://www.google.com/recaptcha/api.js?render={{ env.RECAPTCHA_SITE }}"></script>
@@ -71,6 +72,10 @@
           </div>
           <hr class="dropdown-divider">
           <a id="new-board" class="dropdown-item">New...</a>
+          <hr class="dropdown-divider">
+          <a id="go-home" class="dropdown-item">
+            <b>m-ld</b> homepage <i class="fas fa-external-link-alt"></i>
+          </a>
         </div>
       </div>
     </div>

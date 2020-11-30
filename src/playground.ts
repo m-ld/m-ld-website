@@ -5,7 +5,7 @@ import { d3Selection, fromTemplate } from '../lib/client/d3Util';
 import { Grecaptcha, modernizd } from '@m-ld/io-web-runtime/dist/client';
 import { initPopupControls, showInfo, showNotModern, showWarning } from '../lib/client/PopupControls';
 import { fetchConfig } from '../lib/client/Api';
-import { clone, MeldApi, isRead, isWrite, Context, MeldUpdate } from '@m-ld/m-ld';
+import { clone, MeldClone, isRead, isWrite, Context, MeldUpdate } from '@m-ld/m-ld';
 import { AblyRemotes, MeldAblyConfig } from '@m-ld/m-ld/dist/ably';
 import MemDown from 'memdown';
 import { render as renderTime } from 'timeago.js';
@@ -92,7 +92,7 @@ class Playground {
   queryCard: JsonEditorCard;
   txnCard: JsonEditorCard;
   dataEditor: JSONEditor;
-  clone?: MeldApi;
+  clone?: MeldClone;
   config?: MeldAblyConfig;
   options: OptionsDialog;
 
@@ -125,7 +125,7 @@ class Playground {
           const pattern = this.txnCard.jsonEditor.get();
           if (!isWrite(pattern))
             throw NOT_A_WRITE;
-          await this.clone.transact(pattern);
+          await this.clone.write(pattern);
         } catch (err) {
           showWarning(err);
         }
@@ -174,7 +174,7 @@ class Playground {
         this.domain = this.config['@domain'];
         this.config['@context'] = { ...this.config['@context'], ...this.options.context };
         this.clone = await clone(new MemDown, AblyRemotes, this.config);
-        this.clone.follow().subscribe(update => this.onUpdate(update));
+        this.clone.follow(update => this.onUpdate(update));
         await this.clone.status.becomes({ outdated: false });
         showInfo(`Connected to ${this.config['@domain']}`);
         this.runQuery('warn');
@@ -207,7 +207,7 @@ class Playground {
         const pattern = this.queryCard.jsonEditor.get();
         if (!isRead(pattern))
           throw NOT_A_READ;
-        const subjects = await this.clone.transact(pattern);
+        const subjects = await this.clone.read(pattern);
         this.dataEditor.update(subjects);
       } catch (err) {
         if (warn)

@@ -11,6 +11,7 @@ author:
   git: gsvarovsky
   name: George
 date: 2020-09-01
+linkedin: gsvarovsky_a-manifesto-for-live-sharable-data-activity-6707949218973134848-kOt3
 ---
 *Also published on [codeburst.io](https://codeburst.io/a-manifesto-for-live-sharable-data-4869362dfea5).*
 

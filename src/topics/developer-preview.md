@@ -10,6 +10,7 @@ author:
   git: gsvarovsky
   name: George
 date: 2020-08-20
+linkedin: m-ld-io_decentralised-shared-state-activity-6702232922939768833-RW5j
 ---
 Thanks for visiting! We have reached our first engineering milestone, the
 developer preview. On this website you'll find information about

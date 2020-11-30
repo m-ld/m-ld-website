@@ -1,5 +1,6 @@
 import * as d3 from 'd3';
 import { fromTemplate } from './d3Util';
+import * as LOG from 'loglevel';
 
 export function showNotModern(missing: string[]) {
   d3.select('#not-modern').classed('is-active', true)
@@ -7,12 +8,13 @@ export function showNotModern(missing: string[]) {
 }
 
 export function showError(err: any) {
+  LOG.error(err);
   d3.select('#error').classed('is-active', true)
     .select('.error-text').text(`${err}`);
 }
 
 export function showWarning(warn: any, action?: () => void) {
-  console.warn(warn);
+  LOG.warn(warn);
   showMessage('warning', `${warn}`, action);
 }
 
@@ -32,7 +34,7 @@ function showMessage(type: 'warning' | 'info', msg: string, action?: () => void)
       action();
     });
   } else {
-    setTimeout(() => message.remove(), msg.length * 200);
+    setTimeout(() => message.remove(), 5000);
   }
 }
 
