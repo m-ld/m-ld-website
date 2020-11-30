@@ -16,10 +16,6 @@ The domains are set in the [reCAPTCHA admin
 console](https://www.google.com/u/1/recaptcha/admin/site/350626045).
 
 ## dev
-Currently, this project requires a link to the private m-ld(-js) library, e.g.:
-1. `git clone https://github.com/m-ld/m-ld-js.git ../m-ld-js`
-1. `npm link ../m-ld-js` (see [npm link docs](https://docs.npmjs.com/cli/link.html))
-
 To run locally:
 1. Install [now](https://vercel.com/download)
 1. Create a local file ".env" in the root and add any vars found under `env` in
