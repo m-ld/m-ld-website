@@ -12,7 +12,7 @@ author:
   git: gsvarovsky
   name: George
 date: 2020-11-30
-linkedin: TODO
+linkedin: m-ld-io_crdt-realtimecollaborativeediting-decentralized-activity-6739113525781770240-thKF
 ---
 **m-ld** is built on cool computer science, which is changing the way we think
 about data. Come with us on a journey into _CRDTs_ with our handy infographic.
