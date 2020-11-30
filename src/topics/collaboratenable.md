@@ -20,7 +20,7 @@ about data. Come with us on a journey into _CRDTs_ with our handy infographic.
 [![collaboratenable your app with CRDTs](/collaboratenable-infographic.png)](https://drive.google.com/file/d/11Z_cWUb2vj9XHU6TCkMDWb_CChcKL3Md/view?usp=sharing)
 
 This month we've released preview version 0.4 of the
-[Javascript&nbsp;engine](htpps://js.m-ld.org/), which brings improvements to the
+[Javascript&nbsp;engine](https://js.m-ld.org/), which brings improvements to the
 API, as well as performance and scalability work behind the scenes.
 
 > What app would you like to **collaboratenable**? What would be the main
