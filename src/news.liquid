@@ -33,7 +33,12 @@ layout: doc.liquid
     </div>
     {% if news.data.linkedin %}
       <nav class="level">
-        <a class="level-item button is-info" href="https://www.linkedin.com/posts/{{ news.data.linkedin }}">
+      {% if news.data.linkedin == 'TODO' %}
+        {% capture discussLink %}https://www.linkedin.com/company/m-ld-io/{% endcapture %}
+      {% else %}
+        {% capture discussLink %}https://www.linkedin.com/posts/{{ news.data.linkedin }}{% endcapture %}
+      {% endif %}
+        <a class="level-item button is-info" href="{{ discussLink }}">
           <span class="icon">
             <i class="fab fa-linkedin"></i>
           </span>

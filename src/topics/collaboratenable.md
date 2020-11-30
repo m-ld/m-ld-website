@@ -17,10 +17,7 @@ linkedin: TODO
 **m-ld** is built on cool computer science, which is changing the way we think
 about data. Come with us on a journey into _CRDTs_ with our handy infographic.
 
-![collaboratenable your app with CRDTs](/collaboratenable-infographic.png)
-
-(You can download a PDF
-[here](https://drive.google.com/file/d/11Z_cWUb2vj9XHU6TCkMDWb_CChcKL3Md/view?usp=sharing).)
+[![collaboratenable your app with CRDTs](/collaboratenable-infographic.png)](https://drive.google.com/file/d/11Z_cWUb2vj9XHU6TCkMDWb_CChcKL3Md/view?usp=sharing)
 
 This month we've released preview version 0.4 of the
 [Javascript&nbsp;engine](htpps://js.m-ld.org/), which brings improvements to the
