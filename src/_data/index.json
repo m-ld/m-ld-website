@@ -23,14 +23,14 @@
       "name": "Xamarin",
       "icon": "fab fa-microsoft",
       "request": true,
-      "url": "https://github.com/m-ld/feedback/issues/3",
+      "url": "https://github.com/m-ld/m-ld-spec/issues/39",
       "summary": "For client application environments including on mobiles."
     },
     {
       "name": "Python",
       "icon": "fab fa-python",
       "request": true,
-      "url": "https://github.com/m-ld/feedback/issues/4",
+      "url": "https://github.com/m-ld/m-ld-spec/issues/40",
       "summary": "For scripting, data science and general computing environments."
     },
     {

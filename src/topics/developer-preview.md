@@ -25,8 +25,8 @@ We're excited about the many interesting use-cases for **m-ld**!
 We're working really hard on the ergonomics, the performance and the security.
 This is a pre-release preview, and we're eager for your feedback.
 
-If you have a request or a question to share, go to the Issues page of our
-dedicated GitHub [feedback&nbsp;repo](https://github.com/m-ld/feedback/issues).
+If you have a request or a question to share, go to the Discussion page of our
+GitHub [main&nbsp;repo](https://github.com/m-ld/m-ld-spec/discussions).
 If you're unsure where to start, or you'd just like to talk, you can
 [email&nbsp;us](mailto:info@m-ld.io) any time.
 
