@@ -36,7 +36,7 @@
     {
       "name": "What do you need?",
       "icon": "fas fa-edit",
-      "url": "https://github.com/m-ld/feedback/issues",
+      "url": "https://github.com/m-ld/m-ld-spec/issues",
       "summary": "Please create a ticket for the platform you need."
     }
   ]
