@@ -11,7 +11,7 @@ author:
   git: gsvarovsky
   name: George
 date: 2020-12-14
-linkedin: TODO
+linkedin: gsvarovsky_the-data-%C3%A6ther-activity-6744312449127723008-kBiP
 ---
 Let's talk about data.
 
