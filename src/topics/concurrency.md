@@ -98,4 +98,4 @@ compliant with the rule.
 > 🚧 Inclusion of declarative integrity constraints in **m-ld** is an
 > experimental feature, and the subject of active research. The available
 > constraints and the means by which they are declared for a domain is likely to
-> change. Please do [get in touch](mailto:info@m-ld.io) with your requirements.
+> change. Please do [contact&nbsp;us](/hello/) with your requirements.

@@ -9,7 +9,7 @@ summary: '<b>m-ld</b> can be used in apps, robotics, edge computing, personal da
 date: 2020-02-01 # Used for sort order
 ---
 > Here are just some of the uses for **m-ld**. If you have a use-case, please do
-> [let us know](mailto:info@m-ld.io).
+> [let us know](/hello/).
 
 ### Apps
 App data rarely exists in isolation on a single device, but in-house

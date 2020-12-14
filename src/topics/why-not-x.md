@@ -39,6 +39,6 @@ The choice of **m-ld** might be particularly driven by:
 - integration of data sharing features into existing apps;
 - your deployment environment [platform](/doc/#platforms) types.
 
-Please do [contact&nbsp;us](mailto:info@m-ld.io) to discuss your requirements.
-We are as keen as you are that your data management solutions do solve your data
-management problems.
+Please do [contact&nbsp;us](/hello/) to discuss your requirements. We are as
+keen as you are that your data management solutions do solve your data
+management problems!
