@@ -20,11 +20,11 @@
       "summary": "For microservice, serverless and server environments."
     },
     {
-      "name": "Xamarin",
+      "name": ".NET",
       "icon": "fab fa-microsoft",
       "request": true,
       "url": "https://github.com/m-ld/m-ld-spec/issues/39",
-      "summary": "For client application environments including on mobiles."
+      "summary": "For mobile, native client and server environments using .NET."
     },
     {
       "name": "Python",

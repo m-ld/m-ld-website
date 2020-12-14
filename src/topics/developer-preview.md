@@ -28,6 +28,6 @@ This is a pre-release preview, and we're eager for your feedback.
 If you have a request or a question to share, go to the Discussion page of our
 GitHub [main&nbsp;repo](https://github.com/m-ld/m-ld-spec/discussions).
 If you're unsure where to start, or you'd just like to talk, you can
-[email&nbsp;us](mailto:info@m-ld.io) any time.
+[contact&nbsp;us](/hello/) any time.
 
 I do hope everyone is thriving; and we'll stay in touch!
