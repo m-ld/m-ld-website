@@ -16,10 +16,10 @@ date: 2020-11-01 # Used for sort order
 domain. Logically this is part of the 'network' infrastructure and abstracted in
 the **m-ld** specification.
 
-One day message publishing will be publicly available as part of the internet.
-In the meantime, it is necessary for an app to provide a network service to the
-clone, via an adapter. This is straightforward, as the clone engine typically
-only needs to be given a URL and some relevant configuration.
+An app provides a network messaging service to the clone, via an adapter. This
+allows the app to choose an appropriate messaging service for its requirements
+and architecture, and also to secure access to the service prior to passing it
+to the clone.
 
 Message-layer adapters are currently specified for:
 - [MQTT](http://mqtt.org/): a machine-to-machine (M2M)/"Internet of Things"

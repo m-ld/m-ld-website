@@ -39,7 +39,7 @@ much_, because we're constantly having to **wrangle** data, without even
 changing its content, without adding any real value. _Not enough_, because we
 also seem to get it wrong, all the time.
 
-![wrangling](https://cdn-images-1.medium.com/max/1440/1*wYFydC2UqkujjrzQOf8VAw.jpeg)
+![wrangling](/media/wrangling.jpg)
 
 Let me put on the table three categories of worthless wrangling.
 
@@ -74,7 +74,7 @@ So how are we going to address the wrangling problem?
 
 > Imagine a world where data wrangling doesn't have to happen.
 
-![no wrangling](https://cdn-images-1.medium.com/max/1440/1*xbE-r5pZ24dRbWZw6EIY-w.jpeg)
+![no wrangling](/media/no-wrangling.jpg)
 
 ## Abstraction X
 Let's say that when we look at some data in code, with the intention of doing
@@ -121,7 +121,7 @@ really hard to see all the things that are always true, and the things that need
 to be true before some change is allowed, and the things that are true after
 those changes. If I'm lucky, someone has added some comments, or assertions, or
 written some test cases. (Or
-[interface&nbsp;specifications](https://medium.com/r/?url=https%3A%2F%2Fen.wikipedia.org%2Fwiki%2FDesign_by_contract),
+[interface&nbsp;specifications](https://en.wikipedia.org/wiki/Design_by_contract),
 if I'm really lucky.)
 
 But these things are in the code, and that means they're re-coded everywhere the
@@ -139,7 +139,7 @@ than never.
 
 When it comes to truth, things are even more complicated. Languages come with
 baggage. Mutability. Threading. "Volatile"
-[is&nbsp;a&nbsp;thing](https://medium.com/r/?url=https%3A%2F%2Fblog.regehr.org%2Farchives%2F28).
+[is&nbsp;a&nbsp;thing](https://blog.regehr.org/archives/28).
 
 This is not going well. Looks like we have a choice. On the one hand we could
 reinvent programming. Stop using our favourite languages, and move everyone to a
@@ -151,7 +151,7 @@ mapping one abstraction onto another, all the time. Let's just assert what we
 want about X, and let clever programmers bind X to their language with
 libraries.
 
-![binding X](https://cdn-images-1.medium.com/max/1440/1*oT8i35tFwSeH6ca02Yfe1w.jpeg)
+![binding X](/media/binding-x.jpg)
 
 ### Requirements for Binding X to Code
 Once X is bound to a language with a library, we'll have a syntax for that
@@ -180,7 +180,7 @@ across any language that addresses it consistently, and head-on. We haven't
 really got a canonical way to say this data is _this far away_, and _this much
 out of date_, and these will be the _consequences of you editing it_. There are
 some ideas - for example, you should check out the proposed
-[Braid&nbsp;HTTP&nbsp;extension](https://medium.com/r/?url=https%3A%2F%2Fbraid.news%2F).
+[Braid&nbsp;HTTP&nbsp;extension](https://braid.news/).
 
 And naturally, for all of this, if things are going to change - and we know they
 will - we need a well-defined way to cope with that.
@@ -211,13 +211,11 @@ design. And tomorrow, when the someone clever has noticed I keep asking for
 such-and-such data, and makes it available to me before I ask, I can
 progressively enhance that design.
 
-![data aether](https://cdn-images-1.medium.com/max/1440/1*vOX0cy5AqA2D4CqPnsrYGQ.jpeg)
+![data aether](/media/data-aether.jpg)
 
-As the author of **m-ld**, I have my own ideas about how to achieve X, and the
-Data Æther. I'll go into those next time. But what do you think? Can we get away
-from endless expensive but worthless wrangling of **syntax**, **semantics** and
-**truth**?
+What do you think? Can we get away from endless expensive but worthless
+wrangling of **syntax**, **semantics** and **truth**?
 
 And what would we build if we could?
 
-<p align="center"><sub>Wonderful photos by <a href="https://medium.com/r/?url=https%3A%2F%2Funsplash.com%2F%40robbie36%3Futm_source%3Dunsplash%26utm_medium%3Dreferral%26utm_content%3DcreditCopyText">Robert Collins on Unsplash</a></sub></p>
+<p align="center"><sub>Wonderful photos by <a href="https://unsplash.com/@robbie36?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Robert Collins on Unsplash</a></sub></p>

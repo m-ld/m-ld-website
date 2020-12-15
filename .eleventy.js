@@ -3,6 +3,7 @@ const { default11tyConfig, packageDir } = require('@m-ld/io-web-build');
 
 module.exports = function (config) {
   const jsoneditorDist = join(packageDir('jsoneditor', require), 'dist');
+  config.addPassthroughCopy('src/media');
   config.addPassthroughCopy({
     [join(jsoneditorDist, 'jsoneditor.min.css')]: 'jsoneditor.min.css',
     [join(jsoneditorDist, 'img', 'jsoneditor-icons.svg')]: 'img/jsoneditor-icons.svg'

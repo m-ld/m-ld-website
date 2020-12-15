@@ -17,7 +17,7 @@ linkedin: m-ld-io_crdt-realtimecollaborativeediting-decentralized-activity-67391
 **m-ld** is built on cool computer science, which is changing the way we think
 about data. Come with us on a journey into _CRDTs_ with our handy infographic.
 
-[![collaboratenable your app with CRDTs](/collaboratenable-infographic.png)](https://bit.ly/3o5TU0w)
+[![collaboratenable your app with CRDTs](/media/collaboratenable-infographic.png)](https://bit.ly/3o5TU0w)
 
 This month we've released preview version 0.4 of the
 [Javascript&nbsp;engine](https://js.m-ld.org/), which brings improvements to the
