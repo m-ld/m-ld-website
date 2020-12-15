@@ -179,11 +179,11 @@ lot of time in that corner.
 across any language that addresses it consistently, and head-on. We haven't
 really got a canonical way to say this data is _this far away_, and _this much
 out of date_, and these will be the _consequences of you editing it_. There are
-some ideas - for example, you should check out the proposed
+some ideas&mdash;or example, you should check out the proposed
 [Braid&nbsp;HTTP&nbsp;extension](https://braid.news/).
 
-And naturally, for all of this, if things are going to change - and we know they
-will - we need a well-defined way to cope with that.
+And naturally, for all of this, if things are going to change&mdash;and we know they
+will&mdash;we need a well-defined way to cope with that.
 
 ### The Consequences of X
 So let's say we've done it, we have X and it's available to our choice of
