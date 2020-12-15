@@ -121,7 +121,7 @@ really hard to see all the things that are always true, and the things that need
 to be true before some change is allowed, and the things that are true after
 those changes. If I'm lucky, someone has added some comments, or assertions, or
 written some test cases. (Or
-[interface&nbsp;specifications](https://medium.com/r/?url=https%3A%2F%2Fen.wikipedia.org%2Fwiki%2FDesign_by_contract),
+[interface&nbsp;specifications](https://en.wikipedia.org/wiki/Design_by_contract),
 if I'm really lucky.)
 
 But these things are in the code, and that means they're re-coded everywhere the
@@ -139,7 +139,7 @@ than never.
 
 When it comes to truth, things are even more complicated. Languages come with
 baggage. Mutability. Threading. "Volatile"
-[is&nbsp;a&nbsp;thing](https://medium.com/r/?url=https%3A%2F%2Fblog.regehr.org%2Farchives%2F28).
+[is&nbsp;a&nbsp;thing](https://blog.regehr.org/archives/28).
 
 This is not going well. Looks like we have a choice. On the one hand we could
 reinvent programming. Stop using our favourite languages, and move everyone to a
@@ -180,7 +180,7 @@ across any language that addresses it consistently, and head-on. We haven't
 really got a canonical way to say this data is _this far away_, and _this much
 out of date_, and these will be the _consequences of you editing it_. There are
 some ideas - for example, you should check out the proposed
-[Braid&nbsp;HTTP&nbsp;extension](https://medium.com/r/?url=https%3A%2F%2Fbraid.news%2F).
+[Braid&nbsp;HTTP&nbsp;extension](https://braid.news/).
 
 And naturally, for all of this, if things are going to change - and we know they
 will - we need a well-defined way to cope with that.
@@ -218,4 +218,4 @@ wrangling of **syntax**, **semantics** and **truth**?
 
 And what would we build if we could?
 
-<p align="center"><sub>Wonderful photos by <a href="https://medium.com/r/?url=https%3A%2F%2Funsplash.com%2F%40robbie36%3Futm_source%3Dunsplash%26utm_medium%3Dreferral%26utm_content%3DcreditCopyText">Robert Collins on Unsplash</a></sub></p>
+<p align="center"><sub>Wonderful photos by <a href="https://unsplash.com/@robbie36?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Robert Collins on Unsplash</a></sub></p>
