@@ -32,7 +32,7 @@ deployed with its host app on any platform that has a network connection and for
 which a clone 'engine' exists.
 
 <p align="center">
-<img src="/architecture.svg" alt="clone environments" width="500"/>
+<img src="/media/architecture.svg" alt="clone environments" width="500"/>
 </p>
 
 All clones of the data can accept reads and writes without waiting for other

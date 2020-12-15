@@ -34,7 +34,7 @@ As a data management app developer, I've used many ways to encode and store
 data. Frequently, they are combined in the same architecture, with one of the
 locations being blessed as the central 'truth':
 
-![centralised data](/centralised-data.svg)
+![centralised data](/media/centralised-data.svg)
 
 The specific technologies vary, but the overall pattern is very common.
 Motivations include properties of security, integrity, consistency, operational
@@ -59,7 +59,7 @@ In this blog, I'll argue that with recent advances in computer science we can
 make improvements to this, for many applications. Applying our manifesto, we
 want our architecture to look more like this:
 
-![live sharable data](/live-sharable-data.svg)
+![live sharable data](/media/live-sharable-data.svg)
 
 *But how?*
 
