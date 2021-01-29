@@ -219,7 +219,7 @@ export class BoardView extends InfiniteView {
   private linkDragging(mv: MessageView) {
     this.btnDragging(
       mv, thatId => thatId != mv.msg['@id'] &&
-        !includesValue(mv.msg.linkTo, { '@id': thatId }), 'link-target');
+        !includesValue(mv.msg.resource, 'linkTo', { '@id': thatId }), 'link-target');
   }
 
   private linkDragEnd(mv: MessageView, dragged: SVGElement) {
@@ -237,7 +237,7 @@ export class BoardView extends InfiniteView {
   private unlinkDragging(mv: MessageView) {
     this.btnDragging(
       mv, thatId => thatId != mv.msg['@id'] &&
-        includesValue(mv.msg.linkTo, { '@id': thatId }), 'remove-target');
+        includesValue(mv.msg.resource, 'linkTo', { '@id': thatId }), 'remove-target');
   }
 
   private unlinkDragStart(mv: MessageView, dragged: SVGElement) {
