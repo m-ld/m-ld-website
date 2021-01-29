@@ -1,7 +1,7 @@
 import * as local from 'local-storage';
 
-export type Version = 'v0' | 'v1';
-export const CURRENT_VERSION: Version = 'v1';
+export type Version = 'v0' | 'v1' | 'v2';
+export const CURRENT_VERSION: Version = 'v2';
 
 export class BoardLocal {
   /** Return of '' means create a new domain */

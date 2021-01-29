@@ -71,3 +71,6 @@ read our [Manifesto for Data](/news/#live-and-sharable).
 
 > 🚧 *Coming soon: example deployment diagrams for a selection of
 > architectures.* [Let us know](/hello/) what your app looks like.
+
+View the implementation-independent technical specification of **m-ld** on the
+[specification portal](https://spec.m-ld.org/).
