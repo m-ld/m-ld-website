@@ -16,6 +16,10 @@ We've had a busy Christmas here at **m-ld.io**, working towards a Beta of the
 core specification and the Javascript engine.
 
 The biggest ticket on our list was Lists! So we're happy to announce that we've
-worked out the specification and completed a prototype implementation.
+worked out the [specification](https://spec.m-ld.org/#lists) and completed a
+prototype implementation.
 
-You can read all about multi-collaborator editable lists in our article.
+We've also put together an article all about multi-collaborator editable lists;
+we'll post the link just as soon as it's published.
+
+We're looking forward to 2021. Let us know what you're building!
