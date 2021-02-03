@@ -13,6 +13,16 @@ figure svg {
   fill: $grey;
 }
 
+aside.menu {
+  position: sticky;
+  top: 1em;
+}
+
+.news-show-button {
+  position: sticky;
+  top: 0;
+}
+
 .content blockquote {
   @extend .has-background-warning-light
 }

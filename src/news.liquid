@@ -1,11 +1,21 @@
 ---
 layout: doc.liquid
 title: news
+width: max-desktop
 ---
 <h1 class="title">news</h1>
+<script>
+function toggleNewsItem(slug) {
+  const hidden = document.querySelector(`#${slug} .news-content`).classList.toggle('is-hidden');
+  document.querySelector(`#${slug} .news-show-button i`).classList.replace(
+    hidden ? 'fa-chevron-up' : 'fa-chevron-down', hidden ? 'fa-chevron-down' : 'fa-chevron-up');
+  if (!hidden)
+    history.replaceState(null, '', `#${slug}`);
+}
+</script>
 {%- for news in collections.news reversed -%}
 <article id="{{ news.fileSlug }}" class="media box">
-  <figure class="media-left">
+  <figure class="media-left is-hidden-mobile">
     <p class="image is-64x64">
       <img src="https://github.com/{{news.data.author.git}}.png?size=64"/>
     </p>
@@ -29,24 +39,39 @@ title: news
     <div class="has-text-weight-medium content">
       {{ news.data.title }} - {{ news.data.summary }}
     </div>
-    <div class="content">
-      {{ news.templateContent }}
-    </div>
-    {% if news.data.linkedin %}
-      <nav class="level">
-      {% if news.data.linkedin == 'TODO' %}
-        {% capture discussLink %}https://www.linkedin.com/company/m-ld-io/{% endcapture %}
-      {% else %}
-        {% capture discussLink %}https://www.linkedin.com/posts/{{ news.data.linkedin }}{% endcapture %}
+    <nav class="level news-show-button">
+      <button class="level-item button is-light"
+        onclick="toggleNewsItem('{{ news.fileSlug }}')"
+        title="Show or hide the news article">
+        <span class="icon">
+          <i class="fas fa-chevron-down"></i>
+        </span>
+      </button>
+    </nav>
+    <div class="news-content is-hidden">
+      <div class="content">
+        {{ news.templateContent }}
+      </div>
+      {% if news.data.linkedin %}
+        <nav class="level">
+        {% if news.data.linkedin == 'TODO' %}
+          {% capture discussLink %}https://www.linkedin.com/company/m-ld-io/{% endcapture %}
+        {% else %}
+          {% capture discussLink %}https://www.linkedin.com/posts/{{ news.data.linkedin }}{% endcapture %}
+        {% endif %}
+          <a class="level-item button is-info is-light" href="{{ discussLink }}">
+            <span class="icon">
+              <i class="fab fa-linkedin"></i>
+            </span>
+            <span>Join the discussion</span>
+          </a>
+        </nav>
       {% endif %}
-        <a class="level-item button is-info is-light" href="{{ discussLink }}">
-          <span class="icon">
-            <i class="fab fa-linkedin"></i>
-          </span>
-          <span>Join the discussion</span>
-        </a>
-      </nav>
-    {% endif %}
+    </div>
   </div>
 </article>
+<script>
+if (window.location.hash.slice(1) === '{{ news.fileSlug }}')
+  toggleNewsItem('{{ news.fileSlug }}');
+</script>
 {%- endfor -%}
