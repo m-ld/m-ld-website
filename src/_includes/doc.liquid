@@ -11,17 +11,8 @@
 
 <body>
   {% include 'navbar' %}
-  <div class="container is-fluid">
-    <div class="columns">
-      <div class="column is-3 has-background-light">
-        {% include 'sidebar' %}
-      </div>
-      <div class="column is-9">
-        <div class="container is-fluid">
-          <div class="content">{{ content }}</div>
-        </div>
-      </div>
-    </div>
+  <div class="container is-{{ width }}">
+    <div class="content">{{ content }}</div>
   </div>
   <footer class="footer">
     {% include 'footer' %}

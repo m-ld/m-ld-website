@@ -1,14 +1,25 @@
 ---
 layout: doc.liquid
 title: documentation
+width: fluid
 ---
-<p>🚧 <i>This documentation is for the <a href="/#developer-preview">developer preview</a> of <b>m-ld</b>.</i></p>
-<h1 class="title">documentation</h1>
-{%- for doc in collections.doc -%}
-<div class="content">
-  <h2 id="{{ doc.fileSlug }}">
-    {{ doc.data.title }}
-  </h2>
-  {{ doc.templateContent }}
+<div class="columns">
+  <div class="column is-3 has-background-light">
+    {% include 'sidebar' %}
+  </div>
+  <div class="column is-9">
+    <div class="container is-fluid">
+      <p>🚧 <i>This documentation is for the <a href="/#developer-preview">developer preview</a> of <b>m-ld</b>.</i></p>
+      <h1 class="title">documentation</h1>
+      {%- for doc in collections.doc -%}
+      <div class="content">
+        <h2 id="{{ doc.fileSlug }}">
+          {{ doc.data.title }}
+        </h2>
+        {{ doc.templateContent }}
+      </div>
+      {%- endfor -%}    
+    </div>
+  </div>
 </div>
-{%- endfor -%}
+
