@@ -11,6 +11,7 @@ author:
   git: gsvarovsky
   name: George
 date: 2021-01-29
+linkedin: TODO
 ---
 In [The Data Æther](https://bit.ly/data-aether) I envisioned a future abstraction for data, *X*, in which its **syntax** is invisible, its **semantics** are always visible, and we always know how close to the **truth** it is. So we no longer have to wrangle data between software components, and we can get on with adding value and solving real problems.
 

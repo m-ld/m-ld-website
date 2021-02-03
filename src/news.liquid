@@ -15,7 +15,7 @@ function toggleNewsItem(slug) {
 </script>
 {%- for news in collections.news reversed -%}
 <article id="{{ news.fileSlug }}" class="media box">
-  <figure class="media-left">
+  <figure class="media-left is-hidden-mobile">
     <p class="image is-64x64">
       <img src="https://github.com/{{news.data.author.git}}.png?size=64"/>
     </p>
