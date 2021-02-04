@@ -5,10 +5,11 @@ import { d3Selection, fromTemplate } from '../lib/client/d3Util';
 import { Grecaptcha, modernizd } from '@m-ld/io-web-runtime/dist/client';
 import { initPopupControls, showInfo, showNotModern, showWarning } from '../lib/client/PopupControls';
 import { fetchConfig } from '../lib/client/Api';
-import { clone, MeldClone, isRead, isWrite, Context, MeldUpdate } from '@m-ld/m-ld';
+import { clone, MeldClone, isRead, isWrite, MeldUpdate } from '@m-ld/m-ld';
 import { AblyRemotes, MeldAblyConfig } from '@m-ld/m-ld/dist/ably';
 import MemDown from 'memdown';
 import { render as renderTime } from 'timeago.js';
+import { parse, stringify } from 'querystring';
 const queryTemplates = require('../lib/templates/query-templates.json');
 const txnTemplates = require('../lib/templates/txn-templates.json');
 
@@ -22,7 +23,7 @@ window.onload = async function () {
 
   await Grecaptcha.ready;
 
-  const pg = new Playground();
+  const pg = new Playground(parse(window.location.hash.slice(1)));
   window.addEventListener('beforeunload', e => {
     if (pg.unsaved) {
       e.preventDefault();
@@ -88,6 +89,15 @@ const NOT_A_WRITE = 'Transaction pattern is not a write operation';
 const NOT_A_CONTEXT = 'A m-ld context must be a JSON object';
 const CONFIRM_CHANGE_DOMAIN = 'You may have unsaved data. Continue changing domain?';
 
+function setupJson(key: string, setup: { [key: string]: string | string[] }, def: any): any {
+  const val = setup[key];
+  try {
+    return typeof val == 'string' ? JSON.parse(val) : def;
+  } catch (err) {
+    return def;
+  }
+}
+
 class Playground {
   queryCard: JsonEditorCard;
   txnCard: JsonEditorCard;
@@ -96,18 +106,19 @@ class Playground {
   config?: MeldAblyConfig;
   options: OptionsDialog;
 
-  constructor() {
-    this.queryCard = new JsonEditorCard(d3.select('#query-card'), queryTemplates, {
+  constructor(setup: { [key: string]: string | string[] }) {
+    this.queryCard = new JsonEditorCard('query', queryTemplates, {
       mode: 'code', mainMenuBar: false, statusBar: false, onValidate: json =>
         isRead(json) ? [] : [{ path: [], message: NOT_A_READ }]
-    }, queryTemplates['Describe all subjects']);
-    this.txnCard = new JsonEditorCard(d3.select('#txn-card'), txnTemplates, {
+    }, setupJson('query', setup, queryTemplates['Describe all subjects']));
+    this.txnCard = new JsonEditorCard('txn', txnTemplates, {
       mode: 'code', mainMenuBar: false, statusBar: false, onValidate: json =>
         isWrite(json) ? [] : [{ path: [], message: NOT_A_WRITE }]
-    });
+    }, setupJson('txn', setup, {}));
     this.dataEditor = new JSONEditor(d3.select('#data-jsoneditor').node() as HTMLElement, {
-      modes: ['view', 'code'], enableTransform: false, enableSort: false, onEditable: () => false
+      modes: ['code', 'view'], enableTransform: false, enableSort: false, onEditable: () => false
     }, []);
+    this.domain = typeof setup.domain == 'string' ? setup.domain : '';
     this.domainInput.on('keydown', () => {
       if (d3.event.key === 'Enter')
         this.loadDomain();
@@ -131,14 +142,6 @@ class Playground {
         }
       }
     });
-    d3.select('#txn-import').on('click', async () => {
-      try {
-        const json = await d3.json(d3.select('#txn-import-url').property('value'));
-        this.txnCard.jsonEditor.set(json);
-      } catch (err) {
-        showWarning(err);
-      }
-    });
     d3.select('#show-options').on('click', () => this.options.show());
     this.options = new OptionsDialog();
     this.intro.select('.delete').on('click', () =>
@@ -146,6 +149,7 @@ class Playground {
     d3.select('#show-intro').on('click', () =>
       this.intro.classed('is-hidden', false));
     this.loading = false;
+    this.loadDomain();
   }
 
   private get intro() {
@@ -251,17 +255,19 @@ class Playground {
 }
 
 class JsonEditorCard extends D3View<HTMLDivElement> {
+  name?: string;
   jsonEditor: JSONEditor;
   created = Date.now();
   expanded: boolean = false;
 
   constructor(
-    cardNode: d3Selection<HTMLDivElement>,
+    card: d3Selection<HTMLDivElement> | string,
     templates: object,
     options?: JSONEditorOptions,
     json?: any) {
-    super(cardNode);
-    cardNode.datum(this);
+    super(typeof card == 'string' ? d3.select(`#${card}-card`) : card);
+    this.name = typeof card == 'string' ? card : undefined;
+    this.d3.datum(this);
 
     this.toggle.on('click', () => {
       this.expanded = this.content.classed('is-hidden');
@@ -294,6 +300,18 @@ class JsonEditorCard extends D3View<HTMLDivElement> {
         this.jsonEditor.set(e[1]);
         this.updatePreview(options);
       });
+
+    this.linkButton?.on('click', () => {
+      if (this.name != null) {
+        const icon = this.linkButton.select('i');
+        const link = new URL(window.location.href);
+        link.hash = `#${stringify({ [this.name]: JSON.stringify(this.jsonEditor.get()) })}`
+        navigator.clipboard.writeText(link.href).then(() => {
+          icon.classed('fa-link', false).classed('fa-check', true);
+          setTimeout(() => icon.classed('fa-check', false).classed('fa-link', true), 1000);
+        });
+      }
+    });
 
     options?.onChange?.();
   }
@@ -353,6 +371,10 @@ class JsonEditorCard extends D3View<HTMLDivElement> {
 
   get templatesContent() {
     return this.d3.select('.templates-menu .dropdown-content');
+  }
+
+  get linkButton() {
+    return this.d3.select<HTMLAnchorElement>('.card-link');
   }
 }
 
