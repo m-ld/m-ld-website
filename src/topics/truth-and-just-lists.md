@@ -205,6 +205,8 @@ This indexed-object syntax also allows us to perform pattern matching against th
 
 This returns `[{ "?list": { "@id": "avoid" }, "?spamPriority": 1 }]`.
 
+You can try out this Lists API in **m-ld** using the web-based playground. [Here is a link to the example](https://m-ld.org/playground/#txn=%7B%22%40id%22%3A%22reminders%22%2C%22shopping%22%3A%5B%7B%22%40id%22%3A%22buy%22%2C%22%40list%22%3A%5B%22Bread%22%2C%22Milk%22%5D%7D%2C%7B%22%40id%22%3A%22avoid%22%2C%22%40list%22%3A%5B%22Pink%20Wafers%22%2C%22Spam%22%5D%7D%5D%7D). (Once the domain is connected, just click *apply* in the **Transact** pane to insert the list.)
+
 So now we can express list operations in the **json-rql** API. How does this translate to the RDF graph?
 
 ### RDF List Representation
