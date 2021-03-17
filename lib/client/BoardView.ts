@@ -5,8 +5,10 @@ import { InfiniteView } from './InfiniteView';
 import { MessageView } from './MessageView';
 import { GroupView } from './D3View';
 import { Rectangle, Circle, Shape, Line } from '../Shapes';
-import { MeldClone, asSubjectUpdates, SubjectUpdates, updateSubject, includesValue } from '@m-ld/m-ld';
-import { shortId, Subject, Select, Describe, Update, Reference, Resource } from '@m-ld/m-ld';
+import {
+  MeldClone, asSubjectUpdates, SubjectUpdates, updateSubject, includesValue
+} from '@m-ld/m-ld';
+import { shortId, Subject, Select, Update, Reference, Resource } from '@m-ld/m-ld';
 import { LinkView } from './LinkView';
 import { showError, showInfo, showWarning } from './PopupControls';
 import { BoardBushIndex, BoardIndex } from '../BoardIndex';
@@ -24,9 +26,8 @@ export class BoardView extends InfiniteView {
 
     model.read(async state => {
       try {
-        const messages = await state.read<Describe, Message>({
-          '@describe': '?s',
-          '@where': { '@id': '?s', '@type': 'Message' }
+        const messages = await state.read({
+          '@describe': '?s', '@where': { '@id': '?s', '@type': 'Message' }
         });
         const anyMessages = this.updateView(asSubjectUpdates({
           '@insert': messages, '@delete': []
@@ -44,8 +45,7 @@ export class BoardView extends InfiniteView {
 
   async linksTo(id: string): Promise<string[]> {
     const selection = await this.model.read<Select>({
-      '@select': '?s',
-      '@where': { '@id': '?s', linkTo: { '@id': id } }
+      '@select': '?s', '@where': { '@id': '?s', linkTo: { '@id': id } }
     });
     return selection.map(values => (values['?s'] as Reference)['@id']);
   }
@@ -60,11 +60,9 @@ export class BoardView extends InfiniteView {
 
   private updateView(updates: SubjectUpdates): boolean {
     Object.keys(updates).forEach(id => {
-      const update = updates[id], updated = this.withThatMessage(id, mv => {
-        const msg = mv.msg.resource;
-        updateSubject(msg, update);
-        this.updateViewFromData(mv, msg);
-      });
+      // Updated Subject can be a Message or a message text List
+      const update = updates[id], updated = this.withThatMessage(id, mv =>
+        this.updateViewFromData(mv, updateSubject(mv.msg.resource, update)));
       if (updated.empty() && update['@insert'] != null) {
         // New message
         const msg = <Resource<Message>>update['@insert'];
@@ -306,12 +304,11 @@ export class BoardView extends InfiniteView {
   private addNewMessage(from: MessageView, position?: [number, number]) {
     const id = shortId();
     const [x, y] = position ?? this.index.findSpace(from.msg);
-    const newMessage: Resource<Message> = {
+    const newMessage: Subject & Message = {
       '@id': id, '@type': 'Message', text: '', x, y, linkTo: []
     };
     const newLink: Subject = {
-      '@id': from.msg['@id'],
-      linkTo: [{ '@id': id }]
+      '@id': from.msg['@id'], linkTo: [{ '@id': id }]
     };
     this.model.write<Update>({ '@insert': [newMessage, newLink] })
       // Yield to the event loop so that we have definitely processed the update
