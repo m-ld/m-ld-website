@@ -1,6 +1,6 @@
 import { BoardView } from '../lib/client/BoardView';
 import { Message } from '../lib/Message';
-import { clone, shortId } from '@m-ld/m-ld';
+import { clone, MeldStatus, shortId } from '@m-ld/m-ld';
 import { AblyRemotes } from '@m-ld/m-ld/dist/ably';
 import { modernizd, Grecaptcha, configureLogging } from '@m-ld/io-web-runtime/dist/client';
 import * as d3 from 'd3';
@@ -11,7 +11,9 @@ import {
 import { initBoardControls } from '../lib/client/BoardControls';
 import { BoardBot } from '../lib/BoardBot';
 import { fetchAnswer, fetchConfig } from '../lib/client/Api';
+import * as lifecycle from 'page-lifecycle';
 import * as LOG from 'loglevel';
+import { Subscription } from 'rxjs';
 
 window.onload = async function () {
   try {
@@ -41,20 +43,18 @@ window.onload = async function () {
     const meld = await clone(backend, AblyRemotes, config);
     // Save the board as soon as it has initialised and periodically after
     // update
-    let saveQueued = false;
-    function queueSave() {
-      if (!saveQueued) {
-        saveQueued = true;
-        setTimeout(() => meld.read(async () => {
-          await local.save();
-          saveQueued = false;
-        }), 2000);
+    let saving = false;
+    async function queueSave() {
+      if (!saving) {
+        saving = true;
+        await local.save();
+        saving = false;
       }
     }
     meld.read(queueSave, queueSave);
-    window.addEventListener('unload', async () => {
-      await meld.close();
-      await local.save(); // Saves final state
+    lifecycle.addEventListener('statechange', event => {
+      if (event.newState === 'hidden')
+        meld.close()
     });
 
     // Wait for the latest state from the clone
@@ -63,7 +63,7 @@ window.onload = async function () {
 
     // When the clone goes offline, show a suitable warning
     let online = meld.status.value.online;
-    const statusSub = meld.status.subscribe(status => {
+    function onStatus(status: MeldStatus) {
       if (status.online !== online && !status.online) {
         showWarning('It looks like this browser is offline. ' +
           'You can keep working, but don\'t refresh the page.');
@@ -71,8 +71,17 @@ window.onload = async function () {
           .then(() => showInfo('Back online!'));
       }
       online = status.online;
-    }, showError);
-    window.addEventListener('beforeunload', () => statusSub.unsubscribe());
+    }
+    let statusSub: Subscription | undefined;
+    lifecycle.addEventListener('statechange', event => {
+      if (event.newState === 'active' && (statusSub == null || statusSub.closed))
+        statusSub = meld.status.subscribe(onStatus, showError);
+      else if (event.newState === 'passive')
+        statusSub?.unsubscribe();
+    });
+    window.addEventListener('beforeunload', () => {
+      statusSub?.unsubscribe();
+    });
 
     // Unshow the loading progress
     d3.select('#loading').classed('is-active', false);

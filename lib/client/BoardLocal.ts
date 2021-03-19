@@ -34,11 +34,6 @@ export class BoardLocal {
   }
 
   async load(domain: string) {
-    // Push the domain to the top of the list
-    let localDomains = this.domains;
-    localDomains = localDomains.filter(v => v[1] !== domain);
-    localDomains.unshift([CURRENT_VERSION, domain]);
-    this.setDomains(localDomains);
     // Do we have a cache for this backend?
     const cache = await this.cache;
     const data = await cache.match(domain);
@@ -64,6 +59,12 @@ export class BoardLocal {
     const cache = await this.cache;
     if (this.backend == null || this.domain == null)
       throw new Error('No active domain!');
+    // Push the domain to the top of the list
+    let localDomains = this.domains;
+    localDomains = localDomains.filter(v => v[1] !== this.domain);
+    localDomains.unshift([CURRENT_VERSION, this.domain]);
+    this.setDomains(localDomains);
+    // Save the data
     const iterator = this.backend.iterator();
     const stream = new ReadableStream({
       async pull(controller) {

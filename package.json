@@ -47,6 +47,7 @@
     "local-storage": "^2.0.0",
     "loglevel": "^1.7.1",
     "memdown": "^5.1.0",
+    "page-lifecycle": "^0.1.2",
     "rbush": "^3.0.1",
     "rxjs": "^6.6.3",
     "striptags": "^3.1.1",
