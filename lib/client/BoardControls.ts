@@ -1,5 +1,4 @@
 import * as d3 from 'd3';
-import * as Level from 'level-js';
 import { BoardLocal, CURRENT_VERSION } from './BoardLocal';
 import { showError, showInfo, showWarning } from './PopupControls';
 
@@ -37,20 +36,11 @@ export function initBoardControls(local: BoardLocal) {
       .append('td').append('a').classed('tag is-delete is-danger', true)
       .attr('title', 'Remove this board')
       .on('mousedown', domain => showInfo(
-        `Remove ${domain[1]} from this browser?`, () => deleteDomain(domain[1])));
-  }
-
-  function deleteDomain(domain: string) {
-    // Level typing is wrong - destroy is a static method
-    (<any>Level).destroy(domain, (err: any) => {
-      if (err) {
-        showError(err);
-      } else {
-        local.removeDomain(domain);
-        showInfo(`Board ${domain} has been removed from this browser.`);
-        updateBoardPicks();
-      }
-    });
+        `Remove ${domain[1]} from this browser?`,
+        () => local.removeDomain(domain).then(() => {
+          showInfo(`Board ${domain[1]} has been removed from this browser.`);
+          updateBoardPicks();
+        }, showError)));
   }
 }
 

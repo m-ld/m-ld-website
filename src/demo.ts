@@ -1,13 +1,14 @@
 import { BoardView } from '../lib/client/BoardView';
 import { Message } from '../lib/Message';
-import * as Level from 'level-js';
 import { clone, shortId } from '@m-ld/m-ld';
 import { AblyRemotes } from '@m-ld/m-ld/dist/ably';
 import { modernizd, Grecaptcha, configureLogging } from '@m-ld/io-web-runtime/dist/client';
 import * as d3 from 'd3';
 import { BoardLocal } from '../lib/client/BoardLocal'
-import { initPopupControls, showError, showInfo, showNotModern, showWarning } from '../lib/client/PopupControls';
-import { initBoardControls} from '../lib/client/BoardControls';
+import {
+  initPopupControls, showError, showInfo, showNotModern, showWarning
+} from '../lib/client/PopupControls';
+import { initBoardControls } from '../lib/client/BoardControls';
 import { BoardBot } from '../lib/BoardBot';
 import { fetchAnswer, fetchConfig } from '../lib/client/Api';
 import * as LOG from 'loglevel';
@@ -30,14 +31,31 @@ window.onload = async function () {
     const config = await fetchConfig(domain, local.getBotName(domain));
     configureLogging(config, LOG);
     domain = config['@domain'];
-    
+
     const botName = config.botName ?? false;
     local.setBotName(domain, botName);
     history.replaceState(null, '', '#' + domain);
 
-    // Initialise the m-ld clone
-    const meld = await clone(Level(domain), AblyRemotes, config);
-    window.addEventListener('unload', () => meld.close());
+    // Initialise the m-ld clone with a local backend
+    const backend = await local.load(domain);
+    const meld = await clone(backend, AblyRemotes, config);
+    // Save the board as soon as it has initialised and periodically after
+    // update
+    let saveQueued = false;
+    function queueSave() {
+      if (!saveQueued) {
+        saveQueued = true;
+        setTimeout(() => meld.read(async () => {
+          await local.save();
+          saveQueued = false;
+        }), 2000);
+      }
+    }
+    meld.read(queueSave, queueSave);
+    window.addEventListener('unload', async () => {
+      await meld.close();
+      await local.save(); // Saves final state
+    });
 
     // Wait for the latest state from the clone
     // (Remove this line to see rev-ups as they happen)
@@ -55,9 +73,6 @@ window.onload = async function () {
       online = status.online;
     }, showError);
     window.addEventListener('beforeunload', () => statusSub.unsubscribe());
-
-    // Add the domain to the local list of domains
-    local.addDomain(domain);
 
     // Unshow the loading progress
     d3.select('#loading').classed('is-active', false);
