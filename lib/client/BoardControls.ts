@@ -13,8 +13,22 @@ export function initBoardControls(local: BoardLocal) {
       boardPicker.classed('is-active', show);
     })
     .on('blur', () => d3.select('#board-menu').classed('is-active', false));
-  d3.select('#new-board').on('mousedown', () => location.hash = 'new');
-  d3.select('#go-home').on('mousedown', () => location.pathname = '/');
+  d3.select('#new-board').on('mousedown', () => local.navigate('new'));
+  d3.select('#go-home').on('mousedown', () => local.navigate('home'));
+
+  local.on('dirty', dirty => d3.select('#save').property('disabled', !dirty));
+  local.on('saving', saving => d3.select('#save').classed('is-loading', saving));
+  // Actual clicking of the save button is handled in the Demo class
+
+  local.on('online', online => d3.select('#online')
+    .classed('is-success', online).classed('is-warning', !online));
+  d3.select('#online').on('click', () => {
+    if (local.online)
+      showInfo('This browser is online, all good!');
+    else
+      showWarning('It looks like this browser is offline. ' +
+        'You can keep working, but don\'t refresh the page.');
+  });
 
   function updateBoardPicks() {
     const boardPicks = boardPicker.select('#boards')
@@ -28,7 +42,7 @@ export function initBoardControls(local: BoardLocal) {
       .text(domain => domain[1])
       .on('mousedown', domain => {
         if (domain[0] === CURRENT_VERSION)
-          location.hash = domain[1];
+          local.navigate(domain[1]);
         else
           showWarning('Sorry, we can\'t show that board, it was made with an older version.')
       });

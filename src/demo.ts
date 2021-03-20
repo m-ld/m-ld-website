@@ -1,6 +1,7 @@
 import { BoardView } from '../lib/client/BoardView';
 import { Message } from '../lib/Message';
-import { clone, MeldStatus, shortId } from '@m-ld/m-ld';
+import { node } from '../lib/client/d3Util';
+import { clone, MeldClone, shortId } from '@m-ld/m-ld';
 import { AblyRemotes } from '@m-ld/m-ld/dist/ably';
 import { modernizd, Grecaptcha, configureLogging } from '@m-ld/io-web-runtime/dist/client';
 import * as d3 from 'd3';
@@ -13,75 +14,54 @@ import { BoardBot } from '../lib/BoardBot';
 import { fetchAnswer, fetchConfig } from '../lib/client/Api';
 import * as lifecycle from 'page-lifecycle';
 import * as LOG from 'loglevel';
-import { Subscription } from 'rxjs';
+import { EMPTY, fromEvent, merge, Subscription } from 'rxjs';
+import {
+  debounce, debounceTime, distinctUntilChanged, filter, last, map, startWith, takeUntil
+} from 'rxjs/operators';
 
 window.onload = async function () {
-  try {
-    await modernizd(['indexeddb']);
-  } catch (err) {
-    return showNotModern(err);
+  await modernizd(['indexeddb']).catch(showNotModern);
+  new Demo().initialise().catch(showError);
+}
+
+window.onhashchange = function () {
+  location.reload();
+};
+
+class Demo {
+  local = new BoardLocal();
+
+  constructor() {
+    initPopupControls();
+    initBoardControls(this.local);
   }
-  initPopupControls();
-  const local = new BoardLocal();
-  initBoardControls(local);
 
-  await Grecaptcha.ready;
-
-  try {
-    let domain: string = local.targetDomain(document.location.hash.slice(1) ?? '');
+  async initialise() {
+    await Grecaptcha.ready;
+    let domain: string = this.local.targetDomain(document.location.hash.slice(1) ?? '');
     // Get the configuration for the domain
-    const config = await fetchConfig(domain, local.getBotName(domain));
+    const config = await fetchConfig(domain, this.local.getBotName(domain));
     configureLogging(config, LOG);
     domain = config['@domain'];
 
     const botName = config.botName ?? false;
-    local.setBotName(domain, botName);
+    this.local.setBotName(domain, botName);
     history.replaceState(null, '', '#' + domain);
 
     // Initialise the m-ld clone with a local backend
-    const backend = await local.load(domain);
+    const backend = await this.local.load(domain);
     const meld = await clone(backend, AblyRemotes, config);
-    // Save the board as soon as it has initialised and periodically after
-    // update
-    let saving = false;
-    async function queueSave() {
-      if (!saving) {
-        saving = true;
-        await local.save();
-        saving = false;
-      }
-    }
-    meld.read(queueSave, queueSave);
-    lifecycle.addEventListener('statechange', event => {
-      if (event.newState === 'hidden')
-        meld.close()
-    });
+    window.addEventListener('unload', () => meld.close());
+
+    // Set up auto-save.
+    this.setupAutoSave(meld);
 
     // Wait for the latest state from the clone
     // (Remove this line to see rev-ups as they happen)
     await meld.status.becomes({ outdated: false });
 
     // When the clone goes offline, show a suitable warning
-    let online = meld.status.value.online;
-    function onStatus(status: MeldStatus) {
-      if (status.online !== online && !status.online) {
-        showWarning('It looks like this browser is offline. ' +
-          'You can keep working, but don\'t refresh the page.');
-        meld.status.becomes({ online: true })
-          .then(() => showInfo('Back online!'));
-      }
-      online = status.online;
-    }
-    let statusSub: Subscription | undefined;
-    lifecycle.addEventListener('statechange', event => {
-      if (event.newState === 'active' && (statusSub == null || statusSub.closed))
-        statusSub = meld.status.subscribe(onStatus, showError);
-      else if (event.newState === 'passive')
-        statusSub?.unsubscribe();
-    });
-    window.addEventListener('beforeunload', () => {
-      statusSub?.unsubscribe();
-    });
+    meld.status.subscribe(status => this.local.online = status.online);
 
     // Unshow the loading progress
     d3.select('#loading').classed('is-active', false);
@@ -111,11 +91,50 @@ window.onload = async function () {
         respond: (message: string, topMessages: string[]) =>
           fetchAnswer(config, message, topMessages)
       }).start(isNew);
-  } catch (err) {
-    showError(err);
+  }
+
+  setupAutoSave(meld: MeldClone) {
+    // Safety net in case the user manages to unload in the dirty state
+    this.local.on('dirty', dirty => lifecycle[dirty ?
+      'addUnsavedChanges' : 'removeUnsavedChanges'](this));
+
+    const autoSave = () => new Promise((resolve, reject) =>
+      // We want to save from a consistent read state, but memdown iterates a
+      // snapshot so we don't have to keep the state locked
+      meld.read(() => this.local.save().then(resolve, reject)));
+
+    // When the document updates, set the dirty status
+    meld.follow(() => { this.local.dirty = true; });
+
+    merge(
+      // Clicked save button
+      fromEvent(node<HTMLButtonElement>(d3.select('#save')), 'click'),
+      // Navigating away
+      fromEvent(this.local, 'navigate'),
+      // Debounced five seconds after update
+      fromEvent(this.local, 'dirty').pipe(debounceTime(5000)),
+      // Passivation of the page
+      fromEvent(lifecycle, 'statechange').pipe(filter(event => event.newState === 'passive')),
+      // Mouse leaves (e.g. to navigate)
+      fromEvent(document, 'mouseleave'),
+      // Trying to unload
+      fromEvent(window, 'beforeunload')
+    ).pipe(
+      // Stop when meld is closed
+      takeUntil(meld.status.pipe(last())),
+      // Save and do not overlap saves
+      debounce(() => this.local.dirty ? autoSave() : EMPTY)
+    ).subscribe(() =>
+      // Only allow navigation when saved
+      this.navigateIfPending());
+  }
+
+  private navigateIfPending() {
+    if (this.local.destination === 'new')
+      location.hash = 'new';
+    else if (this.local.destination === 'home')
+      location.href = '/';
+    else if (this.local.destination != null)
+      location.hash = this.local.destination;
   }
 }
-window.onhashchange = function () {
-  location.reload();
-};
-

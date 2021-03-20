@@ -42,6 +42,10 @@ html#demo {
   cursor: grab;
 }
 
+#board-buttons .button:not(:hover) {
+  border-color: transparent;
+}
+
 .board-message-box {
   fill: $light;
   stroke: $light;

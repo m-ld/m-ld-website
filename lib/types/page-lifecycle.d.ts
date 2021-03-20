@@ -46,7 +46,7 @@ declare module 'page-lifecycle' {
      * The argument passed should be unique to this state, as it can only be
      * removed by passing the same argument to `removeUnsavedChanges()`.
      */
-    addUnsavedchanges(id: Object | Symbol): void;
+    addUnsavedChanges(id: Object | Symbol): void;
     /**
      * Removes an item matching the passed argument from an internal
      * pending-changes stack. If the stack is empty, the generic `beforeunload`
