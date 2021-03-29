@@ -24,7 +24,7 @@ export function showInfo(info: any, action?: () => void) {
 
 function showMessage(type: 'warning' | 'info', msg: string, action?: () => void) {
   const message = d3.select('#popup-messages')
-    .insert(fromTemplate(type), ':first-child')
+    .insert(() => fromTemplate(type), ':first-child')
     .classed('is-hidden', false).attr('id', null);
   message.select('.delete').on('click', () => message.remove());
   message.select('.popup-message-text').text(msg);

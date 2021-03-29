@@ -1,4 +1,4 @@
-import { SVG, setAttr, d3Selection } from './d3Util';
+import { SVG, setAttr, d3Selection, fromTemplate } from './d3Util';
 import { Shape, Line } from '../Shapes';
 import * as d3 from 'd3';
 import { D3View } from './D3View';
@@ -56,12 +56,8 @@ export class LinkView extends D3View<SVGLineElement> {
 
   private static createLinkLine(svg: SVG, fromId: string, toId: string) {
     return svg.selectAll('#link-lines')
-      .append(LinkView.createLinkLineNode)
+      .append(() => fromTemplate<SVGLineElement>('link-line'))
       .classed('link-line', true)
       .attr('id', LinkView.linkId(fromId, toId));
-  }
-
-  private static createLinkLineNode(): SVGLineElement {
-    return <SVGLineElement>(<Element>d3.select('#link-line-template').node()).cloneNode(true);
   }
 }

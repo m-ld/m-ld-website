@@ -1,6 +1,6 @@
-import { MeldClone, Update, shortId, Subject, Resource } from '@m-ld/m-ld';
+import { MeldClone, Update, shortId, Subject } from '@m-ld/m-ld';
 import { BoardIndex, MessageItem, MIN_MESSAGE_SIZE } from './BoardIndex';
-import { Message } from './Message';
+import { Message, MessageSubject } from './Message';
 import { MeldUpdate } from '@m-ld/m-ld';
 import { BotBrain, Sentiment, selectRandom } from './BotBrain';
 import * as striptags from 'striptags';
@@ -219,7 +219,7 @@ export class BoardBot {
     const size = topic.size ?? [1, 1];
     const [x, y] = this.index.findSpace(this.message(afterId),
       MIN_MESSAGE_SIZE.map((dim, i) => dim * size[i]) as [number, number]);
-    const message: Message & Subject = {
+    const message: MessageSubject = {
       '@id': id, '@type': 'Message', text, x, y, linkTo: []
     };
     const link: Partial<Message> = {
@@ -241,5 +241,5 @@ function pause(seconds: number = 2) {
 }
 
 function msgText(subject: Subject): string {
-  return striptags(MessageItem.mergeText((<Resource<Message>>subject).text)).trim();
+  return striptags(MessageItem.mergeText((<MessageSubject>subject).text)).trim();
 }

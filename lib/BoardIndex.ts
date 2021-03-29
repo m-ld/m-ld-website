@@ -1,6 +1,6 @@
 import type RBush from 'rbush';
-import { Resource, Reference, array } from '@m-ld/m-ld';
-import { Message } from './Message';
+import { Reference, array } from '@m-ld/m-ld';
+import { Message, MessageSubject } from './Message';
 import { Rectangle } from './Shapes';
 
 // This is required because rbush's exports are broken
@@ -118,49 +118,32 @@ export class BoardBushIndex extends MessageBush implements BoardIndex {
 }
 
 /**
- * Immutable wrapper for a message, which resolves position and text conflicts
- * and maintains a size.
+ * Immutable wrapper for a message, which resolves position and text conflicts,
+ * maintains a size and signals deletion.
  */
 export class MessageItem extends Rectangle implements Message {
   readonly text: string;
   readonly '@type' = 'Message';
-  private readonly src: Resource<Message>;
+  readonly '@id': string;
+  readonly linkTo: Reference[];
+  readonly deleted: boolean;
 
-  constructor(
-    src: Resource<Message>,
-    size?: [number, number]) {
+  constructor(src: MessageSubject, size?: [number, number]) {
     super(MessageItem.mergePosition([src.x, src.y]), size ?? [0, 0]);
-    this.src = deepClone(src);
+    this['@id'] = src['@id'];
+    this.linkTo = array(src.linkTo);
+    this.deleted = !array(src.text).length;
     this.text = MessageItem.mergeText(src.text);
   }
 
-  get '@id'() {
-    return this.src['@id'];
-  }
-
-  get linkTo(): Reference[] {
-    return array(this.src.linkTo);
-  }
-
-  get resource(): Resource<Message> {
-    return deepClone(this.src);
-  }
-
-  get deleted(): boolean {
-    return !array(this.src.text).length;
-  }
-
-  static mergeText(value: Resource<Message>['text']): string {
+  static mergeText(value: MessageSubject['text']): string {
     return array(value).join('<br>');
   }
 
-  static mergePosition([xs, ys]: [Resource<Message>['x'], Resource<Message>['y']]): [number, number] {
+  static mergePosition([xs, ys]: [MessageSubject['x'], MessageSubject['y']]): [number, number] {
     return [
       Math.min.apply(Math, array(xs)),
       Math.min.apply(Math, array(ys))
     ];
   }
 }
-
-// Defensive deep copy, where performance not a concern
-const deepClone = <T>(src: T) => JSON.parse(JSON.stringify(src));

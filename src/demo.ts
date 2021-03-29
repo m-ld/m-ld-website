@@ -1,5 +1,5 @@
 import { BoardView } from '../lib/client/BoardView';
-import { Message } from '../lib/Message';
+import { MessageSubject } from '../lib/Message';
 import { node } from '../lib/client/d3Util';
 import { clone, MeldClone, shortId } from '@m-ld/m-ld';
 import { AblyRemotes } from '@m-ld/m-ld/dist/ably';
@@ -7,16 +7,16 @@ import { modernizd, Grecaptcha, configureLogging } from '@m-ld/io-web-runtime/di
 import * as d3 from 'd3';
 import { BoardLocal } from '../lib/client/BoardLocal'
 import {
-  initPopupControls, showError, showInfo, showNotModern, showWarning
+  initPopupControls, showError, showNotModern
 } from '../lib/client/PopupControls';
 import { initBoardControls } from '../lib/client/BoardControls';
 import { BoardBot } from '../lib/BoardBot';
 import { fetchAnswer, fetchConfig } from '../lib/client/Api';
 import * as lifecycle from 'page-lifecycle';
 import * as LOG from 'loglevel';
-import { EMPTY, fromEvent, merge, Subscription } from 'rxjs';
+import { EMPTY, fromEvent, merge } from 'rxjs';
 import {
-  debounce, debounceTime, distinctUntilChanged, filter, last, map, startWith, takeUntil
+  debounce, debounceTime, filter, last, takeUntil
 } from 'rxjs/operators';
 
 window.onload = async function () {
@@ -76,7 +76,7 @@ class Demo {
     // Add the welcome message if not already there
     const isNew = (await meld.get(welcomeId)) == null;
     if (isNew) {
-      await meld.write<Message>({
+      await meld.write<MessageSubject>({
         '@id': welcomeId,
         '@type': 'Message',
         text: `Welcome to ${domain}!`,

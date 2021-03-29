@@ -59,7 +59,7 @@ export class BoardLocal extends EventEmitter {
 
   set online(online: boolean) {
     if (this._online !== online)
-      this.emit('network', this._online = online);
+      this.emit('online', this._online = online);
   }
 
   get online() {

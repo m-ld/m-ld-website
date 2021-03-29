@@ -194,7 +194,7 @@ class Playground {
     this.runQuery();
     const editorCard = new JsonEditorCard(
       this.updatesLog
-        .insert(fromTemplate<HTMLDivElement>('update'), ':first-child')
+        .insert(() => fromTemplate<HTMLDivElement>('update'), ':first-child')
         .attr('id', null).classed('is-hidden', false), {}, {
       mode: 'code', mainMenuBar: false, statusBar: false, onEditable: () => false
     }, update);
