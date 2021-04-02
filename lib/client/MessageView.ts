@@ -7,6 +7,7 @@ import { LinkView } from './LinkView';
 import { MessageItem, MIN_MESSAGE_SIZE } from '../BoardIndex';
 import { SubjectUpdate, updateSubject } from '@m-ld/m-ld';
 import { MessageSubject } from '../Message';
+import { HtmlList } from './HtmlList';
 
 /** @see https://github.com/d3/d3-selection#local-variables */
 const VIEW_LOCAL = d3.local<MessageView>();
@@ -14,6 +15,7 @@ const VIEW_LOCAL = d3.local<MessageView>();
 export class MessageView extends GroupView {
   /** @see {@link msg} */
   private _msg: MessageItem;
+  readonly content: HtmlList;
 
   /**
    * @param src m-ld graph subject for the Message being viewed, including any
@@ -27,8 +29,11 @@ export class MessageView extends GroupView {
     // We don't yet know the message size
     this._msg = new MessageItem(src);
     this.d3.classed('board-message', true).attr('id', src['@id']);
-    this.d3.select('.board-message-box').classed('new-message', true);
-    this.d3.select('.board-message-body > div').text(this._msg.text);
+    this.box.classed('new-message', true);
+    this.content = new HtmlList(this.body.select('div'));
+    // TODO
+    this.content.d3.text(this._msg.text);
+    this.content.on('update', u => console.log(JSON.stringify(u)));
     VIEW_LOCAL.set(this.element, this);
   }
 
@@ -57,10 +62,6 @@ export class MessageView extends GroupView {
     return this.d3.select('.board-message-body');
   }
 
-  get content(): d3Selection<HTMLDivElement> {
-    return this.body.select('div');
-  }
-
   getButton(name: 'close' | 'add' | 'move' | 'code') {
     return this.d3.select(`.board-message-${name} circle`);
   }
@@ -77,7 +78,7 @@ export class MessageView extends GroupView {
         return; // Nothing else to do
       } else {
         // Update the visible text - but not if the user is editing
-        if (document.activeElement !== node(this.content))
+        if (document.activeElement !== this.content.element)
           this.updateText();
         // Update the position
         this.position = this._msg.position;
@@ -85,7 +86,7 @@ export class MessageView extends GroupView {
     }
     // We push the re-sizing to at least the next frame because Firefox
     // sometimes hasn't updated the bounding client rect yet.
-    const images = this.content.selectAll<HTMLImageElement, unknown>('img').nodes();
+    const images = this.content.d3.selectAll<HTMLImageElement, unknown>('img').nodes();
     if (images.length)
       await Promise.all(images.map(img =>
         img.complete ? Promise.resolve() : new Promise((resolve, reject) => {
@@ -96,7 +97,7 @@ export class MessageView extends GroupView {
       await new Promise(resolve => window.requestAnimationFrame(resolve));
 
     // Size the shape to the content
-    const textRect = this.boardView.svgRect(node(this.content));
+    const textRect = this.boardView.svgRect(this.content.element);
     // Chromium bug: The computed effective zoom is currently force-set to 1.0
     // for foreignObjects. We can detect by comparing the body to the box,
     // because they are locked to having the same width attributes.
@@ -141,7 +142,7 @@ export class MessageView extends GroupView {
 
   toggleCode() {
     this.updateText(!this.codeMode);
-    this.content.attr('contenteditable', !this.codeMode);
+    this.content.d3.attr('contenteditable', !this.codeMode);
     this.box.classed('code-mode', this.codeMode);
     this.d3.raise();
     this.update();
@@ -152,12 +153,13 @@ export class MessageView extends GroupView {
   }
 
   get text(): string {
-    return node(this.content).innerHTML;
+    return this.content.toString();
   }
 
   private updateText(codeMode: boolean = this.codeMode) {
     // This has the effect of switching to the given codeMode, see codeMode()
-    node(this.content).innerHTML = codeMode ? `<pre>${this.msgCode}</pre>` : this._msg.text;
+    // TODO
+    this.content.element.innerHTML = codeMode ? `<pre>${this.msgCode}</pre>` : this._msg.text;
   }
 
   private get msgCode(): string {
@@ -165,7 +167,7 @@ export class MessageView extends GroupView {
   }
 
   private get codeMode(): boolean {
-    return !this.content.select('pre').empty();
+    return !this.content.d3.select('pre').empty();
   }
 
   private get allOutLinks() {

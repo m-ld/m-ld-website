@@ -41,6 +41,7 @@
     "@types/rbush": "^3.0.0",
     "compromise": "^13.7.0",
     "d3": "^5.16.0",
+    "fast-array-diff": "^1.0.1",
     "jsoneditor": "^9.1.4",
     "line-intersect": "^2.2.4",
     "line2": "^0.2.1",

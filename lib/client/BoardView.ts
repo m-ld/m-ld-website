@@ -84,7 +84,7 @@ export class BoardView extends InfiniteView {
       // The contenteditable div can be smaller than the body
       .on('mousedown', () => this.forceEditFocus(mv))
       .on('touchstart', () => this.forceEditFocus(mv));
-    mv.content
+    mv.content.d3
       .on('focus', () => this.inputStart(mv))
       .on('input', () => this.inputChange(mv))
       .on('keydown', () => this.inputKey(mv))
@@ -108,7 +108,7 @@ export class BoardView extends InfiniteView {
   }
 
   private forceEditFocus(mv: MessageView) {
-    const div = node(mv.content);
+    const div = mv.content.element;
     if (document.activeElement !== div) {
       // Raise early to prevent the focus handler raise from causing a blur
       mv.d3.raise();
@@ -161,7 +161,7 @@ export class BoardView extends InfiniteView {
 
   private inputKey(mv: MessageView) {
     if (d3.event.key === 'Enter' && !d3.event.shiftKey) {
-      node(mv.content).blur();
+      mv.content.element.blur();
       d3.event.preventDefault();
     }
   }
@@ -313,7 +313,7 @@ export class BoardView extends InfiniteView {
     this.model.write<Update>({ '@insert': [newMessage, newLink] })
       // Yield to the event loop so that we have definitely processed the update
       .then(() => new Promise(done => setTimeout(done)))
-      .then(() => this.withThatMessage(id, mv => node(mv.content).focus()), showWarning);
+      .then(() => this.withThatMessage(id, mv => mv.content.element.focus()), showWarning);
   }
 
   private removeMessage(mv: MessageView, top: boolean) {
