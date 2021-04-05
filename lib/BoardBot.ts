@@ -1,9 +1,7 @@
-import { MeldClone, Update, shortId, Subject } from '@m-ld/m-ld';
-import { BoardIndex, MessageItem, MIN_MESSAGE_SIZE } from './BoardIndex';
-import { Message, MessageSubject } from './Message';
-import { MeldUpdate } from '@m-ld/m-ld';
+import { MeldClone, Update, shortId } from '@m-ld/m-ld';
+import { BoardIndex, MIN_MESSAGE_SIZE } from './BoardIndex';
+import { MessageSubject, MessageItem, splitHtml } from './Message';
 import { BotBrain, Sentiment, selectRandom } from './BotBrain';
-import * as striptags from 'striptags';
 
 type Topic = {
   text: string | ((bot: BoardBot) => string),
@@ -12,7 +10,7 @@ type Topic = {
 const SEE_HELP: Topic = {
   text: `
     For Help with this collaborative message board,
-    <br>click the <i class="fas fa-question"></i> button.`,
+    <br>click the Help (?) button.`,
   size: [2, 1.5]
 }
 const FIRST_GREETING: Topic = {
@@ -141,10 +139,10 @@ export class BoardBot {
       await this.say([this.greetingId('return'), RETURN_GREETING]);
     }
     // Set up chat in response to messages
-    this.meld.follow(update => {
+    this.index.on('insert', items => {
       if (!this.thinking) {
         this.thinking = true;
-        this.maybeAnswer(update)
+        this.maybeAnswer(items)
           .catch(err => console.warn(err)) // TODO: Logging
           .finally(() => this.thinking = false);
       }
@@ -163,11 +161,12 @@ export class BoardBot {
 
       const [greeting, msg, after] = await Promise.all(
         [initialGreetingId, msgId, afterId].map(id => this.meld.get(id)));
-      
+
       if (greeting != null && after != null) {
         if (msg == null) {
           await this.say([msgId, appTopic], true, afterId);
-          await pause(4); // Pause after saying anything
+          // await pause(4); // Pause after saying anything
+          break; // TODO
         }
       } else {
         // User is deleting messages, probably doesn't want us around
@@ -176,16 +175,15 @@ export class BoardBot {
     }
   }
 
-  private async maybeAnswer(update: MeldUpdate) {
-    const msg = update['@insert'].filter( // Check not one of my own
-      subject => subject['@id'] != null && !this.myIds.has(subject['@id']))
-      .map(subject => ({ '@id': subject['@id'], text: msgText(subject) }))
-      .find(msg => msg.text && (this.addressedIn(msg.text) || this.chatting));
+  private async maybeAnswer(items: MessageItem[]) {
+    // Check not one of my own
+    const msg = items.find(msg => !this.myIds.has(msg['@id']) &&
+      msg.text && (this.addressedIn(msg.text) || this.chatting));
     if (msg != null) {
       // Pause for thought
       await pause(Math.random());
       const answer = await this.brain.respond(msg.text,
-        this.index.topMessages(10, this.myIds).map(msg => striptags(msg)));
+        this.index.topMessages(10, this.myIds).map(stripTags));
       if (answer.message != null)
         await this.say({ text: answer.message, size: [1, 1] }, true, msg['@id']);
       if (answer.sentiment.includes(Sentiment.START_CHAT))
@@ -219,10 +217,8 @@ export class BoardBot {
     const size = topic.size ?? [1, 1];
     const [x, y] = this.index.findSpace(this.message(afterId),
       MIN_MESSAGE_SIZE.map((dim, i) => dim * size[i]) as [number, number]);
-    const message: MessageSubject = {
-      '@id': id, '@type': 'Message', text, x, y, linkTo: []
-    };
-    const link: Partial<Message> = {
+    const message = MessageSubject.create({ '@id': id, text, x, y });
+    const link: Partial<MessageSubject> = {
       '@id': afterId, linkTo: [{ '@id': id }]
     };
     this.myIds.add(this.prevId = id);
@@ -240,6 +236,6 @@ function pause(seconds: number = 2) {
   return new Promise(res => setTimeout(res, seconds * 1000));
 }
 
-function msgText(subject: Subject): string {
-  return striptags(MessageItem.mergeText((<MessageSubject>subject).text)).trim();
+function stripTags(html: string): string {
+  return splitHtml(html, text => text, _tag => '').join('');
 }

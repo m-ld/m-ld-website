@@ -76,13 +76,11 @@ class Demo {
     // Add the welcome message if not already there
     const isNew = (await meld.get(welcomeId)) == null;
     if (isNew) {
-      await meld.write<MessageSubject>({
+      await meld.write(MessageSubject.create({
         '@id': welcomeId,
-        '@type': 'Message',
         text: `Welcome to ${domain}!`,
-        x: 200, y: 100,
-        linkTo: []
-      });
+        x: 200, y: 100
+      }));
     }
 
     // Unleash the board's resident bot

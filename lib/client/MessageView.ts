@@ -4,9 +4,9 @@ import { BoardView } from './BoardView';
 import { Rectangle } from '../Shapes';
 import { GroupView } from './D3View';
 import { LinkView } from './LinkView';
-import { MessageItem, MIN_MESSAGE_SIZE } from '../BoardIndex';
-import { SubjectUpdate, updateSubject } from '@m-ld/m-ld';
-import { MessageSubject } from '../Message';
+import { MIN_MESSAGE_SIZE } from '../BoardIndex';
+import { SubjectUpdater, SubjectUpdates, updateSubject } from '@m-ld/m-ld';
+import { MessageSubject, MessageItem } from '../Message';
 import { HtmlList } from './HtmlList';
 
 /** @see https://github.com/d3/d3-selection#local-variables */
@@ -15,25 +15,25 @@ const VIEW_LOCAL = d3.local<MessageView>();
 export class MessageView extends GroupView {
   /** @see {@link msg} */
   private _msg: MessageItem;
+  readonly src: MessageSubject;
   readonly content: HtmlList;
 
   /**
-   * @param src m-ld graph subject for the Message being viewed, including any
-   * conflicting states. Updated based on model updates. Use to remove old state
-   * from the model.
+   * Must be followed by a call to {@link update}, to initialise message
+   * content.
+   * @param id identity of the Message being viewed
    */
   constructor(
-    readonly src: MessageSubject,
+    id: string,
     readonly boardView: BoardView) {
     super(fromTemplate<SVGGElement>('board-message'));
     // We don't yet know the message size
-    this._msg = new MessageItem(src);
-    this.d3.classed('board-message', true).attr('id', src['@id']);
+    this.src = MessageSubject.create({ '@id': id });
+    this._msg = new MessageItem(this.src); // For safety
+    this.d3.classed('board-message', true).attr('id', id);
     this.box.classed('new-message', true);
     this.content = new HtmlList(this.body.select('div'));
-    // TODO
-    this.content.d3.text(this._msg.text);
-    this.content.on('update', u => console.log(JSON.stringify(u)));
+    this.content.element.id = this.src.text?.['@id'] ?? '';
     VIEW_LOCAL.set(this.element, this);
   }
 
@@ -66,9 +66,10 @@ export class MessageView extends GroupView {
     return this.d3.select(`.board-message-${name} circle`);
   }
 
-  async update(update?: SubjectUpdate): Promise<void> {
-    if (update != null) {
-      this._msg = new MessageItem(updateSubject(this.src, update));
+  async update(updater?: SubjectUpdater): Promise<void> {
+    if (updater != null) {
+      // This will also update the nested list
+      this._msg = new MessageItem(updater.update(this.src));
       // Detect if the message has become invalid (deleted)
       if (this._msg.deleted) {
         this.d3.remove();
@@ -77,9 +78,8 @@ export class MessageView extends GroupView {
         LinkView.remove(this.allInLinks);
         return; // Nothing else to do
       } else {
-        // Update the visible text - but not if the user is editing
-        if (document.activeElement !== this.content.element)
-          this.updateText();
+        // Update the visible text
+        this.content.update(this._msg.textData);
         // Update the position
         this.position = this._msg.position;
       }
@@ -113,7 +113,7 @@ export class MessageView extends GroupView {
     setAttr(this.body, { width, height });
     this._msg = new MessageItem(this.src, [width, height]);
 
-    if (update != null) // i.e. data has changed
+    if (updater != null) // i.e. data has changed
       await this.syncLinks();
 
     // Update the position of all link lines
@@ -140,34 +140,12 @@ export class MessageView extends GroupView {
     inLinks.forEach(thatId_2 => this.withThat(thatId_2, that_2 => that_2.link(this)));
   }
 
-  toggleCode() {
-    this.updateText(!this.codeMode);
-    this.content.d3.attr('contenteditable', !this.codeMode);
-    this.box.classed('code-mode', this.codeMode);
-    this.d3.raise();
-    this.update();
-  }
-
   set active(active: boolean) {
     this.d3.classed('active', active);
   }
 
   get text(): string {
     return this.content.toString();
-  }
-
-  private updateText(codeMode: boolean = this.codeMode) {
-    // This has the effect of switching to the given codeMode, see codeMode()
-    // TODO
-    this.content.element.innerHTML = codeMode ? `<pre>${this.msgCode}</pre>` : this._msg.text;
-  }
-
-  private get msgCode(): string {
-    return JSON.stringify(this.src, null, 2);
-  }
-
-  private get codeMode(): boolean {
-    return !this.content.d3.select('pre').empty();
   }
 
   private get allOutLinks() {
@@ -183,7 +161,7 @@ export class MessageView extends GroupView {
   }
 
   private withThat(thatId: string, action: (mv: MessageView) => any) {
-    this.boardView.withThatMessage(thatId, action);
+    return this.boardView.withThatMessage(thatId, action);
   }
 
   get rect(): Rectangle {

@@ -15,32 +15,28 @@ export type HtmlListUpdate = DeleteInsert<{ [key: number]: string | string[] }>;
  * When provided with a splice, performs a non-destructive merge using Ranges.
  */
 export class HtmlList extends D3View<HTMLElement> implements Iterable<string> {
-  events = new EventEmitter;
-  inputTxn?: { old: string[] };
+  private events = new EventEmitter;
+  private inputTxn?: InputTxn;
 
   constructor(d3: d3Selection<HTMLElement>) {
     super(d3);
     this.element.addEventListener('beforeinput', () => {
-      this.inputTxn = { old: this.list };
+      this.inputTxn = new InputTxn(this.element);
     });
     this.element.addEventListener('input', () => {
       if (this.inputTxn != null) {
-        this.events.emit('update', this.getUpdate(this.inputTxn.old));
+        this.events.emit('update', this.inputTxn.commit());
         delete this.inputTxn;
       }
     });
   }
 
-  on(event: 'update', handler: (update: DeleteInsert<{ [key: number]: string }>) => any) {
+  on(event: 'update', handler: (update: HtmlListUpdate) => any) {
     this.events.on(event, handler);
   }
 
-  get list() {
-    return [...this];
-  }
-
-  set list(to: string[]) {
-    new SpliceTxn(this.element).update(to).commit();
+  update(to: string[]) {
+    new PatchTxn(this.element).update(to).commit();
   }
 
   [Symbol.iterator](): Iterator<string, number, undefined> {
@@ -49,18 +45,6 @@ export class HtmlList extends D3View<HTMLElement> implements Iterable<string> {
 
   toString(): string {
     return [...this].join('');
-  }
-
-  private getUpdate(from: string[]) {
-    const update: HtmlListUpdate = { '@delete': {}, '@insert': {} };
-    for (let patch of getPatch(from, this.list)) {
-      if (patch.type === 'remove')
-        for (let i = 0; i < patch.items.length; i++)
-          update['@delete'][patch.oldPos + i] = patch.items[i];
-      else if (patch.type === 'add')
-        update['@insert'][patch.oldPos] = patch.items;
-    }
-    return update;
   }
 }
 
@@ -100,9 +84,35 @@ interface BaseExtent<T> {
   focus: T;
 }
 
-class SpliceTxn {
+class InputTxn {
+  prev: string[];
+
+  constructor(
+    readonly element: Element) {
+    this.prev = this.list;
+  }
+
+  get list(): string[] {
+    return [...listItems(this.element)];
+  }
+
+  commit() {
+    const update: HtmlListUpdate = { '@delete': {}, '@insert': {} };
+    for (let patch of getPatch(this.prev, this.list)) {
+      if (patch.type === 'remove')
+        for (let i = 0; i < patch.items.length; i++)
+          update['@delete'][patch.oldPos + i] = patch.items[i];
+      else if (patch.type === 'add')
+        update['@insert'][patch.oldPos] = patch.items;
+    }
+    return update;
+  }
+}
+
+class PatchTxn {
   selection?: BaseExtent<number>;
   list: string[] = [];
+  dirty = false;
 
   constructor(readonly element: Element) {
     const docSel = document.getSelection();
@@ -123,31 +133,34 @@ class SpliceTxn {
     for (let patch of getPatch(this.list, to)) {
       this.adjustSelection('anchor', patch);
       this.adjustSelection('focus', patch);
+      this.dirty = true;
     }
     this.list = to;
     return this;
   }
 
   commit() {
-    // Apply the changes as innerHTML
-    this.element.innerHTML = this.list.join('');
-    // Reset the selection
-    const listSel = this.selection;
-    const docSel = document.getSelection();
-    if (listSel != null && docSel != null) {
-      let newSel: Partial<BaseExtent<{ node: Node, offset: number }>> = {};
-      visitItems(this.element, (node, offset, index) => {
-        if (index === listSel.anchor)
-          newSel.anchor = { node, offset };
-        if (index === listSel.focus)
-          newSel.focus = { node, offset };
-      });
-      if (newSel.anchor != null && newSel.focus != null)
-        docSel.setBaseAndExtent(newSel.anchor.node, newSel.anchor.offset,
-          newSel.focus.node, newSel.focus.offset);
-      else if (newSel.anchor != null || newSel.focus != null)
-        docSel.collapse(newSel.anchor?.node ?? newSel.focus?.node ?? null,
-          newSel.anchor?.offset ?? newSel.focus?.offset);
+    if (this.dirty) {
+      // Apply the changes as innerHTML
+      this.element.innerHTML = this.list.join('');
+      // Reset the selection
+      const listSel = this.selection;
+      const docSel = document.getSelection();
+      if (listSel != null && docSel != null) {
+        let newSel: Partial<BaseExtent<{ node: Node, offset: number }>> = {};
+        visitItems(this.element, (node, offset, index) => {
+          if (index === listSel.anchor)
+            newSel.anchor = { node, offset };
+          if (index === listSel.focus)
+            newSel.focus = { node, offset };
+        });
+        if (newSel.anchor != null && newSel.focus != null)
+          docSel.setBaseAndExtent(newSel.anchor.node, newSel.anchor.offset,
+            newSel.focus.node, newSel.focus.offset);
+        else if (newSel.anchor != null || newSel.focus != null)
+          docSel.collapse(newSel.anchor?.node ?? newSel.focus?.node ?? null,
+            newSel.anchor?.offset ?? newSel.focus?.offset);
+      }
     }
   }
 

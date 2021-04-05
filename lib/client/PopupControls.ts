@@ -11,6 +11,7 @@ export function showError(err: any) {
   LOG.error(err);
   d3.select('#error').classed('is-active', true)
     .select('.error-text').text(`${err}`);
+  throw err;
 }
 
 export function showWarning(warn: any, action?: () => void) {

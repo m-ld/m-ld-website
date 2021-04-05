@@ -1,6 +1,6 @@
+import { EventEmitter } from 'events';
 import type RBush from 'rbush';
-import { Reference, array } from '@m-ld/m-ld';
-import { Message, MessageSubject } from './Message';
+import { MessageItem } from './Message';
 import { Rectangle } from './Shapes';
 
 // This is required because rbush's exports are broken
@@ -9,6 +9,8 @@ const MessageBush: new () => RBush<MessageItem> = require('rbush');
 export const MIN_MESSAGE_SIZE: [number, number] = [115, 50];
 
 export interface BoardIndex {
+  on(event: 'insert' | 'remove', handler: (items: MessageItem[]) => any): void;
+
   get(id: string): MessageItem | undefined;
 
   all(): MessageItem[];
@@ -42,6 +44,11 @@ export interface BoardIndex {
 export class BoardBushIndex extends MessageBush implements BoardIndex {
   // Maintains insertion order, so top message is last
   private top = new Set<string>();
+  private events = new EventEmitter;
+
+  on(event: 'insert' | 'remove', handler: (items: MessageItem[]) => any) {
+    this.events.on(event, handler);
+  }
 
   get(id: string): MessageItem | undefined {
     return this.all().filter(item => item['@id'] === id)[0];
@@ -50,12 +57,14 @@ export class BoardBushIndex extends MessageBush implements BoardIndex {
   load(items: ReadonlyArray<MessageItem>): BoardBushIndex {
     super.load(items);
     items.forEach(item => this.top.add(item['@id']));
+    this.events.emit('insert', items);
     return this;
   }
 
   insert(item: MessageItem): BoardBushIndex {
     super.insert(item);
     this.top.add(item['@id']);
+    this.events.emit('insert', [item]);
     return this;
   }
 
@@ -73,12 +82,16 @@ export class BoardBushIndex extends MessageBush implements BoardIndex {
     if (prev != null) {
       super.remove(prev);
       this.top.delete(item['@id']);
+      this.events.emit('remove', [item]);
     }
     return this;
   }
 
   clear(): BoardBushIndex {
+    const items = this.all();
     super.clear();
+    // Clear is called before class initialisation
+    this.events?.emit('remove', items);
     return this;
   }
 
@@ -114,36 +127,5 @@ export class BoardBushIndex extends MessageBush implements BoardIndex {
     return Array.from(this.top)
       .reverse().filter(id => excludeIds == null || !excludeIds.has(id))
       .slice(0, count).map(id => this.get(id)?.text ?? ''); // Should exist
-  }
-}
-
-/**
- * Immutable wrapper for a message, which resolves position and text conflicts,
- * maintains a size and signals deletion.
- */
-export class MessageItem extends Rectangle implements Message {
-  readonly text: string;
-  readonly '@type' = 'Message';
-  readonly '@id': string;
-  readonly linkTo: Reference[];
-  readonly deleted: boolean;
-
-  constructor(src: MessageSubject, size?: [number, number]) {
-    super(MessageItem.mergePosition([src.x, src.y]), size ?? [0, 0]);
-    this['@id'] = src['@id'];
-    this.linkTo = array(src.linkTo);
-    this.deleted = !array(src.text).length;
-    this.text = MessageItem.mergeText(src.text);
-  }
-
-  static mergeText(value: MessageSubject['text']): string {
-    return array(value).join('<br>');
-  }
-
-  static mergePosition([xs, ys]: [MessageSubject['x'], MessageSubject['y']]): [number, number] {
-    return [
-      Math.min.apply(Math, array(xs)),
-      Math.min.apply(Math, array(ys))
-    ];
   }
 }
