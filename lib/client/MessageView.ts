@@ -15,7 +15,6 @@ const VIEW_LOCAL = d3.local<MessageView>();
 export class MessageView extends GroupView {
   /** @see {@link msg} */
   private _msg: MessageItem;
-  readonly src: MessageSubject;
   readonly content: HtmlList;
 
   /**
@@ -24,13 +23,12 @@ export class MessageView extends GroupView {
    * @param id identity of the Message being viewed
    */
   constructor(
-    id: string,
+    readonly src: MessageSubject,
     readonly boardView: BoardView) {
     super(fromTemplate<SVGGElement>('board-message'));
     // We don't yet know the message size
-    this.src = MessageSubject.create({ '@id': id });
-    this._msg = new MessageItem(this.src); // For safety
-    this.d3.classed('board-message', true).attr('id', id);
+    this._msg = new MessageItem(src);
+    this.d3.classed('board-message', true).attr('id', src['@id']);
     this.box.classed('new-message', true);
     this.content = new HtmlList(this.body.select('div'));
     this.content.element.id = this.src.text?.['@id'] ?? '';
@@ -66,10 +64,10 @@ export class MessageView extends GroupView {
     return this.d3.select(`.board-message-${name} circle`);
   }
 
-  async update(data?: MessageSubject): Promise<void> {
-    if (data != null) {
+  async update(dirty?: 'dirty'): Promise<void> {
+    if (dirty) {
       // This will also update the nested list
-      this._msg = new MessageItem(data);
+      this._msg = new MessageItem(this.src);
       // Detect if the message has become invalid (deleted)
       if (this._msg.deleted) {
         this.d3.remove();
@@ -113,7 +111,7 @@ export class MessageView extends GroupView {
     setAttr(this.body, { width, height });
     this._msg = new MessageItem(this.src, [width, height]);
 
-    if (data != null) // i.e. data has changed
+    if (dirty) // i.e. data has changed
       await this.syncLinks();
 
     // Update the position of all link lines

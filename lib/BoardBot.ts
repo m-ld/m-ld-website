@@ -125,8 +125,10 @@ export class BoardBot {
   }
 
   async start(isNew: boolean) {
-    if (isNew) {
+    // Wait for the welcome Id to be available in the index
+    while (this.index.get(this.welcomeId) == null)
       await pause();
+    if (isNew) {
       await this.say(SEE_HELP);
       await pause(4);
       await this.say([this.greetingId('initial'), FIRST_GREETING], false);

@@ -29,7 +29,7 @@ export class BoardView extends InfiniteView {
       try {
         const messages = await MessageSubject.load(state);
         for (let src of messages)
-          this.updateMessageView(this.addMessageView(src['@id']), { update: () => src });
+          this.updateMessageView(this.addMessageView(src));
         if (messages.length > 0 && this.zoomToExtent())
           showInfo('Tip: You can look more closely by double-clicking.');
       } catch (err) {
@@ -65,22 +65,25 @@ export class BoardView extends InfiniteView {
       // An updated Subject can be a Message or a message text List. Since both
       // may be in the same set of updates, keep track of which message views
       // are affected so we don't double-spend.
-      const updated = this.withThatMessage(id, mv => this.updateMessageView(mv, updater));
-      if (updated.empty() && insert != null && insert['@type'] === 'Message')
+      const updated = this.withThatMessage(id, mv => {
+        updater.update(mv.src);
+        this.updateMessageView(mv);
+      });
+      if (updated.empty() && insert != null && insert['@type'] === 'Message') {
         // A message we haven't seen before
-        this.updateMessageView(this.addMessageView(id), updater);
+        const src = updater.update(MessageSubject.create({ '@id': id }));
+        this.updateMessageView(this.addMessageView(src));
+      }
     });
   }
 
-  private updateMessageView(mv: MessageView,
-    updater: { update(src: MessageSubject): MessageSubject }) {
+  private updateMessageView(mv: MessageView) {
     // Update the index when the message view has re-sized itself
-    mv.update(updater.update(mv.src))
-      .then(() => this._index.update(mv.msg)).catch(showWarning);
+    mv.update('dirty').then(() => this._index.update(mv.msg)).catch(showWarning);
   }
 
-  private addMessageView(id: string) {
-    const mv = new MessageView(id, this);
+  private addMessageView(src: MessageSubject) {
+    const mv = new MessageView(src, this);
     node(this.messageGroup).insertAdjacentElement('beforeend', mv.element);
     mv.body
       // The contenteditable div can be smaller than the body

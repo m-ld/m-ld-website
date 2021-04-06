@@ -208,6 +208,7 @@ class KeyValueReader {
           if (value == null)
             return null;
           this.buffer = value;
+          this.pos = 0;
         }
         buffer[i] = this.buffer[this.pos++];
       }
