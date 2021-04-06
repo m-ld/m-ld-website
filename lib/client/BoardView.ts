@@ -27,10 +27,10 @@ export class BoardView extends InfiniteView {
 
     model.read(async state => {
       try {
-        const anyMessages = this.updateView(asSubjectUpdates({
-          '@insert': await MessageSubject.load(state), '@delete': []
-        }));
-        if (anyMessages && this.zoomToExtent())
+        const messages = await MessageSubject.load(state);
+        for (let src of messages)
+          this.updateMessageView(this.addMessageView(src['@id']), { update: () => src });
+        if (messages.length > 0 && this.zoomToExtent())
           showInfo('Tip: You can look more closely by double-clicking.');
       } catch (err) {
         showError(err);
@@ -58,7 +58,7 @@ export class BoardView extends InfiniteView {
     return this._index;
   }
 
-  private updateView(updates: SubjectUpdates): boolean {
+  private updateView(updates: SubjectUpdates) {
     const updater = new SubjectUpdater(updates);
     Object.keys(updates).forEach(id => {
       const insert = updates[id]['@insert'];
@@ -70,12 +70,13 @@ export class BoardView extends InfiniteView {
         // A message we haven't seen before
         this.updateMessageView(this.addMessageView(id), updater);
     });
-    return !!Object.keys(updates).length;
   }
 
-  private updateMessageView(mv: MessageView, updater: SubjectUpdater) {
+  private updateMessageView(mv: MessageView,
+    updater: { update(src: MessageSubject): MessageSubject }) {
     // Update the index when the message view has re-sized itself
-    mv.update(updater).then(() => this._index.update(mv.msg)).catch(showWarning);
+    mv.update(updater.update(mv.src))
+      .then(() => this._index.update(mv.msg)).catch(showWarning);
   }
 
   private addMessageView(id: string) {

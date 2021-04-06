@@ -66,10 +66,10 @@ export class MessageView extends GroupView {
     return this.d3.select(`.board-message-${name} circle`);
   }
 
-  async update(updater?: SubjectUpdater): Promise<void> {
-    if (updater != null) {
+  async update(data?: MessageSubject): Promise<void> {
+    if (data != null) {
       // This will also update the nested list
-      this._msg = new MessageItem(updater.update(this.src));
+      this._msg = new MessageItem(data);
       // Detect if the message has become invalid (deleted)
       if (this._msg.deleted) {
         this.d3.remove();
@@ -113,7 +113,7 @@ export class MessageView extends GroupView {
     setAttr(this.body, { width, height });
     this._msg = new MessageItem(this.src, [width, height]);
 
-    if (updater != null) // i.e. data has changed
+    if (data != null) // i.e. data has changed
       await this.syncLinks();
 
     // Update the position of all link lines

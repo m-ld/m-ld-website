@@ -48,20 +48,20 @@ export namespace MessageSubject {
     };
   };
 
-  export function load(state: MeldReadState, id = '?') {
+  export function load(state: MeldReadState, id = any()): PromiseLike<MessageSubject[]> {
+    const required = {
+      '@id': id, '@type': 'Message',
+      text: { '@id': any(), '@list': { [any()]: any() } },
+      x: any(), y: any()
+    };
+    const optional = {
+      '@id': id, '@type': 'Message',
+      linkTo: any()
+    };
     return state.read<Construct>({
-      '@construct': {
-        '@id': id,
-        '@type': 'Message',
-        text: {
-          '@id': '?',
-          '@list': { '?': '?' }
-        },
-        x: '?',
-        y: '?',
-        linkTo: '?'
-      }
-    })
+      '@construct': { ...required, ...optional },
+      '@where': { '@union': [required, optional] }
+    }).then(data => data as MessageSubject[]);
   }
 
   export function remove(state: MeldState, src: MessageSubject) {
