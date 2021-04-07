@@ -167,8 +167,7 @@ export class BoardBot {
       if (greeting != null && after != null) {
         if (msg == null) {
           await this.say([msgId, appTopic], true, afterId);
-          // await pause(4); // Pause after saying anything
-          break; // TODO
+          await pause(4); // Pause after saying anything
         }
       } else {
         // User is deleting messages, probably doesn't want us around

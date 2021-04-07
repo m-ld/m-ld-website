@@ -1,5 +1,5 @@
 import * as d3 from 'd3';
-import { MessageSubject } from '../Message';
+import { isStringText, MessageSubject } from '../Message';
 import { svgParent, getAttr, d3Selection, node } from './d3Util';
 import { InfiniteView } from './InfiniteView';
 import { MessageView } from './MessageView';
@@ -13,6 +13,8 @@ import { LinkView } from './LinkView';
 import { showError, showInfo, showWarning } from './PopupControls';
 import { BoardBushIndex, BoardIndex } from '../BoardIndex';
 import { HtmlListUpdate } from './HtmlList';
+import { debounce, tap } from 'rxjs/operators';
+import { fromEvent } from 'rxjs';
 
 const CLICK_DRAG_DISTANCE = 3;
 
@@ -27,10 +29,9 @@ export class BoardView extends InfiniteView {
 
     model.read(async state => {
       try {
-        const messages = await MessageSubject.load(state);
-        for (let src of messages)
-          this.updateMessageView(this.addMessageView(src));
-        if (messages.length > 0 && this.zoomToExtent())
+        const last = await MessageSubject.load(state).pipe(tap(src =>
+          this.updateMessageView(this.addMessageView(src)))).toPromise();
+        if (last != null && this.zoomToExtent())
           showInfo('Tip: You can look more closely by double-clicking.');
       } catch (err) {
         showError(err);
@@ -89,8 +90,9 @@ export class BoardView extends InfiniteView {
       // The contenteditable div can be smaller than the body
       .on('mousedown', () => this.forceEditFocus(mv))
       .on('touchstart', () => this.forceEditFocus(mv));
-    mv.content
-      .on('update', update => this.inputChange(mv, update));
+    // Ensure that text updates don't overlap
+    fromEvent<HtmlListUpdate>(mv.content, 'update').pipe(
+      debounce(update => this.inputChange(mv, update))).subscribe();
     mv.content.d3
       .on('focus', () => this.inputStart(mv))
       .on('keydown', () => this.inputKey(mv))
@@ -168,14 +170,19 @@ export class BoardView extends InfiniteView {
       .on('end', this.withThisMessage(dragEnd));
   }
 
-  private inputChange(mv: MessageView, update: HtmlListUpdate) {
-    if (mv.src.text != null)
-      this.model.write<Update>({
-        '@delete': { '@id': mv.src.text['@id'], '@list': update['@delete'] },
-        '@insert': { '@id': mv.src.text['@id'], '@list': update['@insert'] }
-      }).catch(showWarning);
+  private async inputChange(mv: MessageView, listUpdate: HtmlListUpdate): Promise<unknown> {
     // Immediately update the message's size to accommodate the input
     mv.update();
+    if (mv.src.text != null) {
+      const update: Update = isStringText(mv.src.text) ? {
+        '@delete': { '@id': mv.src['@id'], text: mv.src.text },
+        '@insert': { '@id': mv.src['@id'], text: mv.content.toString() }
+      } : {
+        '@delete': { '@id': mv.src.text['@id'], '@list': listUpdate['@delete'] },
+        '@insert': { '@id': mv.src.text['@id'], '@list': listUpdate['@insert'] }
+      };
+      return this.model.write(update);
+    }
   }
 
   private inputStart(mv: MessageView) {

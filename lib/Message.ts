@@ -1,6 +1,11 @@
-import { any, array, MeldReadState, MeldState, Reference, shortId, Subject } from '@m-ld/m-ld';
-import { Construct } from '@m-ld/m-ld/dist/jrql-support';
+import {
+  any, array, MeldReadState, MeldState, Reference, shortId, Subject, Construct, Describe
+} from '@m-ld/m-ld';
+import { isPropertyObject, isReference } from '@m-ld/m-ld/dist/jrql-support';
+import { Observable } from 'rxjs';
+import { mergeMap } from 'rxjs/operators';
 import { Rectangle } from './Shapes';
+import { getPatch, applyPatch } from 'fast-array-diff';
 
 export interface Message {
   '@id': string;
@@ -10,13 +15,26 @@ export interface Message {
   linkTo: Reference[];
 }
 
+type ListText = { '@id': string, '@list': string[] };
+type StringText = string | string[];
+/**
+ * Feature flag for using list text
+ */
+const USING_LIST_TEXT = false;
+export function isStringText(text?: StringText | ListText): text is StringText {
+  return Array.isArray(text) ? text.every(isStringText) : typeof text == 'string';
+}
+
+function listText(text: string | undefined) {
+  return text == null ? [] : ([] as string[]).concat(
+    // Split text into characters, keep HTML tags atomic
+    ...splitHtml(text, text => [...text], tag => [tag]));
+}
+
 export interface MessageSubject extends Subject {
   '@id': string;
   '@type': 'Message';
-  text?: {
-    '@id': string,
-    '@list': string[]
-  };
+  text?: StringText | ListText;
   x?: number | number[];
   y?: number | number[];
   linkTo?: Reference[];
@@ -32,43 +50,41 @@ export function splitHtml<T>(
 export namespace MessageSubject {
   export function create(init: Partial<Message>): MessageSubject {
     const id = init['@id'] ?? shortId();
-    const text = init.text == null ? [] : ([] as string[]).concat(
-      // Split text into characters, keep HTML tags atomic
-      ...splitHtml(init.text, text => [...text], tag => [tag]));
     return {
       '@id': id,
       '@type': 'Message',
-      text: {
-        '@id': `${id}_text`,
-        '@list': text
-      },
+      text: USING_LIST_TEXT ? {
+        '@id': textId(id),
+        '@list': listText(init.text)
+      } : init.text,
       x: init.x,
       y: init.y,
       linkTo: init.linkTo
     };
   };
 
-  export function load(state: MeldReadState, id = any()): PromiseLike<MessageSubject[]> {
-    const required = {
-      '@id': id, '@type': 'Message',
-      text: { '@id': any(), '@list': { [any()]: any() } },
-      x: any(), y: any()
-    };
-    const optional = {
-      '@id': id, '@type': 'Message',
-      linkTo: any()
-    };
-    return state.read<Construct>({
-      '@construct': { ...required, ...optional },
-      '@where': { '@union': [required, optional] }
-    }).then(data => data as MessageSubject[]);
+  export function textId(id: string): string {
+    return `${id}_text`;
+  }
+
+  export function load(state: MeldReadState, id = any()): Observable<MessageSubject> {
+    return state.read<Describe>({
+      '@describe': '?id',
+      '@where': { '@id': '?id', '@type': 'Message' }
+    }).pipe(mergeMap(async subject => {
+      const src = { ...subject } as MessageSubject;
+      // Check for ListText
+      if (isPropertyObject('text', src.text) && isReference(src.text))
+        src.text = (await state.get(src.text['@id'])) as ListText;
+      return src;
+    }));
   }
 
   export function remove(state: MeldState, src: MessageSubject) {
     const patterns = [
       { '@id': src['@id'], [any()]: any() },
       { '@id': any(), linkTo: { '@id': src['@id'] } }
-    ].concat(src.text != null ?
+    ].concat(src.text != null && !isStringText(src.text) ?
       { '@id': src.text['@id'], [any()]: any() } : []);
     // Delete the message including its text, and any links to it
     return state.write({
@@ -84,7 +100,7 @@ export namespace MessageSubject {
  */
 export class MessageItem extends Rectangle implements Message {
   readonly text: string;
-  readonly textData: string[];
+  readonly textList: string[];
   readonly '@id': string;
   readonly linkTo: Reference[];
   readonly deleted: boolean;
@@ -97,7 +113,18 @@ export class MessageItem extends Rectangle implements Message {
     this['@id'] = src['@id'];
     this.linkTo = array(src.linkTo);
     this.deleted = src.text == null;
-    this.textData = src.text?.['@list'] ?? [];
-    this.text = this.textData.join('');
+    if (isStringText(src.text))
+      this.textList = mergeTexts(array(src.text));
+    else
+      this.textList = src.text?.['@list'] ?? [];
+    this.text = this.textList.join('');
   }
+}
+
+function mergeTexts(texts: string[]): string[] {
+  return texts.sort().reduce((merged, text) => mergeAdd(merged, listText(text)), []);
+}
+
+function mergeAdd(a: string[], b: string[]): string[] {
+  return applyPatch(a, getPatch(a, b).filter(p => p.type === 'add'));
 }

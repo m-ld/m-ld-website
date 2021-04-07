@@ -89,7 +89,7 @@ const NOT_A_WRITE = 'Transaction pattern is not a write operation';
 const NOT_A_CONTEXT = 'A m-ld context must be a JSON object';
 const CONFIRM_CHANGE_DOMAIN = 'You may have unsaved data. Continue changing domain?';
 
-function setupJson(key: string, setup: { [key: string]: string | string[] }, def: any): any {
+function setupJson(key: string, setup: { [key: string]: string | string[] | undefined }, def: any): any {
   const val = setup[key];
   try {
     return typeof val == 'string' ? JSON.parse(val) : def;
@@ -106,7 +106,7 @@ class Playground {
   config?: MeldAblyConfig;
   options: OptionsDialog;
 
-  constructor(setup: { [key: string]: string | string[] }) {
+  constructor(setup: { [key: string]: string | string[] | undefined }) {
     this.queryCard = new JsonEditorCard('query', queryTemplates, {
       mode: 'code', mainMenuBar: false, statusBar: false, onValidate: json =>
         isRead(json) ? [] : [{ path: [], message: NOT_A_READ }]

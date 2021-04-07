@@ -5,7 +5,6 @@ import { Rectangle } from '../Shapes';
 import { GroupView } from './D3View';
 import { LinkView } from './LinkView';
 import { MIN_MESSAGE_SIZE } from '../BoardIndex';
-import { SubjectUpdater, SubjectUpdates, updateSubject } from '@m-ld/m-ld';
 import { MessageSubject, MessageItem } from '../Message';
 import { HtmlList } from './HtmlList';
 
@@ -31,7 +30,7 @@ export class MessageView extends GroupView {
     this.d3.classed('board-message', true).attr('id', src['@id']);
     this.box.classed('new-message', true);
     this.content = new HtmlList(this.body.select('div'));
-    this.content.element.id = this.src.text?.['@id'] ?? '';
+    this.content.element.id = MessageSubject.textId(src['@id']);
     VIEW_LOCAL.set(this.element, this);
   }
 
@@ -77,7 +76,7 @@ export class MessageView extends GroupView {
         return; // Nothing else to do
       } else {
         // Update the visible text
-        this.content.update(this._msg.textData);
+        this.content.update(this._msg.textList);
         // Update the position
         this.position = this._msg.position;
       }

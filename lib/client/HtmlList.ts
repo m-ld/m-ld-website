@@ -35,6 +35,10 @@ export class HtmlList extends D3View<HTMLElement> implements Iterable<string> {
     this.events.on(event, handler);
   }
 
+  off(event: 'update', handler: (update: HtmlListUpdate) => any) {
+    this.events.off(event, handler);
+  }
+
   update(to: string[]) {
     new PatchTxn(this.element).update(to).commit();
   }
