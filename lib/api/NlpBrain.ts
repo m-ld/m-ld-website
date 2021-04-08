@@ -36,14 +36,14 @@ export class NlpBrain implements BotBrain {
       respond: groups => ans(1, `OK, ${groups[0].text()}-ing.`, Sentiment.STOP_CHAT)
     }, {
       patterns: [`(talk|chat)$`, `(talk|chat) about [#Noun]`],
-      respond: (groups, i) => ans(i + 1, i ? `text:word.json/${groups[0].text()}/topExample` :
+      respond: (groups, i) => ans(i + 1, i ? `text:word.json/${uriWord(groups)}/topExample` :
         `OK! What about?`, Sentiment.START_CHAT)
     }, {
       patterns: [`what is your name`],
       respond: () => ans(1, `My name is ${this.botName}.`)
     }, {
       patterns: [`your favourite [#Noun]`],
-      respond: groups => ans(1, `It's "words:word.json/${groups[0].text()}/relatedWords?useCanonical=true&relationshipTypes=synonym&limitPerRelationshipType=10"`)
+      respond: groups => ans(1, `It's "words:word.json/${uriWord(groups)}/relatedWords?useCanonical=true&relationshipTypes=synonym&limitPerRelationshipType=10"`)
     }, {
       patterns: [`^[#Noun]$`],
       respond: groups => ans(1, `${groups[0].text('reduced')}?`)
@@ -121,6 +121,10 @@ export class NlpBrain implements BotBrain {
           ({ ...thought, score: thought.score + perPattern.length }));
       }));
   };
+}
+
+function uriWord(groups: ReturnType<nlp.Document['groups']>) {
+  return encodeURIComponent(groups[0].text().trim());
 }
 
 function best(thoughts: Thought[]): Thought | null {

@@ -2,6 +2,8 @@ import { MeldClone, Update, shortId } from '@m-ld/m-ld';
 import { BoardIndex, MIN_MESSAGE_SIZE } from './BoardIndex';
 import { MessageSubject, MessageItem, splitHtml } from './Message';
 import { BotBrain, Sentiment, selectRandom } from './BotBrain';
+import { fromEvent } from 'rxjs';
+import { buffer, debounceTime, map } from 'rxjs/operators';
 
 type Topic = {
   text: string | ((bot: BoardBot) => string),
@@ -112,7 +114,6 @@ const APP_TOPICS: AppTopic[] = [{
 export class BoardBot {
   private prevId: string;
   private myIds = new Set<string>();
-  private thinking = false;
   private chatting = false;
 
   constructor(
@@ -120,7 +121,8 @@ export class BoardBot {
     private readonly welcomeId: string,
     private readonly meld: MeldClone,
     private readonly index: BoardIndex,
-    private readonly brain: BotBrain) {
+    private readonly brain: BotBrain,
+    private readonly onError: (err: any) => void) {
     this.prevId = welcomeId;
   }
 
@@ -140,18 +142,31 @@ export class BoardBot {
       await pause();
       await this.say([this.greetingId('return'), RETURN_GREETING]);
     }
-    // Set up chat in response to messages
-    this.index.on('insert', items => {
-      if (!this.thinking) {
-        this.thinking = true;
-        this.maybeAnswer(items)
-          .catch(err => console.warn(err)) // TODO: Logging
-          .finally(() => this.thinking = false);
-      }
-    });
-    await pause(4);
+    // Set up chat in response to updated messages
+    const messageUpdates = fromEvent<MessageItem>(this.index, 'update');
+    messageUpdates.pipe(
+      // Buffer while debouncing
+      buffer(messageUpdates.pipe(debounceTime(3000))),
+      map(changedMsgs => {
+        for (let changedMsg of changedMsgs) {
+          const currentMsg = this.index.get(changedMsg['@id']);
+          if (this.shouldAnswer(currentMsg, changedMsg))
+            return currentMsg;
+        }
+      }))
+      .subscribe(msg => this.answer(msg).catch(this.onError));
     // Keep going with the exposition if desired
+    await pause(4);
     this.sayTopics();
+  }
+
+  private shouldAnswer(msg: MessageItem | undefined, old: MessageItem) {
+    // Change of non-empty text
+    return msg?.text && msg.text !== old.text &&
+      // Not one of my own messages
+      !this.myIds.has(msg['@id']) &&
+      // Being addressed or feeling chatty
+      (this.addressedIn(msg.text) || this.chatting);
   }
 
   private async sayTopics() {
@@ -176,13 +191,8 @@ export class BoardBot {
     }
   }
 
-  private async maybeAnswer(items: MessageItem[]) {
-    // Check not one of my own
-    const msg = items.find(msg => !this.myIds.has(msg['@id']) &&
-      msg.text && (this.addressedIn(msg.text) || this.chatting));
+  private async answer(msg?: MessageItem) {
     if (msg != null) {
-      // Pause for thought
-      await pause(Math.random());
       const answer = await this.brain.respond(msg.text,
         this.index.topMessages(10, this.myIds).map(stripTags));
       if (answer.message != null)
@@ -196,7 +206,7 @@ export class BoardBot {
 
   private addressedIn(text: string) {
     // Directly addressed in the given message text?
-    return text.match(`(?:^|\\s)${this.name}(?:$|[^\\w])`);
+    return text.match(`(?:^|\\s)${this.name}(?:$|[^\\w])`) != null;
   }
 
   private greetingId(initial: 'initial' | 'return'): string {

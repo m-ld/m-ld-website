@@ -1,5 +1,7 @@
 import { Chat, TopicIndexEntry } from '../lib/dto';
-import { fetchJson, responder, HttpError, fetchJsonUrl, JwtAuth } from '@m-ld/io-web-runtime/dist/lambda';
+import {
+  fetchJson, responder, HttpError, fetchJsonUrl, JwtAuth, LOG
+} from '@m-ld/io-web-runtime/dist/lambda';
 import { NlpBrain } from '../lib/api/NlpBrain';
 import { selectRandom } from '../lib/BotBrain';
 import { URL } from 'url';
@@ -34,9 +36,14 @@ async function fillWords(message: string): Promise<string> {
         return `${selectRandom(json[key])}`;
       else
         return `${json[key]}`;
-    }).catch(() => 'erm'));
+    }));
     return '';
   });
-  const results = await Promise.all(calls);
-  return message.replace(regex, () => results.shift() ?? '')
+  try {
+    const results = await Promise.all(calls);
+    return message.replace(regex, () => results.shift() ?? '');
+  } catch (err) {
+    LOG.warn(err);
+    return 'erm';
+  }
 }

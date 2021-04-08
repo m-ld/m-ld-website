@@ -8,8 +8,15 @@ const MessageBush: new () => RBush<MessageItem> = require('rbush');
 
 export const MIN_MESSAGE_SIZE: [number, number] = [115, 50];
 
+export namespace BoardIndex {
+  export type Event = 'insert' | 'update' | 'remove';
+  export type EventHandler = (item: MessageItem) => any;
+}
+
 export interface BoardIndex {
-  on(event: 'insert' | 'remove', handler: (items: MessageItem[]) => any): void;
+  on(event: BoardIndex.Event, handler: BoardIndex.EventHandler): void;
+
+  off(event: BoardIndex.Event, handler: BoardIndex.EventHandler): void;
 
   get(id: string): MessageItem | undefined;
 
@@ -46,52 +53,52 @@ export class BoardBushIndex extends MessageBush implements BoardIndex {
   private top = new Set<string>();
   private events = new EventEmitter;
 
-  on(event: 'insert' | 'remove', handler: (items: MessageItem[]) => any) {
+  on(event: BoardIndex.Event, handler: BoardIndex.EventHandler) {
     this.events.on(event, handler);
   }
 
-  get(id: string): MessageItem | undefined {
-    return this.all().filter(item => item['@id'] === id)[0];
+  off(event: BoardIndex.Event, handler: BoardIndex.EventHandler) {
+    this.events.on(event, handler);
   }
 
-  load(items: ReadonlyArray<MessageItem>): BoardBushIndex {
-    super.load(items);
-    items.forEach(item => this.top.add(item['@id']));
-    this.events.emit('insert', items);
-    return this;
+  private emit(event: BoardIndex.Event, item: MessageItem) {
+    // Clear is called before class initialisation
+    this.events?.emit(event, item);
+  }
+
+  get(id: string): MessageItem | undefined {
+    return this.all().find(item => item['@id'] === id);
   }
 
   insert(item: MessageItem): BoardBushIndex {
     super.insert(item);
     this.top.add(item['@id']);
-    this.events.emit('insert', [item]);
+    this.emit('insert', item);
     return this;
   }
 
   update(item: MessageItem): BoardBushIndex {
-    // Note that the remove and re-insert also maintains the 'top' ordering.
-    this.remove(item);
-    if (!item.deleted)
-      this.insert(item);
+    if (item.deleted)
+      return this.remove(item);
+    const prev = this.get(item['@id']);
+    if (prev == null)
+      return this.insert(item);
+    super.remove(prev);
+    super.insert(item);
+    this.top.delete(item['@id']);
+    this.top.add(item['@id']);
+    this.emit('update', prev);
     return this;
   }
 
   remove(item: MessageItem): BoardBushIndex {
     // Bug in RBush https://github.com/mourner/rbush/issues/95
-    const prev = this.all().find(prev => prev['@id'] === item['@id']);
+    const prev = this.get(item['@id']);
     if (prev != null) {
       super.remove(prev);
       this.top.delete(item['@id']);
-      this.events.emit('remove', [item]);
+      this.emit('remove', item);
     }
-    return this;
-  }
-
-  clear(): BoardBushIndex {
-    const items = this.all();
-    super.clear();
-    // Clear is called before class initialisation
-    this.events?.emit('remove', items);
     return this;
   }
 

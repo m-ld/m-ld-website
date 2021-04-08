@@ -7,7 +7,7 @@ import { modernizd, Grecaptcha, configureLogging } from '@m-ld/io-web-runtime/di
 import * as d3 from 'd3';
 import { BoardLocal } from '../lib/client/BoardLocal'
 import {
-  initPopupControls, showError, showNotModern
+  initPopupControls, showError, showNotModern, showWarning
 } from '../lib/client/PopupControls';
 import { initBoardControls } from '../lib/client/BoardControls';
 import { BoardBot } from '../lib/BoardBot';
@@ -88,7 +88,7 @@ class Demo {
       await new BoardBot(botName, welcomeId, meld, boardView.index, {
         respond: (message: string, topMessages: string[]) =>
           fetchAnswer(config, message, topMessages)
-      }).start(isNew);
+      }, showWarning).start(isNew);
   }
 
   setupAutoSave(meld: MeldClone) {
