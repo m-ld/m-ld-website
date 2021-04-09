@@ -13,9 +13,9 @@ date: 2020-08-20
 linkedin: m-ld-io_decentralised-shared-state-activity-6702232922939768833-RW5j
 ---
 Thanks for visiting! We have reached our first engineering milestone, the
-developer preview. On this website you'll find information about
-**m-ld**, including why and how to use it. There's also a cool demo app (press
-the big blue button) which shows one use-case for **m-ld**.
+developer preview. On this website you'll find information about **m-ld**,
+including why and how to use it. There's also a cool demo app which shows one
+use-case for **m-ld**.
 
 And of course, the main event is the
 [Javascript&nbsp;engine](https://js.m-ld.org/), which you can download and begin
