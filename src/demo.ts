@@ -3,6 +3,7 @@ import { MessageSubject } from '../lib/Message';
 import { node } from '../lib/client/d3Util';
 import { clone, MeldClone, shortId } from '@m-ld/m-ld';
 import { AblyRemotes } from '@m-ld/m-ld/dist/ably';
+import { WrtcPeering } from '@m-ld/m-ld/dist/wrtc';
 import { modernizd, Grecaptcha, configureLogging } from '@m-ld/io-web-runtime/dist/client';
 import * as d3 from 'd3';
 import { BoardLocal } from '../lib/client/BoardLocal'
@@ -50,7 +51,8 @@ class Demo {
 
     // Initialise the m-ld clone with a local backend
     const backend = await this.local.load(domain);
-    const meld = await clone(backend, AblyRemotes, config);
+    const remotes = new AblyRemotes(config, { peering: new WrtcPeering(config) });
+    const meld = await clone(backend, remotes, config);
     window.addEventListener('unload', () => meld.close());
 
     // Set up auto-save.

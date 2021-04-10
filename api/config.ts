@@ -10,7 +10,13 @@ export default responder<Config.Request, Config.Response>(
       '@domain': domain,
       genesis,
       logLevel: LOG.getLevel(),
-      maxDeltaSize: 16 * 1024
+      maxDeltaSize: 16 * 1024,
+      wrtc: {
+        iceServers: [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:global.stun.twilio.com:3478?transport=udp' }
+        ]
+      }
     };
     if (!genesis) {
       // Try to load a custom config for this domain

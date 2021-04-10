@@ -1,6 +1,7 @@
 import { MeldAblyConfig } from '@m-ld/m-ld/dist/ably';
 import { Answer } from './BotBrain';
 import { AuthorisedRequest, Session } from '@m-ld/io-web-runtime/dist/dto';
+import { MeldWrtcConfig } from '@m-ld/m-ld/dist/wrtc';
 
 export namespace Config {
   export interface Request
@@ -19,7 +20,7 @@ export namespace Config {
     token: string;
   }
 
-  export type Response = MeldAblyConfig & Session & {
+  export type Response = MeldAblyConfig & MeldWrtcConfig & Session & {
     /**
      * Domain active bot, or `false` to disable the bot
      */
