@@ -3,6 +3,7 @@ import { EventEmitter } from 'events';
 import { d3Selection } from './d3Util';
 import { D3View } from './D3View';
 import { getPatch, PatchItem } from 'fast-array-diff';
+const voidElements = require('void-elements');
 
 export type HtmlListUpdate = DeleteInsert<{ [key: number]: string | string[] }>;
 
@@ -60,12 +61,15 @@ function* listItems(element: Element,
   let childOffset = 0;
   for (let child of element.childNodes) {
     if (child instanceof Element) {
+      const tag = child.tagName.toLowerCase();
       // TODO: Attributes?
-      yield `<${child.tagName.toLowerCase()}>`;
+      yield `<${tag}>`;
       visitor(element, childOffset, index++);
-      index = yield* listItems(child, visitor, index);
-      yield `</${child.tagName.toLowerCase()}>`;
-      index++; // Don't visit the close tag
+      if (!voidElements[tag]) {
+        index = yield* listItems(child, visitor, index);
+        yield `</${tag}>`;
+        index++; // Don't visit the close tag
+      }
     } else if (child instanceof CharacterData) {
       let characterOffset = 0;
       for (let character of child.data) {

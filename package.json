@@ -51,7 +51,8 @@
     "page-lifecycle": "^0.1.2",
     "rbush": "^3.0.1",
     "rxjs": "^6.6.3",
-    "timeago.js": "^4.0.2"
+    "timeago.js": "^4.0.2",
+    "void-elements": "^2.0.1"
   },
   "jest": {
     "roots": [
