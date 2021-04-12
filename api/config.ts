@@ -1,5 +1,7 @@
 import { Config } from '../lib/dto';
-import { LOG, randomWord, responder, fetch, RecaptchaAuth, signJwt } from '@m-ld/io-web-runtime/dist/lambda';
+import {
+  LOG, randomWord, responder, fetch, RecaptchaAuth, signJwt, fetchJsonUrl
+} from '@m-ld/io-web-runtime/dist/lambda';
 import nlp from 'compromise';
 
 export default responder<Config.Request, Config.Response>(
@@ -10,20 +12,17 @@ export default responder<Config.Request, Config.Response>(
       '@domain': domain,
       genesis,
       logLevel: LOG.getLevel(),
-      maxDeltaSize: 16 * 1024,
-      wrtc: {
-        iceServers: [
-          { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'stun:global.stun.twilio.com:3478?transport=udp' }
-        ]
-      }
+      maxDeltaSize: 16 * 1024
     };
-    if (!genesis) {
+    const [customConfig, wrtc, token] = await Promise.all([
       // Try to load a custom config for this domain
-      Object.assign(config, await loadCustomConfig(domain));
-    }
-    // Tokens are Ably JWTs - used for both our config and Ably's
-    config.token = await ablyToken(domain, configReq['@id']);
+      genesis ? undefined : loadCustomConfig(domain),
+      // Load WebRTC config
+      loadWrtcConfig(),
+      // Tokens are Ably JWTs - used for both our config and Ably's
+      ablyToken(domain, configReq['@id'])
+    ]);
+    Object.assign(config, customConfig, { wrtc, token });
     config.ably = Object.assign(config.ably ?? {}, { token: config.token, maxRate: 15 });
     // Check if bot is explicitly disabled in the custom config
     if (config.botName !== false && configReq.botName != null) {
@@ -36,6 +35,29 @@ export default responder<Config.Request, Config.Response>(
     // We're now sure we have everything, even if Typescript isn't
     return <Config.Response>config;
   });
+
+/** @see https://docs.xirsys.com/?pg=api-turn */
+async function loadWrtcConfig() {
+  const auth = `${process.env.XIRSYS_IDENT}:${process.env.XIRSYS_SECRET}`;
+  const channel = process.env.XIRSYS_CHANNEL;
+  const body = JSON.stringify({ format: 'urls' });
+  const res = await fetchJsonUrl<{ v: string, s: 'error' } | { v: RTCConfiguration, s: 'ok' }>(
+    new URL(`https://global.xirsys.net/_turn/${channel}`), {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Basic ${Buffer.from(auth).toString('base64')}`,
+      'Content-Type': 'application/json',
+      'Content-Length': `${body.length}`
+    },
+    body
+  });
+  if (res.s !== 'ok')
+    throw res.v;
+  // BUG in Xirsys response
+  if (res.v.iceServers != null && !Array.isArray(res.v.iceServers))
+    res.v.iceServers = [<RTCIceServer>res.v.iceServers];
+  return res.v;
+}
 
 /**
  * Load custom config for the domain from https://github.com/m-ld/message-board-demo.
