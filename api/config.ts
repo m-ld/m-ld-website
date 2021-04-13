@@ -53,10 +53,45 @@ async function loadWrtcConfig() {
   });
   if (res.s !== 'ok')
     throw res.v;
-  // BUG in Xirsys response
-  if (res.v.iceServers != null && !Array.isArray(res.v.iceServers))
-    res.v.iceServers = [<RTCIceServer>res.v.iceServers];
-  return res.v;
+  return { ...res.v, iceServers: fixIceServers(res.v.iceServers) };
+}
+
+/** BUG in Xirsys outputs single server without array wrapper */
+function fixIceServers(iceServers?: RTCIceServer[] | RTCIceServer): RTCIceServer[] | undefined {
+  if (iceServers != null) {
+    if (!Array.isArray(iceServers))
+      iceServers = [iceServers];
+    iceServers.forEach(iceServer => {
+      if (Array.isArray(iceServer.urls)) {
+        const parsed = iceServer.urls.map(parseIceServerUrl);
+        iceServer.urls = [
+          removeFirst(parsed, ice => ice.protocol === 'stun'),
+          removeFirst(parsed, ice => ice.protocol === 'turn' && ice.transport === 'udp'),
+          removeFirst(parsed, ice => ice.protocol === 'turn' && ice.transport === 'tcp'),
+          ...parsed
+        ].map(ice => ice?.url).filter((url?: string): url is string => url != null).slice(0, 3);
+      }
+    });
+    return iceServers;
+  }
+}
+
+function removeFirst<T>(array: T[], predicate: (t: T) => boolean): T | undefined {
+  const index = array.findIndex(predicate);
+  if (index > -1)
+    return array.splice(index, 1)[0];
+}
+
+function parseIceServerUrl(url: string): {
+  url: string, protocol?: string, port?: string, transport?: string
+} {
+  const match = url.match(/^(stun|turn|turns):[\w-\.]+(?::(\d+))?(?:\?transport=(tcp|udp))?/);
+  if (match != null) {
+    const [url, protocol, port, transport] = match;
+    return { url, protocol, port, transport };
+  } else {
+    return { url };
+  }
 }
 
 /**
