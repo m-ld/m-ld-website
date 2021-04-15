@@ -14,8 +14,8 @@ export class BoardLocal extends EventEmitter {
   private domain: Domain | undefined;
   private cache: Promise<Cache>;
   private _destination: Domain | 'home' | 'new' | undefined;
-  private _dirty: boolean = true;
-  private _online: boolean = true;
+  private _dirty?: boolean;
+  private _online?: boolean;
 
   constructor() {
     super();
@@ -63,7 +63,7 @@ export class BoardLocal extends EventEmitter {
   }
 
   get online() {
-    return this._online;
+    return this._online ?? false;
   }
 
   navigate(destination: Domain | 'home' | 'new') {
@@ -80,7 +80,7 @@ export class BoardLocal extends EventEmitter {
   }
 
   get dirty() {
-    return this._dirty;
+    return this._dirty ?? false;
   }
 
   async load(domain: Domain) {

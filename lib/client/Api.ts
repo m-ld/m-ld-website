@@ -1,8 +1,8 @@
-import * as d3 from 'd3';
 import { AuthorisedRequest, Grecaptcha, setLogToken } from '@m-ld/io-web-runtime/dist/client';
 import { Chat, Config } from '../dto';
 import { uuid } from '@m-ld/m-ld';
 import { Answer } from '../BotBrain';
+import { showGrecaptcha } from './PopupControls';
 
 /**
  * @param domain name or empty string to request a new domain
@@ -37,16 +37,35 @@ export function fetchAnswer(config: Config.Response, message: string, topMessage
 
 async function refetchConfig(domain: string | '', id: string, botName?: string | false) {
   const token = await Grecaptcha.execute('config');
-  return await fetchJson<Config.Request, Config.Response>('/api/config', {
+  const req = {
     origin: window.location.origin,
     '@id': id, '@domain': domain, token, botName
-  });
+  };
+  const res = await fetchWithJson<Config.Request>('/api/config', req);
+  if (res.status === 403) {
+    const v2Token = await showGrecaptcha();
+    return fetchJson<Config.Request, Config.Response>('/api/config', {
+      ...req, token: `v2:${v2Token}`
+    });
+  } else if (!res.ok) {
+    throw new Error(res.status + " " + res.statusText);
+  } else {
+    return (await res.json()) as Config.Response;
+  }
 }
 
 async function fetchJson<Q extends AuthorisedRequest, S>(api: string, req: Q): Promise<S> {
-  return await d3.json(api, {
+  const res = await fetchWithJson<Q>(api, req);
+  if (!res.ok)
+    throw new Error(res.status + " " + res.statusText);
+  return res.json();
+}
+
+function fetchWithJson<Q extends AuthorisedRequest>(api: string, req: Q) {
+  return fetch(api, {
     method: 'post',
     headers: { 'Content-type': 'application/json; charset=UTF-8' },
     body: JSON.stringify(req)
-  }) as S;
+  });
 }
+

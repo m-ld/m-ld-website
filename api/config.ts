@@ -5,7 +5,10 @@ import {
 import nlp from 'compromise';
 
 export default responder<Config.Request, Config.Response>(
-  new RecaptchaAuth(process.env.RECAPTCHA_SECRET, 0.2), async configReq => {
+  new RecaptchaAuth({
+    v2: process.env.RECAPTCHA_V2_SECRET,
+    v3: process.env.RECAPTCHA_SECRET
+  }), async configReq => {
     const { domain, genesis } = await newDomain(configReq['@domain']);
     const config: Partial<Config.Response> = {
       '@id': configReq['@id'],

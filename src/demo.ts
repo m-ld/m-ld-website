@@ -17,7 +17,7 @@ import * as lifecycle from 'page-lifecycle';
 import * as LOG from 'loglevel';
 import { EMPTY, fromEvent, merge } from 'rxjs';
 import {
-  debounce, debounceTime, filter, last, takeUntil
+  debounce, debounceTime, filter, last, startWith, takeUntil
 } from 'rxjs/operators';
 
 window.onload = async function () {
@@ -112,11 +112,14 @@ class Demo {
       // Navigating away
       fromEvent(this.local, 'navigate'),
       // Debounced five seconds after update
-      fromEvent(this.local, 'dirty').pipe(debounceTime(5000)),
+      fromEvent(this.local, 'dirty').pipe(
+        startWith(...this.local.dirty ? ['dirty'] : []),
+        debounceTime(5000)),
       // Passivation of the page
-      fromEvent(lifecycle, 'statechange').pipe(filter(event => event.newState === 'passive')),
+      fromEvent(lifecycle, 'statechange').pipe(
+        filter(event => event.newState === 'passive')),
       // Mouse leaves (e.g. to navigate)
-      fromEvent(document, 'mouseleave'),
+      fromEvent(document.body, 'mouseleave'),
       // Trying to unload
       fromEvent(window, 'beforeunload')
     ).pipe(
