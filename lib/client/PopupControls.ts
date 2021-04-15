@@ -8,10 +8,14 @@ export function showNotModern(missing: string[]) {
     .select('#missing').text(`${missing.join(', ')}`);
 }
 
-export function showError(err: any) {
+export function showError(err: any, fallback?: { href: string, text: string }) {
   LOG.error(err);
-  d3.select('#error').classed('is-active', true)
-    .select('.error-text').text(`${err}`);
+  const errorPopup = d3.select('#error').classed('is-active', true);
+  errorPopup.select('.error-text').text(`${err}`);
+  if (fallback != null) {
+    errorPopup.select('.error-fallback')
+      .attr('href', fallback.href).text(fallback.text);
+  }
   throw err;
 }
 

@@ -1,6 +1,6 @@
 import * as d3 from 'd3';
 import { BoardLocal, CURRENT_VERSION } from './BoardLocal';
-import { showError, showInfo, showWarning } from './PopupControls';
+import { showInfo, showWarning } from './PopupControls';
 
 export function initBoardControls(local: BoardLocal) {
   // Board menu dropdown
@@ -54,7 +54,7 @@ export function initBoardControls(local: BoardLocal) {
         () => local.removeDomain(domain).then(() => {
           showInfo(`Board ${domain[1]} has been removed from this browser.`);
           updateBoardPicks();
-        }, showError)));
+        }, showWarning)));
   }
 }
 

@@ -22,7 +22,8 @@ import {
 
 window.onload = async function () {
   await modernizd(['indexeddb']).catch(showNotModern);
-  new Demo().initialise().catch(showError);
+  new Demo().initialise().catch(err =>
+    showError(err, { href: '#new', text: 'create a new board' }));
 }
 
 window.onhashchange = function () {
