@@ -124,7 +124,7 @@ class PatchTxn {
 
   constructor(readonly element: Element) {
     const docSel = document.getSelection();
-    const listSel = { anchor: -1, focus: -1 };
+    const listSel: BaseExtent<number> = { anchor: -1, focus: -1 };
     this.list = [...listItems(element, (node, offset, index) => {
       if (docSel != null) {
         if (node === docSel.anchorNode && offset === docSel.anchorOffset)
@@ -133,6 +133,13 @@ class PatchTxn {
           listSel.focus = index;
       }
     })];
+    // Special case: anchor/focus is after the last child
+    if (docSel != null) {
+      if (listSel.anchor < 0 && element.contains(docSel.anchorNode))
+        listSel.anchor = this.list.length;
+      if (listSel.focus < 0 && element.contains(docSel.focusNode))
+        listSel.focus = this.list.length;
+    }
     if (listSel.anchor > -1 && listSel.focus > -1)
       this.selection = listSel;
   }
@@ -155,7 +162,15 @@ class PatchTxn {
       const listSel = this.selection;
       const docSel = document.getSelection();
       if (listSel != null && docSel != null) {
-        let newSel: Partial<BaseExtent<{ node: Node, offset: number }>> = {};
+        let newSel: BaseExtent<{ node: Node, offset: number }> = {
+          focus: { node: this.element, offset: 0 },
+          anchor: { node: this.element, offset: 0 }
+        };
+        // Special case: anchor/focus is after the end of the list
+        if (listSel.anchor >= this.list.length)
+          newSel.anchor.offset = this.element.childNodes.length;
+        if (listSel.focus >= this.list.length)
+          newSel.focus.offset = this.element.childNodes.length;
         visitItems(this.element, (node, offset, index) => {
           if (index === listSel.anchor)
             newSel.anchor = { node, offset };
@@ -174,7 +189,7 @@ class PatchTxn {
 
   private adjustSelection(key: 'anchor' | 'focus', patch: PatchItem<string>) {
     if (this.selection != null) {
-      const start = patch.newPos, count = patch.items.length;
+      const start = patch.oldPos, count = patch.items.length;
       if (patch.type === 'remove') {
         // Deletes happen before the cursor
         if (this.selection[key] >= start)
@@ -183,8 +198,8 @@ class PatchTxn {
           else
             this.selection[key] -= count;
       } else if (patch.type === 'add') {
-        // Inserts happen after the cursor
-        if (this.selection[key] > start)
+        // Inserts happen before the cursor
+        if (this.selection[key] >= start)
           this.selection[key] += count;
       }
     }
