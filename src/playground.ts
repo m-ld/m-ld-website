@@ -1,15 +1,20 @@
 import * as d3 from 'd3';
 import JSONEditor, { JSONEditorOptions } from 'jsoneditor';
 import { D3View } from '../lib/client/D3View';
-import { d3Selection, fromTemplate } from '../lib/client/d3Util';
+import { d3Selection, fromTemplate, node } from '../lib/client/d3Util';
 import { Grecaptcha, modernizd } from '@m-ld/io-web-runtime/dist/client';
-import { initPopupControls, showInfo, showNotModern, showWarning } from '../lib/client/PopupControls';
+import {
+  initPopupControls, showInfo, showMessage, showNotModern, showWarning
+} from '../lib/client/PopupControls';
 import { fetchConfig } from '../lib/client/Api';
 import { clone, MeldClone, isRead, isWrite, MeldUpdate } from '@m-ld/m-ld';
 import { AblyRemotes, MeldAblyConfig } from '@m-ld/m-ld/dist/ably';
 import MemDown from 'memdown';
 import { render as renderTime } from 'timeago.js';
 import { parse, stringify } from 'querystring';
+import * as local from 'local-storage';
+import { LevelDownResponse } from '../lib/client/LevelDownResponse';
+import { WrtcPeering } from '@m-ld/m-ld/dist/wrtc';
 const queryTemplates = require('../lib/templates/query-templates.json');
 const txnTemplates = require('../lib/templates/txn-templates.json');
 
@@ -98,15 +103,16 @@ function setupJson(key: string, setup: { [key: string]: string | string[] | unde
   }
 }
 
-class Playground {
+class Playground extends D3View<HTMLDivElement> {
   queryCard: JsonEditorCard;
   txnCard: JsonEditorCard;
   dataEditor: JSONEditor;
   clone?: MeldClone;
-  config?: MeldAblyConfig;
   options: OptionsDialog;
+  previousDomain?: string;
 
   constructor(setup: { [key: string]: string | string[] | undefined }) {
+    super(d3.select('#playground-ide'));
     this.queryCard = new JsonEditorCard('query', queryTemplates, {
       mode: 'code', mainMenuBar: false, statusBar: false, onValidate: json =>
         isRead(json) ? [] : [{ path: [], message: NOT_A_READ }]
@@ -120,6 +126,7 @@ class Playground {
     }, []);
     this.domain = typeof setup.domain == 'string' ? setup.domain : '';
     this.domainInput.on('keydown', () => {
+      this.domainJoinIcon.classed('is-hidden', false);
       if (d3.event.key === 'Enter')
         this.loadDomain();
     });
@@ -142,18 +149,34 @@ class Playground {
         }
       }
     });
+    d3.select('#domain-download').on('click', () => {
+      showMessage('info', 'Preparing new clone for download', message => {
+        message.append('progress').classed('progress', true).attr('max', 100);
+        return this.downloadClone();
+      }).catch(showWarning);
+    });
     d3.select('#show-options').on('click', () => this.options.show());
     this.options = new OptionsDialog();
-    this.intro.select('.delete').on('click', () =>
-      this.intro.classed('is-hidden', true));
-    d3.select('#show-intro').on('click', () =>
-      this.intro.classed('is-hidden', false));
+
+    this.intro.classed('is-hidden', this.introHidden);
+    this.intro.select('.delete').on('click', () => this.introHidden = true);
+    d3.select('#show-intro').on('click', () => this.introHidden = false);
+
     this.loading = false;
     this.loadDomain();
   }
 
   private get intro() {
     return d3.select('#playground-intro');
+  }
+
+  private get introHidden() {
+    return local.get('m-ld.playground-intro-hidden');
+  }
+
+  private set introHidden(hidden: boolean) {
+    local.set('m-ld.playground-intro-hidden', hidden);
+    this.intro.classed('is-hidden', hidden);
   }
 
   async close() {
@@ -166,21 +189,43 @@ class Playground {
     return this.clone?.status.value.silo;
   }
 
+  async downloadClone() {
+    const config = await fetchConfig(this.domain);
+    const backend = new MemDown;
+    const tempClone = await clone(backend, this.remotes(config), config);
+    await tempClone.status.becomes({ outdated: false });
+    return new Promise<void>((resolve, reject) => tempClone.read(() => {
+      LevelDownResponse.readFrom(backend).blob().then(blob => {
+        try {
+          const blobUrl = URL.createObjectURL(blob);
+          const link = this.d3.append('a')
+            .attr('href', blobUrl).attr('download', `${this.domain}.mld`);
+          node(link).click();
+          link.remove();
+          URL.revokeObjectURL(blobUrl);
+          resolve();
+        } catch (err) {
+          reject(err);
+        }
+      }, reject);
+    }));
+  }
+
   async loadDomain() {
-    if (this.config?.['@domain'] !== this.domain) {
+    if (this.previousDomain !== this.domain) {
       if (this.unsaved && !window.confirm(CONFIRM_CHANGE_DOMAIN))
-        return this.domain = this.config?.['@domain'] ?? '';
+        return this.domain = this.previousDomain ?? '';
       try {
         this.loading = true;
         await this.close();
         this.updatesLog.selectAll('.update-card').remove();
-        this.config = await fetchConfig(this.domain);
-        this.domain = this.config['@domain'];
-        this.config['@context'] = { ...this.config['@context'], ...this.options.context };
-        this.clone = await clone(new MemDown, AblyRemotes, this.config);
+        const config = await fetchConfig(this.domain);
+        this.domain = this.previousDomain = config['@domain'];
+        Object.assign(config['@context'] ??= {}, this.options.context);
+        this.clone = await clone(new MemDown, this.remotes(config), config);
         this.clone.follow(update => this.onUpdate(update));
         await this.clone.status.becomes({ outdated: false });
-        showInfo(`Connected to ${this.config['@domain']}`);
+        showInfo(`Connected to ${config['@domain']}`);
         this.runQuery('warn');
       } catch (err) {
         showWarning(err);
@@ -188,6 +233,10 @@ class Playground {
         this.loading = false;
       }
     }
+  }
+
+  private remotes(config: MeldAblyConfig) {
+    return new AblyRemotes(config, { peering: new WrtcPeering(config) });
   }
 
   private onUpdate(update: MeldUpdate) {
@@ -234,6 +283,10 @@ class Playground {
     return d3.select('#domain-input');
   }
 
+  get domainJoinIcon() {
+    return d3.select('#domain-join');
+  }
+
   get newDomainButton() {
     return d3.select('#domain-new');
   }
@@ -243,7 +296,8 @@ class Playground {
   }
 
   set loading(loading: boolean) {
-    d3.select('#domain-spinner').classed('is-hidden', !loading);
+    this.domainJoinIcon.classed('fa-spinner fa-spin', loading);
+    this.domainJoinIcon.classed('fa-level-down-alt fa-rotate-90 is-hidden', !loading);
     d3.selectAll('.requires-domain').property('disabled', loading || !this.clone);
     this.newDomainButton.property('disabled', loading);
     this.domainInput.property('disabled', loading);

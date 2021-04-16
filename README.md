@@ -4,8 +4,9 @@ m-ld.org
 ## build
 The site is deployed using [Vercel Now](https://vercel.com/docs).
 
-The secrets used in [now.json](now.json) must be added using [now
-secrets](https://vercel.com/docs/cli#commands/secrets).
+Environment variables for reCAPTCHA, WebRTC, logging, pub-sub, dictionary, npm
+and GTag are found in the
+[Project&nbsp;Settings](https://vercel.com/m-ld/m-ld-website/settings/environment-variables).
 
 ## edge
 The `master` branch deploys to the live website, https://m-ld.org. This should
@@ -17,19 +18,20 @@ console](https://www.google.com/u/1/recaptcha/admin/site/350626045).
 
 ## dev
 To run locally:
-1. Install [now](https://vercel.com/download)
-1. Create a local file ".env" in the root and add any vars found under `env` in
-   [now.json](now.json) (MQTT_URL=ws://localhost:8888).
-1. Add `NODE_ENV=development` to enable source-maps.
-1. Add a log level, e.g. `LOG=DEBUG`.
+1. Install [now](https://vercel.com/download) and set auth credentials.
+1. `now env pull` to create a local file ".env" in the root.
+1. Adjust the log level if required, e.g. `LOG=TRACE`.
 1. `npm run local`
 
-Note that `NPM_TOKEN` in [.env.build](./.env.build) is empty to pass through to
-your global npm token.
+After any changes to dependencies, use
+[source-map-explorer](https://github.com/danvk/source-map-explorer) to check
+that the bundle is not adversely affected, e.g. (if installed globally):
+
+`source-map-explorer _site/demo/demo.js --no-border-checks`
 
 ## logging
-Logging can be activated for local demo boards by adding e.g. `LOG=DEBUG` to a
-`.env` file in the project root (also used for secrets, see above).
+Logging is activated for local demo boards in the `.env` file in the project
+root (also used for secrets, see above).
 
 Any board in the world can have logging activated (or any other config changes)
 by adding a JSON configuration file to the config folder on the public
@@ -63,3 +65,5 @@ There is also a small png version, which is generated using
 * https://github.com/d3/d3/blob/master/API.md
 * https://webkul.github.io/myscale/
 * https://modernizr.com/
+* https://ably.com/
+* https://global.xirsys.net/dashboard/services

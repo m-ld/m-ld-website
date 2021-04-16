@@ -38,7 +38,7 @@ export function showGrecaptcha() {
       .finally(() => currentGrecaptcha = undefined);
 }
 
-function showMessage<T = unknown>(type: 'warning' | 'info', msg: string,
+export function showMessage<T = unknown>(type: 'warning' | 'info', msg: string,
   complete: (message: d3Selection<HTMLElement>) => Promise<T>) {
   const message = d3.select('#popup-messages')
     .insert<HTMLElement>(() => fromTemplate(type), ':first-child')

@@ -47,7 +47,7 @@ export function initBoardControls(local: BoardLocal) {
           showWarning('Sorry, we can\'t show that board, it was made with an older version.')
       });
     boardPicks.filter((_, i) => i > 0)
-      .append('td').append('a').classed('tag is-delete is-danger', true)
+      .append('td').append('a').classed('tag is-delete', true)
       .attr('title', 'Remove this board')
       .on('mousedown', domain => showInfo(
         `Remove ${domain[1]} from this browser?`,
