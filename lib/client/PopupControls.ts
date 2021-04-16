@@ -1,7 +1,7 @@
 import * as d3 from 'd3';
 import { d3Selection, fromTemplate, node } from './d3Util';
 import * as LOG from 'loglevel';
-import { Grecaptcha } from '@m-ld/io-web-runtime';
+import { Grecaptcha } from '@m-ld/io-web-runtime/dist/client';
 
 export function showNotModern(missing: string[]) {
   d3.select('#not-modern').classed('is-active', true)
@@ -33,7 +33,7 @@ export function showGrecaptcha() {
   if (currentGrecaptcha != null)
     return currentGrecaptcha;
   else
-    return currentGrecaptcha = showMessage<string>('info', 'Are you still there?',
+    return currentGrecaptcha = showMessage<string>('info', 'Excuse us, we just need to check...',
       message => Grecaptcha.render(node(message.append('div'))))
       .finally(() => currentGrecaptcha = undefined);
 }

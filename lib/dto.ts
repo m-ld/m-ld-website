@@ -20,17 +20,17 @@ export namespace Config {
     token: string;
   }
 
-  export type Response = MeldAblyConfig & MeldWrtcConfig & Session & {
+  export type Response = MeldAblyConfig & MeldWrtcConfig & AblyTokenSession & {
     /**
      * Domain active bot, or `false` to disable the bot
      */
     botName?: string | false;
-    /**
-     * JWT token, must be Ably-compatible
-     * @see https://www.ably.io/documentation/core-features/authentication#ably-jwt
-     */
-    token: string;
   };
+}
+
+export namespace Renew {
+  export type Request = AuthorisedRequest & AblyTokenSession;
+  export type Response = AblyTokenSession;
 }
 
 export namespace Chat {
@@ -53,4 +53,12 @@ export interface TopicIndexEntry {
   patterns: string[];
   summary: string;
   id: string;
+}
+
+export interface AblyTokenSession extends Session {
+  /**
+   * JWT token, must be Ably-compatible
+   * @see https://www.ably.io/documentation/core-features/authentication#ably-jwt
+   */
+  token: string;
 }
