@@ -72,9 +72,8 @@ async function fetchJson<Q extends AuthorisedRequest, S>(
       const fallbackRes = await fallback(res);
       if (fallbackRes != null)
         return fallbackRes;
-    } else {
-      throw new Error(res.status + " " + res.statusText);
     }
+    throw new Error(res.status + " " + res.statusText);
   }
   return res.json();
 }
