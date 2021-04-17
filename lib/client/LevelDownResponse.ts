@@ -36,8 +36,10 @@ export class LevelDownResponse {
       async pull(controller) {
         iterator.next((err, key, value) => {
           if (err) {
+            iterator.end(err => err && console.warn(err));
             controller.error(err);
           } else if (key == null || value == null) {
+            iterator.end(err => err && console.warn(err));
             controller.close();
           } else {
             controller.enqueue(new Uint8Array([
