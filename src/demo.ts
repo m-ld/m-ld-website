@@ -8,11 +8,10 @@ import { modernizd, Grecaptcha, configureLogging } from '@m-ld/io-web-runtime/di
 import * as d3 from 'd3';
 import { BoardLocal } from '../lib/client/BoardLocal'
 import {
-  initPopupControls, showError, showNotModern, showWarning
+  initPopupControls, showError, loadingFinished, showNotModern, showAbout
 } from '../lib/client/PopupControls';
 import { initBoardControls } from '../lib/client/BoardControls';
-import { BoardBot } from '../lib/BoardBot';
-import { fetchAnswer, fetchConfig } from '../lib/client/Api';
+import { fetchConfig } from '../lib/client/Api';
 import * as lifecycle from 'page-lifecycle';
 import * as LOG from 'loglevel';
 import { EMPTY, fromEvent, merge } from 'rxjs';
@@ -39,9 +38,11 @@ class Demo {
   }
 
   async initialise() {
-    await Grecaptcha.ready;
-    let domain: string = this.local.targetDomain(document.location.hash.slice(1) ?? '');
+    const requestedDomain = document.location.hash.slice(1) ?? '';
+    showAbout(requestedDomain === '');
+    let domain: string = this.local.targetDomain(requestedDomain);
     // Get the configuration for the domain
+    await Grecaptcha.ready;
     const config = await fetchConfig(domain, this.local.getBotName(domain));
     configureLogging(config, LOG);
     domain = config['@domain'];
@@ -67,31 +68,24 @@ class Demo {
     meld.status.subscribe(status => this.local.online = status.online);
 
     // Unshow the loading progress
-    d3.select('#loading').classed('is-active', false);
-    d3.select('#board-href').text(window.location.href);
+    loadingFinished();
 
     // The welcome message uses the id of the domain - it can't be deleted
     const welcomeId = shortId(domain);
 
     // Create the board UI View
-    const boardView = new BoardView('#board', meld, welcomeId);
+    new BoardView('#board', meld, welcomeId);
 
     // Add the welcome message if not already there
     const isNew = (await meld.get(welcomeId)) == null;
     if (isNew) {
       await meld.write(MessageSubject.create({
         '@id': welcomeId,
-        text: `Welcome to ${domain}!`,
+        text: `Welcome to your message board, ${domain}!<br>
+        For help using this app, click the (?) button on the left.`,
         x: 200, y: 100
       }));
     }
-
-    // Unleash the board's resident bot
-    if (botName)
-      await new BoardBot(botName, welcomeId, meld, boardView.index, {
-        respond: (message: string, topMessages: string[]) =>
-          fetchAnswer(config, message, topMessages)
-      }, showWarning).start(isNew);
   }
 
   setupAutoSave(meld: MeldClone) {
@@ -109,7 +103,7 @@ class Demo {
 
     merge(
       // Clicked save button
-      fromEvent(node<HTMLButtonElement>(d3.select('#save')), 'click'),
+      fromEvent(node<HTMLButtonElement>(d3.select('#save-board')), 'click'),
       // Navigating away
       fromEvent(this.local, 'navigate'),
       // Debounced five seconds after update

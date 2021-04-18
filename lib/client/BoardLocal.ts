@@ -24,7 +24,7 @@ export class BoardLocal extends EventEmitter {
   }
 
   /** Return of '' means create a new domain */
-  targetDomain(domain: Domain): Domain | '' {
+  targetDomain(domain: Domain | 'new'): Domain | '' {
     const first = this.domains.find(v => v[0] === CURRENT_VERSION)?.[1];
     const invalid = (domain: Domain) => this.domains.some(v => v[0] !== CURRENT_VERSION && v[1] === domain);
     if (domain === 'new' || invalid(domain) || (!domain && !first)) {

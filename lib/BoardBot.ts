@@ -5,6 +5,12 @@ import { BotBrain, Sentiment, selectRandom } from './BotBrain';
 import { fromEvent } from 'rxjs';
 import { buffer, debounceTime, map } from 'rxjs/operators';
 
+/**
+ * As of 18-Apr-21, the board bot is deactivated.
+ * 
+ * Thanks for your service guys.
+ */
+
 type Topic = {
   text: string | ((bot: BoardBot) => string),
   size?: [number, number]
@@ -17,9 +23,7 @@ const SEE_HELP: Topic = {
 }
 const FIRST_GREETING: Topic = {
   text: bot => `
-    Hi! I'm a bot. My name is ${bot.name}.<br>
-    I'm here to talk about <b>m-ld</b>.<br>
-    You can stop me by deleting this message!`,
+    Hi! I'm a bot. My name is ${bot.name}.`,
   size: [2, 1.5]
 };
 const RETURN_GREETING: Topic = {
@@ -29,87 +33,6 @@ const RETURN_GREETING: Topic = {
     `Hello! ${bot.name} here, a bot, if you need me.`),
   size: [1.5, 1]
 };
-interface AppTopic extends Topic {
-  id: AppTopicId,
-  linkFrom?: AppTopicId
-}
-type AppTopicId =
-  'what-is-this' |
-  'its-not-m-ld' |
-  'its-not-a-db' |
-  'try-browser-back' |
-  'try-incognito' |
-  'watch-sync' |
-  'sync-is-m-ld' |
-  'url-contains-domain' |
-  'for-more-detail';
-const APP_TOPICS: AppTopic[] = [{
-  id: 'what-is-this',
-  text: `
-    This is a message board app. You can create new messages and<br>
-    edit the existing ones, and make new connections between messages.`,
-  size: [2, 1.5]
-}, {
-  id: 'its-not-m-ld',
-  text: `
-    This app is not m-ld, but it uses a m-ld engine to store the data and share it.`,
-  size: [2.5, 1],
-  linkFrom: 'what-is-this'
-}, {
-  id: 'its-not-a-db',
-  text: `
-    This app doesn't use a database.<br>
-    In fact this site is just statically served HTML and Javascript.`,
-  size: [2, 1.5],
-  linkFrom: 'what-is-this'
-}, {
-  id: 'try-browser-back',
-  text: `
-    If you use the browser Back button and return to the same screen,<br>
-    you'll see that the whole message board is still here.`,
-  size: [2, 1.5],
-  linkFrom: 'its-not-m-ld'
-}, {
-  id: 'try-incognito',
-  text: `
-    If you copy the browser URL, then open a new incognito window,<br>
-    or a different browser, or on a different machine,<br>
-    and navigate to that URL, you'll see the same message board.`,
-  size: [3, 2],
-  linkFrom: 'its-not-m-ld'
-}, {
-  id: 'watch-sync',
-  text: `
-    Now, if you or I make some changes...<br>
-    you'll see the state of the boards staying synchronised.`,
-  size: [2, 1.5],
-  linkFrom: 'try-incognito'
-}, {
-  id: 'sync-is-m-ld',
-  text: `
-    This sharing of state is achieved using m-ld.<br>
-    There is no code in the app itself to communicate the data between the two boards.<br>
-    Instead, the app just makes the changes it wants to the data,<br>
-    and m-ld handles keeping the board data synchronised.`,
-  size: [3, 2],
-  linkFrom: 'watch-sync'
-}, {
-  id: 'url-contains-domain',
-  text: `
-    m-ld is told by the app which boards should share the same data.<br>
-    In this app, it's done using the URL fragment.`,
-  size: [2, 1.5],
-  linkFrom: 'sync-is-m-ld'
-}, {
-  id: 'for-more-detail',
-  text: `
-    That's all I'm going to say for now. You can ask me questions,<br>
-    and I'll try to answer them (call me by name).<br>
-    You can also head to the FAQ in the docs.<br>
-    This board is yours to use, of course. Happy Messaging!`,
-  size: [3, 2],
-  linkFrom: 'what-is-this'
-}];
 
 export class BoardBot {
   private prevId: string;
@@ -155,9 +78,6 @@ export class BoardBot {
         }
       }))
       .subscribe(msg => this.answer(msg).catch(this.onError));
-    // Keep going with the exposition if desired
-    await pause(4);
-    this.sayTopics();
   }
 
   private shouldAnswer(msg: MessageItem | undefined, old: MessageItem) {
@@ -167,28 +87,6 @@ export class BoardBot {
       !this.myIds.has(msg['@id']) &&
       // Being addressed or feeling chatty
       (this.addressedIn(msg.text) || this.chatting);
-  }
-
-  private async sayTopics() {
-    const initialGreetingId = this.greetingId('initial');
-    for (let appTopic of APP_TOPICS) {
-      const msgId = shortId(appTopic.id);
-      const afterId = appTopic.linkFrom != null ?
-        shortId(appTopic.linkFrom) : initialGreetingId;
-
-      const [greeting, msg, after] = await Promise.all(
-        [initialGreetingId, msgId, afterId].map(id => this.meld.get(id)));
-
-      if (greeting != null && after != null) {
-        if (msg == null) {
-          await this.say([msgId, appTopic], true, afterId);
-          await pause(4); // Pause after saying anything
-        }
-      } else {
-        // User is deleting messages, probably doesn't want us around
-        break;
-      }
-    }
   }
 
   private async answer(msg?: MessageItem) {

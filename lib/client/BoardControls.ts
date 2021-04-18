@@ -13,11 +13,11 @@ export function initBoardControls(local: BoardLocal) {
       boardPicker.classed('is-active', show);
     })
     .on('blur', () => d3.select('#board-menu').classed('is-active', false));
-  d3.select('#new-board').on('mousedown', () => local.navigate('new'));
+  d3.selectAll('.new-board').on('mousedown', () => local.navigate('new'));
   d3.select('#go-home').on('mousedown', () => local.navigate('home'));
 
-  local.on('dirty', dirty => d3.select('#save').property('disabled', !dirty));
-  local.on('saving', saving => d3.select('#save').classed('is-loading', saving));
+  local.on('dirty', dirty => d3.select('#save-board').property('disabled', !dirty));
+  local.on('saving', saving => d3.select('#save-board').classed('is-loading', saving));
   // Actual clicking of the save button is handled in the Demo class
 
   local.on('online', online => d3.select('#online')

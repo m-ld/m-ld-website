@@ -73,7 +73,10 @@ export class BoardView extends InfiniteView {
       if (updated.empty() && insert != null && insert['@type'] === 'Message') {
         // A message we haven't seen before
         const src = updater.update(MessageSubject.create({ '@id': id }));
-        this.updateMessageView(this.addMessageView(src));
+        const mv = this.addMessageView(src);
+        this.updateMessageView(mv);
+        if (id === this.welcomeId)
+          this.forceEditFocus(mv, false);
       }
     });
   }
@@ -128,14 +131,16 @@ export class BoardView extends InfiniteView {
     return d3.select('#board-message-code');
   }
 
-  private forceEditFocus(mv: MessageView) {
+  private forceEditFocus(mv: MessageView, selectText = true) {
     const div = mv.content.element;
     if (document.activeElement !== div) {
       // Raise early to prevent the focus handler raise from causing a blur
       mv.d3.raise();
       div.focus();
-      document.execCommand('selectAll');
-      d3.event.preventDefault();
+      if (selectText)
+        document.execCommand('selectAll');
+      if (d3.event != null)
+        d3.event.preventDefault();
     }
   }
 
@@ -191,8 +196,11 @@ export class BoardView extends InfiniteView {
   }
 
   private inputKey(mv: MessageView) {
-    if (d3.event.key === 'Enter' && !d3.event.shiftKey) {
+    if (d3.event.key === 'Enter' && d3.event.ctrlKey) {
       mv.content.element.blur();
+      d3.event.preventDefault();
+    } else if (d3.event.key === 'Tab') {
+      this.addNewMessage(mv);
       d3.event.preventDefault();
     }
   }

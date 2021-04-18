@@ -58,13 +58,37 @@ function messageAction(action?: () => void | Promise<unknown>) {
       .on('click', () => Promise.resolve(action()).then(resolve, reject))) : messageTimeout;
 }
 
-export function showHelp() {
+export function loadingFinished() {
+  d3.select(document.body).classed('loading', false);
+  d3.select('#loading-progress').classed('is-active', false);
+  d3.select('#board-href').text(window.location.href);
+}
+
+function showHelp(show?: boolean) {
   const help = d3.select('#help');
-  d3.select('#help').classed('is-hidden', !help.classed('is-hidden')).raise();
+  show ??= help.classed('is-hidden');
+  help.classed('is-hidden', !show);
+}
+
+export function showAbout(active = true) {
+  showHelp(false);
+  d3.select('#board-about').classed('is-active', active);
+  if (!active && d3.select('body').classed('loading'))
+    d3.select('#loading-progress').classed('is-active', true);
 }
 
 export function initPopupControls() {
-  // Un-show buttons
+  // Show & un-show buttons
   d3.select('#help .delete').on('click', showHelp);
   d3.select('#show-help').on('click', showHelp);
+  d3.selectAll('.show-about').on('mousedown', () => showAbout());
+  d3.select('#board-about .delete').on('mousedown', () => {
+    d3.event.preventDefault();
+    return showAbout(false);
+  });
+  d3.selectAll('.share-board').on('mousedown', async () => {
+    await navigator.clipboard.writeText(window.location.href);
+    showInfo(`Board location copied to clipboard!
+    Paste it into an email to send it to your friends.`);
+  });
 }
