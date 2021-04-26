@@ -1,8 +1,9 @@
-import * as d3 from 'd3';
 import { AuthorisedRequest, Grecaptcha, setLogToken } from '@m-ld/io-web-runtime/dist/client';
-import { Chat, Config } from '../dto';
+import { Chat, Config, Renew } from '../dto';
 import { uuid } from '@m-ld/m-ld';
 import { Answer } from '../BotBrain';
+import { showGrecaptcha } from './PopupControls';
+import * as lifecycle from 'page-lifecycle';
 
 /**
  * @param domain name or empty string to request a new domain
@@ -11,42 +12,69 @@ import { Answer } from '../BotBrain';
  * @return fetched configuration. This object will occasionally mutate with a
  * new token when it is renewed.
  */
-export async function fetchConfig(domain: string | '', botName?: string | false): Promise<Config.Response> {
-  const config = await refetchConfig(domain, uuid(), botName);
+export async function fetchConfig(
+  domain: string | '', botName?: string | false): Promise<Config.Response> {
+  const req: Config.Request = {
+    ...authorisedRequest(uuid(), domain, `v3:${await Grecaptcha.execute('config')}`), botName
+  };
+  const config: Config.Response = await fetchJson('/api/config', req, async res => {
+    if (res.status === 401)
+      // Google thinks we're a bot, try interactive reCAPTCHA
+      return fetchJson('/api/config', { ...req, token: `v2:${await showGrecaptcha()}` });
+  });
   config.ably.token = config.token;
   config.ably.authCallback = async (_, cb) =>
-    refetchConfig(config['@domain'], config['@id'], config.botName)
-      .then(reconfig => {
-        setLogToken(reconfig.token);
-        config.token = reconfig.token;
-        return cb('', reconfig.token);
-      })
-      .catch(err => cb(err, ''));
+    renewToken(config).then(renewal => {
+      setLogToken(renewal.token);
+      config.token = renewal.token;
+      config.logLevel = renewal.logLevel;
+      return cb('', renewal.token);
+    }).catch(err => cb(err, ''));
   return config;
 }
 
-export function fetchAnswer(config: Config.Response, message: string, topMessages: string[]): Promise<Answer> {
+export function fetchAnswer(
+  config: Config.Response, message: string, topMessages: string[]): Promise<Answer> {
   if (!config.botName)
     return Promise.reject('No bot present');
   return fetchJson<Chat.Request, Chat.Response>('/api/chat', {
-    '@id': config['@id'], '@domain': config['@domain'],
-    origin: window.location.origin, token: config.token,
+    ...authorisedRequest(config['@id'], config['@domain'], config.token),
     message, topMessages, botName: config.botName
   });
 }
 
-async function refetchConfig(domain: string | '', id: string, botName?: string | false) {
-  const token = await Grecaptcha.execute('config');
-  return await fetchJson<Config.Request, Config.Response>('/api/config', {
-    origin: window.location.origin,
-    '@id': id, '@domain': domain, token, botName
+function renewToken(config: Config.Response): Promise<Renew.Response> {
+  const req: Renew.Request = {
+    ...authorisedRequest(config['@id'], config['@domain'], `jwt:${config.token}`),
+    logLevel: config.logLevel
+  };
+  return fetchJson('/api/renew', req, async res => {
+    // Token renewal failed, possibly due to a period of passivation
+    if (res.status === 401 && lifecycle.state === 'active')
+      return fetchJson('/api/renew',
+        { ...req, token: `recaptcha:${await showGrecaptcha()}` });
   });
 }
 
-async function fetchJson<Q extends AuthorisedRequest, S>(api: string, req: Q): Promise<S> {
-  return await d3.json(api, {
+function authorisedRequest(id: string, domain: string, token: string): AuthorisedRequest {
+  return { '@id': id, '@domain': domain, token, origin: window.location.origin };
+}
+
+async function fetchJson<Q extends AuthorisedRequest, S>(
+  api: string, req: Q, fallback?: (res: Response) => Promise<S | undefined>): Promise<S> {
+  const res = await fetch(api, {
     method: 'post',
     headers: { 'Content-type': 'application/json; charset=UTF-8' },
     body: JSON.stringify(req)
-  }) as S;
+  });
+  if (!res.ok) {
+    if (fallback != null) {
+      const fallbackRes = await fallback(res);
+      if (fallbackRes != null)
+        return fallbackRes;
+    }
+    throw new Error(res.status + " " + res.statusText);
+  }
+  return res.json();
 }
+

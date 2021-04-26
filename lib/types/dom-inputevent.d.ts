@@ -1,0 +1,3 @@
+interface InputEvent {
+  getTargetRanges(): StaticRange[];
+}

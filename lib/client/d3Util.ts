@@ -12,13 +12,11 @@ export function node<E extends d3.BaseType>(selection: d3Selection<E>): E {
   return node;
 }
 
-export function fromTemplate<E extends Element>(type: string): () => E {
-  return () => {
-    const node = <E>d3.select<E, unknown>(`#${type}-template`).node()?.cloneNode(true);
-    if (node == null)
-      throw `Missing ${type} template`;
-    return node;
-  }
+export function fromTemplate<E extends Element>(type: string): E {
+  const node = <E>d3.select<E, unknown>(`#${type}-template`).node()?.cloneNode(true);
+  if (node == null)
+    throw `Missing ${type} template`;
+  return node;
 }
 
 export function setAttr(selection: d3Selection, attrs: object) {
@@ -49,12 +47,5 @@ export function svgParent(el: SVGElement): SVGElement {
     return el.parentElement;
   else
     throw new Error('SVG parent expected');
-}
-
-export function parentWithClass<T extends Element>(node: Element | null, className: string): T {
-  if (node == null)
-    throw new Error('Parent expected');
-  return d3.select(node).classed(className) ?
-    <T>node : parentWithClass(node.parentElement, className);
 }
 

@@ -1,15 +1,20 @@
 import * as d3 from 'd3';
-import { Message } from '../Message';
+import { isStringText, MessageSubject } from '../Message';
 import { svgParent, getAttr, d3Selection, node } from './d3Util';
 import { InfiniteView } from './InfiniteView';
 import { MessageView } from './MessageView';
 import { GroupView } from './D3View';
 import { Rectangle, Circle, Shape, Line } from '../Shapes';
-import { MeldClone, asSubjectUpdates, SubjectUpdates, updateSubject, includesValue } from '@m-ld/m-ld';
-import { shortId, Subject, Select, Describe, Update, Reference, Resource } from '@m-ld/m-ld';
+import {
+  MeldClone, asSubjectUpdates, SubjectUpdates, includesValue, SubjectUpdater
+} from '@m-ld/m-ld';
+import { shortId, Select, Update, Reference } from '@m-ld/m-ld';
 import { LinkView } from './LinkView';
 import { showError, showInfo, showWarning } from './PopupControls';
 import { BoardBushIndex, BoardIndex } from '../BoardIndex';
+import { HtmlListUpdate } from './HtmlList';
+import { debounce, tap } from 'rxjs/operators';
+import { fromEvent } from 'rxjs';
 
 const CLICK_DRAG_DISTANCE = 3;
 
@@ -24,14 +29,9 @@ export class BoardView extends InfiniteView {
 
     model.read(async state => {
       try {
-        const messages = await state.read<Describe, Message>({
-          '@describe': '?s',
-          '@where': { '@id': '?s', '@type': 'Message' }
-        });
-        const anyMessages = this.updateView(asSubjectUpdates({
-          '@insert': messages, '@delete': []
-        }));
-        if (anyMessages && this.zoomToExtent())
+        const last = await MessageSubject.load(state).pipe(tap(src =>
+          this.updateMessageView(this.addMessageView(src)))).toPromise();
+        if (last != null && this.zoomToExtent())
           showInfo('Tip: You can look more closely by double-clicking.');
       } catch (err) {
         showError(err);
@@ -40,12 +40,13 @@ export class BoardView extends InfiniteView {
       // Construct subject updates from the group updates
       this.updateView(asSubjectUpdates(update));
     });
+
+    this.codeDialog.select('.delete').on('click', () => this.hideCode());
   }
 
   async linksTo(id: string): Promise<string[]> {
     const selection = await this.model.read<Select>({
-      '@select': '?s',
-      '@where': { '@id': '?s', linkTo: { '@id': id } }
+      '@select': '?s', '@where': { '@id': '?s', linkTo: { '@id': id } }
     });
     return selection.map(values => (values['?s'] as Reference)['@id']);
   }
@@ -58,66 +59,88 @@ export class BoardView extends InfiniteView {
     return this._index;
   }
 
-  private updateView(updates: SubjectUpdates): boolean {
+  private updateView(updates: SubjectUpdates) {
+    const updater = new SubjectUpdater(updates);
     Object.keys(updates).forEach(id => {
-      const update = updates[id], updated = this.withThatMessage(id, mv => {
-        const msg = mv.msg.resource;
-        updateSubject(msg, update);
-        this.updateViewFromData(mv, msg);
+      const insert = updates[id]['@insert'];
+      // An updated Subject can be a Message or a message text List. Since both
+      // may be in the same set of updates, keep track of which message views
+      // are affected so we don't double-spend.
+      const updated = this.withThatMessage(id, mv => {
+        updater.update(mv.src);
+        this.updateMessageView(mv);
       });
-      if (updated.empty() && update['@insert'] != null) {
-        // New message
-        const msg = <Resource<Message>>update['@insert'];
-        this.addMessageView(msg).each(
-          this.withThisMessage(mv => this.updateViewFromData(mv, msg)));
+      if (updated.empty() && insert != null && insert['@type'] === 'Message') {
+        // A message we haven't seen before
+        const src = updater.update(MessageSubject.create({ '@id': id }));
+        const mv = this.addMessageView(src);
+        this.updateMessageView(mv);
+        if (id === this.welcomeId)
+          this.forceEditFocus(mv, false);
       }
     });
-    return !!Object.keys(updates).length;
   }
 
-  private updateViewFromData(mv: MessageView, msg: Resource<Message>) {
+  private updateMessageView(mv: MessageView) {
     // Update the index when the message view has re-sized itself
-    mv.update(msg).then(() => this._index.update(mv.msg)).catch(showWarning);
+    mv.update('dirty').then(() => this._index.update(mv.msg)).catch(showWarning);
   }
 
-  private addMessageView(data: Resource<Message>) {
-    const msgSelect = MessageView.init(data);
-    node(this.messageGroup).insertAdjacentElement('beforeend', node(msgSelect));
-    msgSelect.select('.board-message-body')
+  private addMessageView(src: MessageSubject) {
+    const mv = new MessageView(src, this);
+    node(this.messageGroup).insertAdjacentElement('beforeend', mv.element);
+    mv.body
       // The contenteditable div can be smaller than the body
-      .on('mousedown', this.withThisMessage(this.forceEditFocus))
-      .on('touchstart', this.withThisMessage(this.forceEditFocus));
-    msgSelect.select('.board-message-body > div')
-      .on('focus', this.withThisMessage(this.inputStart))
-      .on('input', this.withThisMessage(this.inputChange))
-      .on('keydown', this.withThisMessage(this.inputKey))
-      .on('blur', this.withThisMessage(this.inputEnd));
-    msgSelect.select('.board-message-close circle')
-      .on('mouseover', this.withThisMessage(mv => this.setRemoving(mv, true)))
-      .on('mouseleave', this.withThisMessage(mv => this.setRemoving(mv, false)))
-      .on('click', this.withThisMessage(mv => this.removeMessage(mv, true)))
+      .on('mousedown', () => this.forceEditFocus(mv))
+      .on('touchstart', () => this.forceEditFocus(mv));
+    // Ensure that text updates don't overlap
+    fromEvent<HtmlListUpdate>(mv.content, 'update').pipe(
+      debounce(update => this.inputChange(mv, update))).subscribe();
+    mv.content.d3
+      .on('focus', () => this.inputStart(mv))
+      .on('keydown', () => this.inputKey(mv))
+      .on('blur', () => this.inputEnd(mv));
+    mv.getButton('close')
+      .on('mouseover', () => this.setRemoving(mv, true))
+      .on('mouseleave', () => this.setRemoving(mv, false))
+      .on('click', () => this.removeMessage(mv, true))
       .call(this.setupBtnDrag(this.unlinkDragStart, this.unlinkDragging, this.unlinkDragEnd));
-    msgSelect.select('.board-message-add circle')
-      .on('click', this.withThisMessage(mv => this.addNewMessage(mv)))
+    mv.getButton('add')
+      .on('click', () => this.addNewMessage(mv))
       .call(this.setupBtnDrag(this.btnDragStart, this.linkDragging, this.linkDragEnd));
-    msgSelect.selectAll('.board-message-move circle').call(d3.drag()
+    mv.getButton('move').call(d3.drag()
       .container(node(this.svg))
       .on('start', this.withThisMessage(this.moveDragStart))
       .on('drag', this.withThisMessage(this.moveDragging))
       .on('end', this.withThisMessage(this.moveDragEnd)));
-    msgSelect.select('.board-message-code circle')
-      .on('click', this.withThisMessage(mv => mv.toggleCode()));
-    return msgSelect;
+    mv.getButton('code')
+      .on('click', () => this.showCode(mv));
+    return mv;
   }
 
-  private forceEditFocus(mv: MessageView) {
-    const div = node(mv.content);
+  private showCode(mv: MessageView) {
+    this.codeDialog.classed('is-active', true)
+      .select('.jsonld').text(JSON.stringify(mv.src, null, 2));
+  }
+
+  private hideCode() {
+    this.codeDialog.classed('is-active', false);
+  }
+
+  private get codeDialog() {
+    return d3.select('#board-message-code');
+  }
+
+  private forceEditFocus(mv: MessageView, selectText = true) {
+    const div = mv.content.element;
     if (document.activeElement !== div) {
       // Raise early to prevent the focus handler raise from causing a blur
       mv.d3.raise();
       div.focus();
-      document.execCommand('selectAll');
-      d3.event.preventDefault();
+      if (selectText)
+        document.execCommand('selectAll');
+      if (d3.event != null)
+        d3.event.preventDefault();
     }
   }
 
@@ -152,9 +175,19 @@ export class BoardView extends InfiniteView {
       .on('end', this.withThisMessage(dragEnd));
   }
 
-  private inputChange(mv: MessageView) {
-    // This updates the message's size to accommodate the input
+  private async inputChange(mv: MessageView, listUpdate: HtmlListUpdate): Promise<unknown> {
+    // Immediately update the message's size to accommodate the input
     mv.update();
+    if (mv.src.text != null) {
+      const update: Update = isStringText(mv.src.text) ? {
+        '@delete': { '@id': mv.src['@id'], text: mv.src.text },
+        '@insert': { '@id': mv.src['@id'], text: mv.content.toString() }
+      } : {
+        '@delete': { '@id': mv.src.text['@id'], '@list': listUpdate['@delete'] },
+        '@insert': { '@id': mv.src.text['@id'], '@list': listUpdate['@insert'] }
+      };
+      return this.model.write(update);
+    }
   }
 
   private inputStart(mv: MessageView) {
@@ -163,21 +196,17 @@ export class BoardView extends InfiniteView {
   }
 
   private inputKey(mv: MessageView) {
-    if (d3.event.key === 'Enter' && !d3.event.shiftKey) {
-      node(mv.content).blur();
+    if (d3.event.key === 'Enter' && d3.event.ctrlKey) {
+      mv.content.element.blur();
+      d3.event.preventDefault();
+    } else if (d3.event.key === 'Tab') {
+      this.addNewMessage(mv);
       d3.event.preventDefault();
     }
   }
 
   private inputEnd(mv: MessageView) {
     mv.active = false;
-    // Commit the change to the message if this isn't a spurious event
-    if (mv.msg.text !== mv.text && !mv.msg.deleted) {
-      this.model.write<Update>({
-        '@insert': { '@id': mv.msg['@id'], text: mv.text },
-        '@delete': { '@id': mv.msg['@id'], text: mv.msg.resource.text }
-      }).then(null, showWarning);
-    }
   }
 
   private moveDragStart(_: MessageView, dragged: SVGElement) {
@@ -197,9 +226,9 @@ export class BoardView extends InfiniteView {
     // Commit the change to the message
     const [x, y] = mv.position;
     this.model.write<Update>({
-      '@insert': { '@id': mv.msg['@id'], x, y },
-      '@delete': { '@id': mv.msg['@id'], x: mv.msg.resource.x, y: mv.msg.resource.y }
-    }).then(null, showWarning);
+      '@delete': { '@id': mv.msg['@id'], x: mv.src.x, y: mv.src.y },
+      '@insert': { '@id': mv.msg['@id'], x, y }
+    }).catch(showWarning);
   }
 
   private btnDragSubject(mv: MessageView, dragged: SVGElement): DragSubject {
@@ -219,7 +248,7 @@ export class BoardView extends InfiniteView {
   private linkDragging(mv: MessageView) {
     this.btnDragging(
       mv, thatId => thatId != mv.msg['@id'] &&
-        !includesValue(mv.msg.resource, 'linkTo', { '@id': thatId }), 'link-target');
+        !includesValue(mv.src, 'linkTo', { '@id': thatId }), 'link-target');
   }
 
   private linkDragEnd(mv: MessageView, dragged: SVGElement) {
@@ -227,7 +256,7 @@ export class BoardView extends InfiniteView {
       if (thatId != null) {
         this.model.write<Update>({
           '@insert': { '@id': mv.msg['@id'], linkTo: { '@id': thatId } }
-        }).then(null, showWarning);
+        }).catch(showWarning);
       } else {
         this.addNewMessage(mv, position);
       }
@@ -237,7 +266,7 @@ export class BoardView extends InfiniteView {
   private unlinkDragging(mv: MessageView) {
     this.btnDragging(
       mv, thatId => thatId != mv.msg['@id'] &&
-        includesValue(mv.msg.resource, 'linkTo', { '@id': thatId }), 'remove-target');
+        includesValue(mv.src, 'linkTo', { '@id': thatId }), 'remove-target');
   }
 
   private unlinkDragStart(mv: MessageView, dragged: SVGElement) {
@@ -250,7 +279,7 @@ export class BoardView extends InfiniteView {
       if (thatId != null) {
         this.model.write<Update>({
           '@delete': { '@id': mv.msg['@id'], linkTo: { '@id': thatId } }
-        }).then(null, showWarning);
+        }).catch(showWarning);
       }
     }, 'remove-target');
   }
@@ -271,7 +300,8 @@ export class BoardView extends InfiniteView {
     drag.target = target;
   }
 
-  private updateDragLink(drag: DragSubject, mv: MessageView, targetClass: string, target: MessageView) {
+  private updateDragLink(
+    drag: DragSubject, mv: MessageView, targetClass: string, target?: MessageView) {
     let toShape: Shape;
     if (target != null) {
       toShape = target.rect;
@@ -304,24 +334,23 @@ export class BoardView extends InfiniteView {
   }
 
   private addNewMessage(from: MessageView, position?: [number, number]) {
-    const id = shortId();
     const [x, y] = position ?? this.index.findSpace(from.msg);
-    const newMessage: Resource<Message> = {
-      '@id': id, '@type': 'Message', text: '', x, y, linkTo: []
-    };
-    const newLink: Subject = {
-      '@id': from.msg['@id'],
-      linkTo: [{ '@id': id }]
+    const newMessage = MessageSubject.create({
+      text: '', x, y, linkTo: []
+    });
+    const newLink: Partial<MessageSubject> = {
+      '@id': from.msg['@id'], linkTo: [{ '@id': newMessage['@id'] }]
     };
     this.model.write<Update>({ '@insert': [newMessage, newLink] })
       // Yield to the event loop so that we have definitely processed the update
       .then(() => new Promise(done => setTimeout(done)))
-      .then(() => this.withThatMessage(id, mv => node(mv.content).focus()), showWarning);
+      .then(() => this.withThatMessage(newMessage['@id'],
+        mv => mv.content.element.focus()), showWarning);
   }
 
   private removeMessage(mv: MessageView, top: boolean) {
     if (mv.msg['@id'] !== this.welcomeId) {
-      this.model.delete(mv.msg['@id']);
+      MessageSubject.remove(this.model, mv.src);
       if (top && d3.event.shiftKey) {
         mv.msg.linkTo.forEach(linked =>
           this.withThatMessage(linked['@id'], mv => this.removeMessage(mv, false)));
@@ -331,24 +360,32 @@ export class BoardView extends InfiniteView {
     }
   }
 
-  hitTest(test: Rectangle, filter: (id: string) => boolean): MessageView {
+  hitTest(test: Rectangle, filter: (id: string) => boolean): MessageView | undefined {
     const found = this._index.search(test).filter(msg => filter(msg['@id']))[0];
-    return found && new MessageView(node(this.msgD3(found['@id'])), this);
+    return found && MessageView.get(node(this.d3ById(found['@id'])));
   }
 
   withThisMessage(action: (mv: MessageView, el: SVGElement) => any): (this: Element) => any {
     const bv = this;
     return function (this: SVGElement) {
-      return action.call(bv, new MessageView(this, bv), this);
+      // Note `this` could be a child of the message view node
+      return action.call(bv, MessageView.get(this), this);
     }
   }
 
   withThatMessage(thatId: string, action: (mv: MessageView) => any) {
-    return this.msgD3(thatId).each(this.withThisMessage(action));
+    return this.d3ById(thatId).each(this.withThisMessage(action));
   }
 
-  private msgD3(thatId: string) {
-    return this.svg.select<Element>(`#${thatId}`);
+  private d3ById(thatId: string): d3Selection<Element> {
+    try {
+      return this.svg.select<Element>(`#${thatId}`);
+    } catch (err) {
+      if (err instanceof DOMException)
+        return <d3Selection<Element>><unknown>this.svg.select(null);
+      else
+        throw err;
+    }
   }
 
   private get messageGroup() {

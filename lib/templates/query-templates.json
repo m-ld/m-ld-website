@@ -5,6 +5,12 @@
       "@id": "?id"
     }
   },
+  "Construct a subject": {
+    "@construct": {
+      "@id": "?id",
+      "<property>": "?value"
+    }
+  },
   "Select values of a property": {
     "@select": ["?id", "?value"],
     "@where": {

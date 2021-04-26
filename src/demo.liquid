@@ -12,8 +12,8 @@
   <script src="demo.js"></script>
 </head>
 
-<body>
-  <div id="loading" class="modal is-active">
+<body class="loading">
+  <div id="loading-progress" class="modal">
     <div class="modal-background"></div>
     <div class="modal-content">
       <progress class="progress" max="100">Loading...</progress>
@@ -71,27 +71,73 @@
             </table>
           </div>
           <hr class="dropdown-divider">
-          <a id="new-board" class="dropdown-item">New...</a>
+          <a class="new-board dropdown-item">
+            <i class="fas fa-chalkboard-teacher"></i>
+            New...
+          </a>
+          <a class="share-board dropdown-item">
+            <i class="fas fa-share-alt"></i>
+            Share
+          </a>
           <hr class="dropdown-divider">
           <a id="go-home" class="dropdown-item">
-            <b>m-ld</b> homepage <i class="fas fa-external-link-alt"></i>
+            <i class="fas fa-external-link-alt"></i>
+            <b>m-ld</b> homepage
+          </a>
+          <a class="dropdown-item show-about">
+            About this demo...
           </a>
         </div>
       </div>
     </div>
     <div>
-      <a id="feedback" class="button" href="https://github.com/m-ld/message-board-demo/issues" title="Feedback" target="_blank">
-        <span class="icon">
-          <i class="fas fa-comment"></i>
-        </span>
-      </a>
+      <button id="online" class="button is-outlined is-success" title="Network availability">
+        <span class="icon"><i class="fas fa-wifi"></i></span>
+      </button>
+    </div>
+    <div>
+      <button class="new-board button" title="New">
+        <span class="icon"><i class="fas fa-chalkboard-teacher"></i></span>
+      </button>
+    </div>
+    <div>
+      <button id="save-board" class="button" title="Save" disabled>
+        <span class="icon"><i class="fas fa-save"></i></span>
+      </button>
+    </div>
+    <div>
+      <button class="share-board button" title="Share">
+        <span class="icon"><i class="fas fa-share-alt"></i></span>
+      </button>
     </div>
     <div>
       <button id="show-help" class="button" title="Help">
-        <span class="icon">
-          <i class="fas fa-question"></i>
-        </span>
+        <span class="icon"><i class="fas fa-question"></i></span>
       </button>
+    </div>
+  </div>
+  <div id="board-message-code" class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-card">
+      <header class="modal-card-head">
+        <p class="modal-card-title">Message JSON-LD</p>
+        <button class="delete" aria-label="close"></button>
+      </header>
+      <section class="modal-card-body">
+        <pre class="jsonld"></pre>
+      </section>
+    </div>
+  </div>
+  <div id="board-about" class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-card">
+      <header class="modal-card-head">
+        <p class="modal-card-title">About the Demo</p>
+        <button class="delete" aria-label="close"></button>
+      </header>
+      <section class="modal-card-body content">
+        {% include 'board-about.html' %}
+      </section>
     </div>
   </div>
   {% include 'popups.liquid', help: 'board-help.liquid' %}

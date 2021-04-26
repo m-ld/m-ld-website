@@ -1,6 +1,6 @@
+import { EventEmitter } from 'events';
 import type RBush from 'rbush';
-import { Resource, Reference, array } from '@m-ld/m-ld';
-import { Message } from './Message';
+import { MessageItem } from './Message';
 import { Rectangle } from './Shapes';
 
 // This is required because rbush's exports are broken
@@ -8,7 +8,16 @@ const MessageBush: new () => RBush<MessageItem> = require('rbush');
 
 export const MIN_MESSAGE_SIZE: [number, number] = [115, 50];
 
+export namespace BoardIndex {
+  export type Event = 'insert' | 'update' | 'remove';
+  export type EventHandler = (item: MessageItem) => any;
+}
+
 export interface BoardIndex {
+  on(event: BoardIndex.Event, handler: BoardIndex.EventHandler): void;
+
+  off(event: BoardIndex.Event, handler: BoardIndex.EventHandler): void;
+
   get(id: string): MessageItem | undefined;
 
   all(): MessageItem[];
@@ -42,43 +51,54 @@ export interface BoardIndex {
 export class BoardBushIndex extends MessageBush implements BoardIndex {
   // Maintains insertion order, so top message is last
   private top = new Set<string>();
+  private events = new EventEmitter;
 
-  get(id: string): MessageItem | undefined {
-    return this.all().filter(item => item['@id'] === id)[0];
+  on(event: BoardIndex.Event, handler: BoardIndex.EventHandler) {
+    this.events.on(event, handler);
   }
 
-  load(items: ReadonlyArray<MessageItem>): BoardBushIndex {
-    super.load(items);
-    items.forEach(item => this.top.add(item['@id']));
-    return this;
+  off(event: BoardIndex.Event, handler: BoardIndex.EventHandler) {
+    this.events.on(event, handler);
+  }
+
+  private emit(event: BoardIndex.Event, item: MessageItem) {
+    // Clear is called before class initialisation
+    this.events?.emit(event, item);
+  }
+
+  get(id: string): MessageItem | undefined {
+    return this.all().find(item => item['@id'] === id);
   }
 
   insert(item: MessageItem): BoardBushIndex {
     super.insert(item);
     this.top.add(item['@id']);
+    this.emit('insert', item);
     return this;
   }
 
   update(item: MessageItem): BoardBushIndex {
-    // Note that the remove and re-insert also maintains the 'top' ordering.
-    this.remove(item);
-    if (!item.deleted)
-      this.insert(item);
+    if (item.deleted)
+      return this.remove(item);
+    const prev = this.get(item['@id']);
+    if (prev == null)
+      return this.insert(item);
+    super.remove(prev);
+    super.insert(item);
+    this.top.delete(item['@id']);
+    this.top.add(item['@id']);
+    this.emit('update', prev);
     return this;
   }
 
   remove(item: MessageItem): BoardBushIndex {
     // Bug in RBush https://github.com/mourner/rbush/issues/95
-    const prev = this.all().find(prev => prev['@id'] === item['@id']);
+    const prev = this.get(item['@id']);
     if (prev != null) {
       super.remove(prev);
       this.top.delete(item['@id']);
+      this.emit('remove', item);
     }
-    return this;
-  }
-
-  clear(): BoardBushIndex {
-    super.clear();
     return this;
   }
 
@@ -116,51 +136,3 @@ export class BoardBushIndex extends MessageBush implements BoardIndex {
       .slice(0, count).map(id => this.get(id)?.text ?? ''); // Should exist
   }
 }
-
-/**
- * Immutable wrapper for a message, which resolves position and text conflicts
- * and maintains a size.
- */
-export class MessageItem extends Rectangle implements Message {
-  readonly text: string;
-  readonly '@type' = 'Message';
-  private readonly src: Resource<Message>;
-
-  constructor(
-    src: Resource<Message>,
-    size?: [number, number]) {
-    super(MessageItem.mergePosition([src.x, src.y]), size ?? [0, 0]);
-    this.src = deepClone(src);
-    this.text = MessageItem.mergeText(src.text);
-  }
-
-  get '@id'() {
-    return this.src['@id'];
-  }
-
-  get linkTo(): Reference[] {
-    return array(this.src.linkTo);
-  }
-
-  get resource(): Resource<Message> {
-    return deepClone(this.src);
-  }
-
-  get deleted(): boolean {
-    return !array(this.src.text).length;
-  }
-
-  static mergeText(value: Resource<Message>['text']): string {
-    return array(value).join('<br>');
-  }
-
-  static mergePosition([xs, ys]: [Resource<Message>['x'], Resource<Message>['y']]): [number, number] {
-    return [
-      Math.min.apply(Math, array(xs)),
-      Math.min.apply(Math, array(ys))
-    ];
-  }
-}
-
-// Defensive deep copy, where performance not a concern
-const deepClone = <T>(src: T) => JSON.parse(JSON.stringify(src));

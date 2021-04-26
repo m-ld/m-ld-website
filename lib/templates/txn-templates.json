@@ -1,46 +1,69 @@
 {
   "Insert new subject properties": {
     "@id": "<identity>",
-    "property1": 1,
-    "property2": "<value>"
+    "<property1>": 1,
+    "<property2>": "<value>"
   },
   "Insert multiple subjects": {
     "@graph": [
       {
         "@id": "<id1>",
-        "property1": 1
+        "<property1>": 1
       },
       {
         "@id": "<id2>",
-        "property1": 2
+        "<property1>": 2
       }
+    ]
+  },
+  "Insert a list": {
+    "@id": "<identity>",
+    "@list": [
+      "<item1>",
+      "<item2>"
     ]
   },
   "Delete a subject property": {
     "@delete": {
       "@id": "<identity>",
-      "property1": 1
+      "<property1>": 1
     }
   },
   "Delete where a property": {
     "@delete": {
       "@id": "?id",
-      "property2": "?any"
+      "<property2>": "?any"
     },
     "@where": {
       "@id": "?id",
-      "property1": 1,
-      "property2": "?any"
+      "<property1>": 1,
+      "<property2>": "?any"
+    }
+  },
+  "Delete a list item by index": {
+    "@delete": {
+      "@id": "<identity>",
+      "@list": {
+        "1": "?"
+      }
+    }
+  },
+  "Delete a list item by value": {
+    "@delete": {
+      "@id": "<identity>",
+      "@list": {
+        "?": "<item>"
+      }
     }
   },
   "Update a subject property": {
     "@delete": {
       "@id": "<identity>",
-      "property1": 1
+      "<property1>": "?"
     },
     "@insert": {
       "@id": "<identity>",
-      "property1": 2
+      "<property1>": 2
     }
   },
   "Replace all subject properties": {
@@ -50,8 +73,8 @@
     },
     "@insert": {
       "@id": "<identity>",
-      "property1": 10,
-      "property2": "<new value>"
+      "<property1>": 10,
+      "<property2>": "<new value>"
     }
   },
   "Delete a subject & all references": {
