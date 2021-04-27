@@ -23,7 +23,7 @@
           news
         </a>
         <a class="navbar-item" href="/doc/">
-          documentation
+          docs
         </a>
         <div class="navbar-item has-dropdown is-hoverable">
           {% unless indexPage %}
@@ -34,11 +34,11 @@
           <div class="navbar-dropdown">
             {%- for platform in index.platforms -%}
             {% if platform.url %}
-            <a class="navbar-item" href="{{platform.url}}">
+            <a class="navbar-item" href="{{ platform.url }}">
             {% else %}
             <a class="navbar-item is-static">
             {% endif %}
-              <span class="icon"><i class="{{platform.icon}}"></i></span>
+              <span class="icon"><i class="{{ platform.icon }}"></i></span>
               <span class="has-text-dark">{{platform.name | downcase}}</span>
               {% if platform.soon %}
               <span class="tag is-warning" style="margin-left: 1em;">soon!</span>
@@ -46,6 +46,16 @@
               <span class="tag is-primary" style="margin-left: 1em;">request</span>
               {% endif %}
             </a>
+            {%- endfor -%}
+          </div>
+        </div>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link">
+            industries
+          </a>
+          <div class="navbar-dropdown">
+            {%- for industry in index.industries -%}
+            <a class="navbar-item" href="/{{ industry.id }}/">{{ industry.title }}</a>
             {%- endfor -%}
           </div>
         </div>

@@ -2,6 +2,16 @@
 
 @import "../node_modules/@m-ld/io-web-build/style";
 
+.drive-pdf {
+  // Used if no background-image specified for id
+  background-color: lightgray;
+  background-size: cover;
+}
+
+#cab {
+  background-image: url(/media/cab-background.jpg);
+}
+
 dl {
   font-size: smaller;
   dt {

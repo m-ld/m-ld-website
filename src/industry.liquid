@@ -1,0 +1,12 @@
+---
+layout: doc.liquid
+pagination:
+  data: index.industries
+  size: 1
+  alias: doc
+permalink: "{{ doc.id }}/index.html"
+width: max-desktop
+---
+<figure class="image is-4by5">
+  <iframe class="has-ratio" src="{{ doc.src }}" frameborder="0" allowfullscreen></iframe>
+</figure>

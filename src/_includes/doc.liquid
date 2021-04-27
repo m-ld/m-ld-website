@@ -4,12 +4,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>m-ld | {{ title }}</title>
+  <title>m-ld | {{ doc.title | default: title }}</title>
   {% include 'gtag.liquid' %}
   <link rel="stylesheet" href="/main.css">
 </head>
 
-<body>
+<body id="{{ doc.id | default: page.fileSlug }}" class="{{ doc.class }}">
   {% include 'navbar' %}
   <div class="container is-{{ width }}">
     <div class="content">{{ content }}</div>
