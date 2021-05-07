@@ -28,6 +28,9 @@ Yet this is a requirement when parties without a mutually trusted platform want
 to collaborate on a project. Developing a protocol and software for this
 situation can bring about a big step for collaborating on the internet.*
 
+We're really looking forward to working towards an _open information society_ in
+collaboration with NLnet and its partners.
+
 NGI Assure is made possible with financial support from the European
 Commission's Next [Generation Internet programme](https://ngi.eu/).
 
