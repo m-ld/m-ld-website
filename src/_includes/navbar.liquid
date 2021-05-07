@@ -1,9 +1,11 @@
 <nav class="navbar mb-3" role="navigation" aria-label="main navigation">
   <div class="container is-fluid">
     <div class="navbar-brand">
+      {% unless indexPage %}
       <a class="navbar-item" href="/">
         <img src="/m-ld.svg" width="112" />
       </a>
+      {% endunless %}
       <script>
       function navbarToggle() {
         document.querySelector('#navbarBurger').classList.toggle('is-active');
@@ -23,7 +25,7 @@
           news
         </a>
         <a class="navbar-item" href="/doc/">
-          documentation
+          docs
         </a>
         <div class="navbar-item has-dropdown is-hoverable">
           {% unless indexPage %}
@@ -34,11 +36,11 @@
           <div class="navbar-dropdown">
             {%- for platform in index.platforms -%}
             {% if platform.url %}
-            <a class="navbar-item" href="{{platform.url}}">
+            <a class="navbar-item" href="{{ platform.url }}">
             {% else %}
             <a class="navbar-item is-static">
             {% endif %}
-              <span class="icon"><i class="{{platform.icon}}"></i></span>
+              <span class="icon"><i class="{{ platform.icon }}"></i></span>
               <span class="has-text-dark">{{platform.name | downcase}}</span>
               {% if platform.soon %}
               <span class="tag is-warning" style="margin-left: 1em;">soon!</span>
@@ -49,6 +51,18 @@
             {%- endfor -%}
           </div>
         </div>
+        {% if index.industries.length > 1 %}
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link">
+            industries
+          </a>
+          <div class="navbar-dropdown">
+            {%- for industry in index.industries -%}
+            <a class="navbar-item" href="/{{ industry.id }}/">{{ industry.title }}</a>
+            {%- endfor -%}
+          </div>
+        </div>
+        {% endif %}
         <a class="navbar-item" href="/playground/">playground</a>
         <a class="navbar-item" href="/demo/">demo</a>
       </div>

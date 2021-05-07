@@ -36,11 +36,14 @@
       </div>
     </div>
   </section>
-  <section class="hero is-primary">
+  <section id="news-banner" class="hero is-warning">
     <div class="hero-body">
       <div class="container content has-text-centered is-size-5">
-        <a href="/news/#webrtc-lists-performance">
-          The Javascript engine v0.6 has been released!
+        <a href="/news/#securing-shared-information">
+          <span>NEWS: security research in partnership with </span>
+          <img src="/media/logo_nlnet.svg" alt="NLnet" />
+          <span> and </span>
+          <img src="/media/NGIAssure.svg" alt="NGI Assure" />
         </a>
       </div>
     </div>
@@ -112,12 +115,14 @@
       </div>
     </div>
   </section>
-  <section class="hero is-light mt-5">
+  <section class="hero is-small mt-5">
     <div class="hero-body">
       {% include 'navbar', indexPage: true %}
-      {% include 'footer', indexPage: true %}
     </div>
   </section>
+  <footer class="footer">
+    {% include 'footer', indexPage: true %}
+  </footer>
 </body>
 
 </html>

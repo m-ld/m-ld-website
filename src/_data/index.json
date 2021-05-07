@@ -39,5 +39,13 @@
       "url": "https://github.com/m-ld/m-ld-spec/issues",
       "summary": "Please create a ticket for the platform you need."
     }
+  ],
+  "industries": [
+    {
+      "id": "cab",
+      "title": "computer-aided biology",
+      "class": "drive-pdf",
+      "src": "https://drive.google.com/file/d/10N_XLJdAL2A0NZtBpgMrhuhzvYXZMfJ2/preview"
+    }
   ]
 }

@@ -2,6 +2,16 @@
 
 @import "../node_modules/@m-ld/io-web-build/style";
 
+.drive-pdf {
+  // Used if no background-image specified for id
+  background-color: lightgray;
+  background-size: cover;
+}
+
+#cab {
+  background-image: url(/media/cab-background.jpg);
+}
+
 dl {
   font-size: smaller;
   dt {
@@ -25,6 +35,20 @@ aside.menu {
 
 .content blockquote {
   @extend .has-background-warning-light
+}
+
+.footer img {
+  height: 3em;
+}
+
+#news-banner .content {
+  span {
+    vertical-align: middle;
+  }
+  img {
+    vertical-align: middle;
+    height: 3em;
+  }
 }
 
 html#demo {
