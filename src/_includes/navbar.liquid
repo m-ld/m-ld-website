@@ -1,9 +1,11 @@
 <nav class="navbar mb-3" role="navigation" aria-label="main navigation">
   <div class="container is-fluid">
     <div class="navbar-brand">
+      {% unless indexPage %}
       <a class="navbar-item" href="/">
         <img src="/m-ld.svg" width="112" />
       </a>
+      {% endunless %}
       <script>
       function navbarToggle() {
         document.querySelector('#navbarBurger').classList.toggle('is-active');
@@ -49,6 +51,7 @@
             {%- endfor -%}
           </div>
         </div>
+        {% if index.industries.length > 1 %}
         <div class="navbar-item has-dropdown is-hoverable">
           <a class="navbar-link">
             industries
@@ -59,6 +62,7 @@
             {%- endfor -%}
           </div>
         </div>
+        {% endif %}
         <a class="navbar-item" href="/playground/">playground</a>
         <a class="navbar-item" href="/demo/">demo</a>
       </div>

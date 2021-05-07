@@ -6,15 +6,41 @@
         Website content licensed
         <a target="_blank" href="http://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY NC SA
           4.0</a>.
-        Icons by <a href="https://www.flaticon.com/authors/xnimrodx" title="xnimrodx">xnimrodx</a>
-        from <a href="https://www.flaticon.com/" title="Flaticon">flaticon.com</a>.
-        Delivered by <a href="https://vercel.com/home" target="_blank">Vercel</a>.
+        Supported by 
       </p>
+    </div>
+    <div class="level-item">
+      <a href="https://nlnet.nl"><img src="/media/logo_nlnet.svg" alt="NLnet"/></a>
     </div>
   </div>
   <div class="level-right">
     <div class="level-item">
-      <p><a href="privacy/">privacy policy</a></p>
+      <p>
+        <a id="credits-link">credits</a>
+        |
+        <a href="privacy/">privacy policy</a>
+      </p>
     </div>
   </div>
+  <div id="credits-modal" class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-card">
+      <header class="modal-card-head">
+        <p class="modal-card-title">We are grateful for:</p>
+        <button class="delete" aria-label="close"></button>
+      </header>
+      <section class="modal-card-body content">
+        {% include 'credits.html' %}
+      </section>
+    </div>
+  </div>
+  <script>
+    (function () {
+      const creditsModal = document.querySelector('#credits-modal');
+      document.querySelector('#credits-link').addEventListener('click', event =>
+        creditsModal.classList.add('is-active'));
+      document.querySelector('#credits-modal .delete').addEventListener('click', event =>
+        creditsModal.classList.remove('is-active'));
+    })();
+  </script>
 </div>
