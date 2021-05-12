@@ -22,6 +22,13 @@ research and prototype modifications to the primitives of the m-ld core protocol
 to natively support strong assurance of data integrity and traceability, with
 authority assignable to identified actors, such as users or groups.
 
+NLnet have said: _Collaborative software does not currently keep track of
+authenticity information on the edits by the actors with cryptographic strength.
+Yet this is a requirement when parties without a mutually trusted platform want
+to collaborate on a project. Developing a protocol and software for this
+situation can bring about a big step for collaborating on knowledge graphs and
+other documents._
+
 We're really looking forward to working towards an _open information society_ in
 collaboration with NLnet and its partners.
 
