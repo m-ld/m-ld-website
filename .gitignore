@@ -6,3 +6,4 @@ _site
 .now
 .env
 .vercel
+.idea/

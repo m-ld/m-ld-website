@@ -1,7 +1,5 @@
 import { Config } from '../lib/dto';
-import {
-  LOG, randomWord, responder, fetch, fetchJsonUrl
-} from '@m-ld/io-web-runtime/dist/lambda';
+import { fetch, fetchJsonUrl, LOG, randomWord, responder } from '@m-ld/io-web-runtime/dist/lambda';
 import nlp from 'compromise';
 import { ablyToken, PrefixAuth, recaptchaV2Auth, recaptchaV3Auth } from '../lib/api/authorisations';
 
@@ -14,7 +12,7 @@ export default responder<Config.Request, Config.Response>(new PrefixAuth({
     '@domain': domain,
     genesis,
     logLevel: LOG.getLevel(),
-    maxDeltaSize: 16 * 1024
+    maxOperationSize: 16 * 1024
   };
   const [customConfig, wrtc, token] = await Promise.all([
     // Try to load a custom config for this domain
@@ -87,7 +85,7 @@ function removeFirst<T>(array: T[], predicate: (t: T) => boolean): T | undefined
 function parseIceServerUrl(url: string): {
   url: string, protocol?: string, port?: string, transport?: string
 } {
-  const match = url.match(/^(stun|turn|turns):[\w-\.]+(?::(\d+))?(?:\?transport=(tcp|udp))?/);
+  const match = url.match(/^(stun|turn|turns):[\w-.]+(?::(\d+))?(?:\?transport=(tcp|udp))?/);
   if (match != null) {
     const [url, protocol, port, transport] = match;
     return { url, protocol, port, transport };

@@ -4,20 +4,23 @@ import { node } from '../lib/client/d3Util';
 import { clone, MeldClone, shortId } from '@m-ld/m-ld';
 import { AblyRemotes } from '@m-ld/m-ld/dist/ably';
 import { WrtcPeering } from '@m-ld/m-ld/dist/wrtc';
-import { modernizd, Grecaptcha, configureLogging } from '@m-ld/io-web-runtime/dist/client';
+import { configureLogging, Grecaptcha, modernizd } from '@m-ld/io-web-runtime/dist/client';
 import * as d3 from 'd3';
 import { BoardLocal } from '../lib/client/BoardLocal'
 import {
-  initPopupControls, showError, loadingFinished, showNotModern, showAbout
+  initPopupControls,
+  loadingFinished,
+  showAbout,
+  showError,
+  showNotModern
 } from '../lib/client/PopupControls';
 import { initBoardControls } from '../lib/client/BoardControls';
 import { fetchConfig } from '../lib/client/Api';
 import * as lifecycle from 'page-lifecycle';
 import * as LOG from 'loglevel';
 import { EMPTY, fromEvent, merge } from 'rxjs';
-import {
-  debounce, debounceTime, filter, last, startWith, takeUntil
-} from 'rxjs/operators';
+import { debounce, debounceTime, filter, last, startWith, takeUntil } from 'rxjs/operators';
+import EventEmitter = require('events');
 
 window.onload = async function () {
   await modernizd(['indexeddb']).catch(showNotModern);
@@ -53,12 +56,13 @@ class Demo {
 
     // Initialise the m-ld clone with a local backend
     const backend = await this.local.load(domain);
+    const backendEvents = new EventEmitter;
     const remotes = new AblyRemotes(config, { peering: new WrtcPeering(config) });
-    const meld = await clone(backend, remotes, config);
+    const meld = await clone(backend, remotes, config, { backendEvents });
     window.addEventListener('unload', () => meld.close());
 
     // Set up auto-save.
-    this.setupAutoSave(meld);
+    this.setupAutoSave(meld, backendEvents);
 
     // Wait for the latest state from the clone
     // (Remove this line to see rev-ups as they happen)
@@ -88,7 +92,7 @@ class Demo {
     }
   }
 
-  setupAutoSave(meld: MeldClone) {
+  setupAutoSave(meld: MeldClone, backendEvents: EventEmitter) {
     // Safety net in case the user manages to unload in the dirty state
     this.local.on('dirty', dirty => lifecycle[dirty ?
       'addUnsavedChanges' : 'removeUnsavedChanges'](this));
@@ -98,8 +102,8 @@ class Demo {
       // snapshot so we don't have to keep the state locked
       meld.read(() => this.local.save().then(resolve, reject)));
 
-    // When the document updates, set the dirty status
-    meld.follow(() => { this.local.dirty = true; });
+    // When commits are made in the backend, set the dirty status
+    backendEvents.on('commit', () => { this.local.dirty = true; });
 
     merge(
       // Clicked save button
