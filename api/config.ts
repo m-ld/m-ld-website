@@ -91,7 +91,8 @@ function parseIceServerUrl(url: string): {
  */
 async function loadCustomConfig(domain: string): Promise<object> {
   const res = await fetch(
-    `https://raw.githubusercontent.com/m-ld/message-board-demo/master/config/${domain}.json`);
+    `https://raw.githubusercontent.com/m-ld/message-board-demo/master/config/${domain}.json`,
+    { timeout: 4000 });
   if (res.ok)
     return res.json();
   else if (res.status !== 404)
