@@ -20,12 +20,7 @@ export namespace Config {
     token: string;
   }
 
-  export type Response = MeldAblyConfig & MeldWrtcConfig & AblyTokenSession & {
-    /**
-     * Domain active bot, or `false` to disable the bot
-     */
-    botName?: string | false;
-  };
+  export type Response = MeldAblyConfig & MeldWrtcConfig & AblyTokenSession;
 }
 
 export namespace Renew {

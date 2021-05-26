@@ -1,8 +1,5 @@
 import { Config } from '../lib/dto';
-import {
-  LOG, randomWord, responder, fetch, fetchJsonUrl
-} from '@m-ld/io-web-runtime/dist/lambda';
-import nlp from 'compromise';
+import { fetch, fetchJsonUrl, LOG, randomWord, responder } from '@m-ld/io-web-runtime/dist/lambda';
 import { ablyToken, PrefixAuth, recaptchaV2Auth, recaptchaV3Auth } from '../lib/api/authorisations';
 
 export default responder<Config.Request, Config.Response>(new PrefixAuth({
@@ -26,14 +23,6 @@ export default responder<Config.Request, Config.Response>(new PrefixAuth({
   ]);
   Object.assign(config, customConfig, { wrtc, token });
   config.ably = Object.assign(config.ably ?? {}, { token: config.token, maxRate: 15 });
-  // Check if bot is explicitly disabled in the custom config
-  if (config.botName !== false && configReq.botName != null) {
-    // Bot name is browser-specific, so just look for truthiness
-    if (config.botName != null) // Every browser has a bot!
-      config.botName = configReq.botName || await newBotName();
-    else // New bot if genesis, otherwise keep whatever we had before
-      config.botName = genesis ? await newBotName() : configReq.botName;
-  }
   // We're now sure we have everything, even if Typescript isn't
   return <Config.Response>config;
 });
@@ -87,7 +76,7 @@ function removeFirst<T>(array: T[], predicate: (t: T) => boolean): T | undefined
 function parseIceServerUrl(url: string): {
   url: string, protocol?: string, port?: string, transport?: string
 } {
-  const match = url.match(/^(stun|turn|turns):[\w-\.]+(?::(\d+))?(?:\?transport=(tcp|udp))?/);
+  const match = url.match(/^(stun|turn|turns):[\w-.]+(?::(\d+))?(?:\?transport=(tcp|udp))?/);
   if (match != null) {
     const [url, protocol, port, transport] = match;
     return { url, protocol, port, transport };
@@ -121,13 +110,4 @@ async function newDomain(domain: string) {
     domain = `${part1}-${part2}.m-ld.org`;
   }
   return { domain, genesis };
-}
-
-/**
- * Get a Bot name if none is specified in the request
- */
-async function newBotName() {
-  return nlp(await randomWord({
-    includePartOfSpeech: 'proper-noun', maxLength: 5
-  })).toTitleCase().text();
 }
