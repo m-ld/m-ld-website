@@ -2,6 +2,12 @@ import { Config } from '../lib/dto';
 import { fetch, fetchJsonUrl, LOG, randomWord, responder } from '@m-ld/io-web-runtime/dist/lambda';
 import { ablyToken, PrefixAuth, recaptchaV2Auth, recaptchaV3Auth } from '../lib/api/authorisations';
 
+/**
+ * Generally timeout in half of the overall lambda timeout, to get early warning of issues
+ * @see https://vercel.com/docs/platform/limits
+ */
+const SERVICE_TIMEOUT = 10000 / 2;
+
 export default responder<Config.Request, Config.Response>(new PrefixAuth({
   v2: recaptchaV2Auth, v3: recaptchaV3Auth
 }), async configReq => {
@@ -40,7 +46,8 @@ async function loadWrtcConfig() {
       'Content-Type': 'application/json',
       'Content-Length': `${body.length}`
     },
-    body
+    body,
+    timeout: SERVICE_TIMEOUT
   });
   if (res.s !== 'ok')
     throw res.v;
@@ -92,7 +99,7 @@ function parseIceServerUrl(url: string): {
 async function loadCustomConfig(domain: string): Promise<object> {
   const res = await fetch(
     `https://raw.githubusercontent.com/m-ld/message-board-demo/master/config/${domain}.json`,
-    { timeout: 4000 });
+    { timeout: SERVICE_TIMEOUT });
   if (res.ok)
     return res.json();
   else if (res.status !== 404)
