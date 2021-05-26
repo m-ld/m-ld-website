@@ -1,9 +1,12 @@
 import { Config } from '../lib/dto';
-import {
-  LOG, randomWord, responder, fetch, fetchJsonUrl
-} from '@m-ld/io-web-runtime/dist/lambda';
-import nlp from 'compromise';
+import { fetch, fetchJsonUrl, LOG, randomWord, responder } from '@m-ld/io-web-runtime/dist/lambda';
 import { ablyToken, PrefixAuth, recaptchaV2Auth, recaptchaV3Auth } from '../lib/api/authorisations';
+
+/**
+ * Generally timeout in half of the overall lambda timeout, to get early warning of issues
+ * @see https://vercel.com/docs/platform/limits
+ */
+const SERVICE_TIMEOUT = 10000 / 2;
 
 export default responder<Config.Request, Config.Response>(new PrefixAuth({
   v2: recaptchaV2Auth, v3: recaptchaV3Auth
@@ -26,14 +29,6 @@ export default responder<Config.Request, Config.Response>(new PrefixAuth({
   ]);
   Object.assign(config, customConfig, { wrtc, token });
   config.ably = Object.assign(config.ably ?? {}, { token: config.token, maxRate: 15 });
-  // Check if bot is explicitly disabled in the custom config
-  if (config.botName !== false && configReq.botName != null) {
-    // Bot name is browser-specific, so just look for truthiness
-    if (config.botName != null) // Every browser has a bot!
-      config.botName = configReq.botName || await newBotName();
-    else // New bot if genesis, otherwise keep whatever we had before
-      config.botName = genesis ? await newBotName() : configReq.botName;
-  }
   // We're now sure we have everything, even if Typescript isn't
   return <Config.Response>config;
 });
@@ -51,7 +46,8 @@ async function loadWrtcConfig() {
       'Content-Type': 'application/json',
       'Content-Length': `${body.length}`
     },
-    body
+    body,
+    timeout: SERVICE_TIMEOUT
   });
   if (res.s !== 'ok')
     throw res.v;
@@ -87,7 +83,7 @@ function removeFirst<T>(array: T[], predicate: (t: T) => boolean): T | undefined
 function parseIceServerUrl(url: string): {
   url: string, protocol?: string, port?: string, transport?: string
 } {
-  const match = url.match(/^(stun|turn|turns):[\w-\.]+(?::(\d+))?(?:\?transport=(tcp|udp))?/);
+  const match = url.match(/^(stun|turn|turns):[\w-.]+(?::(\d+))?(?:\?transport=(tcp|udp))?/);
   if (match != null) {
     const [url, protocol, port, transport] = match;
     return { url, protocol, port, transport };
@@ -102,7 +98,8 @@ function parseIceServerUrl(url: string): {
  */
 async function loadCustomConfig(domain: string): Promise<object> {
   const res = await fetch(
-    `https://raw.githubusercontent.com/m-ld/message-board-demo/master/config/${domain}.json`);
+    `https://raw.githubusercontent.com/m-ld/message-board-demo/master/config/${domain}.json`,
+    { timeout: SERVICE_TIMEOUT });
   if (res.ok)
     return res.json();
   else if (res.status !== 404)
@@ -121,13 +118,4 @@ async function newDomain(domain: string) {
     domain = `${part1}-${part2}.m-ld.org`;
   }
   return { domain, genesis };
-}
-
-/**
- * Get a Bot name if none is specified in the request
- */
-async function newBotName() {
-  return nlp(await randomWord({
-    includePartOfSpeech: 'proper-noun', maxLength: 5
-  })).toTitleCase().text();
 }

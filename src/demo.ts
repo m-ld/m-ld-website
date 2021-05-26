@@ -4,20 +4,22 @@ import { node } from '../lib/client/d3Util';
 import { clone, MeldClone, shortId } from '@m-ld/m-ld';
 import { AblyRemotes } from '@m-ld/m-ld/dist/ably';
 import { WrtcPeering } from '@m-ld/m-ld/dist/wrtc';
-import { modernizd, Grecaptcha, configureLogging } from '@m-ld/io-web-runtime/dist/client';
+import { configureLogging, Grecaptcha, modernizd } from '@m-ld/io-web-runtime/dist/client';
 import * as d3 from 'd3';
 import { BoardLocal } from '../lib/client/BoardLocal'
 import {
-  initPopupControls, showError, loadingFinished, showNotModern, showAbout
+  initPopupControls,
+  loadingFinished,
+  showAbout,
+  showError,
+  showNotModern
 } from '../lib/client/PopupControls';
 import { initBoardControls } from '../lib/client/BoardControls';
 import { fetchConfig } from '../lib/client/Api';
 import * as lifecycle from 'page-lifecycle';
 import * as LOG from 'loglevel';
 import { EMPTY, fromEvent, merge } from 'rxjs';
-import {
-  debounce, debounceTime, filter, last, startWith, takeUntil
-} from 'rxjs/operators';
+import { debounce, debounceTime, filter, last, startWith, takeUntil } from 'rxjs/operators';
 
 window.onload = async function () {
   await modernizd(['indexeddb']).catch(showNotModern);
@@ -43,12 +45,10 @@ class Demo {
     let domain: string = this.local.targetDomain(requestedDomain);
     // Get the configuration for the domain
     await Grecaptcha.ready;
-    const config = await fetchConfig(domain, this.local.getBotName(domain));
+    const config = await fetchConfig(domain);
     configureLogging(config, LOG);
     domain = config['@domain'];
 
-    const botName = config.botName ?? false;
-    this.local.setBotName(domain, botName);
     history.replaceState(null, '', '#' + domain);
 
     // Initialise the m-ld clone with a local backend

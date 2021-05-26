@@ -1,22 +1,18 @@
 import { AuthorisedRequest, Grecaptcha, setLogToken } from '@m-ld/io-web-runtime/dist/client';
-import { Chat, Config, Renew } from '../dto';
+import { Config, Renew } from '../dto';
 import { uuid } from '@m-ld/m-ld';
-import { Answer } from '../BotBrain';
 import { showGrecaptcha } from './PopupControls';
 import * as lifecycle from 'page-lifecycle';
 
 /**
  * @param domain name or empty string to request a new domain
- * @param botName current bot name or `false` to request a new bot name, or
- * `undefined` to skip bots
  * @return fetched configuration. This object will occasionally mutate with a
  * new token when it is renewed.
  */
 export async function fetchConfig(
-  domain: string | '', botName?: string | false): Promise<Config.Response> {
-  const req: Config.Request = {
-    ...authorisedRequest(uuid(), domain, `v3:${await Grecaptcha.execute('config')}`), botName
-  };
+  domain: string | ''): Promise<Config.Response> {
+  const req: Config.Request =
+    authorisedRequest(uuid(), domain, `v3:${await Grecaptcha.execute('config')}`);
   const config: Config.Response = await fetchJson('/api/config', req, async res => {
     if (res.status === 401)
       // Google thinks we're a bot, try interactive reCAPTCHA
@@ -31,16 +27,6 @@ export async function fetchConfig(
       return cb('', renewal.token);
     }).catch(err => cb(err, ''));
   return config;
-}
-
-export function fetchAnswer(
-  config: Config.Response, message: string, topMessages: string[]): Promise<Answer> {
-  if (!config.botName)
-    return Promise.reject('No bot present');
-  return fetchJson<Chat.Request, Chat.Response>('/api/chat', {
-    ...authorisedRequest(config['@id'], config['@domain'], config.token),
-    message, topMessages, botName: config.botName
-  });
 }
 
 function renewToken(config: Config.Response): Promise<Renew.Response> {
