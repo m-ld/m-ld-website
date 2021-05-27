@@ -46,12 +46,10 @@ class Demo {
     let domain: string = this.local.targetDomain(requestedDomain);
     // Get the configuration for the domain
     await Grecaptcha.ready;
-    const config = await fetchConfig(domain, this.local.getBotName(domain));
+    const config = await fetchConfig(domain);
     configureLogging(config, LOG);
     domain = config['@domain'];
 
-    const botName = config.botName ?? false;
-    this.local.setBotName(domain, botName);
     history.replaceState(null, '', '#' + domain);
 
     // Initialise the m-ld clone with a local backend

@@ -1,7 +1,7 @@
 import { EventEmitter } from 'events';
 import * as local from 'local-storage';
 import MemDown from 'memdown';
-import { int32Buf, LevelDownResponse } from './LevelDownResponse';
+import { LevelDownResponse } from './LevelDownResponse';
 
 export type Domain = string; // An internet-style m-ld domain name
 export type Version = 'v0' | 'v1' | 'v2' | 'v3';
@@ -117,17 +117,6 @@ export class BoardLocal extends EventEmitter {
     } finally {
       this.emit('saving', false);
     }
-  }
-
-  getBotName(domain: Domain | ''): string | false {
-    return domain ? local.get<string>(`${domain}.bot`) ?? false : false;
-  }
-
-  setBotName(domain: Domain, name: string | false) {
-    if (domain && name)
-      local.set<string>(`${domain}.bot`, name);
-    else
-      local.remove(`${domain}.bot`);
   }
 }
 
