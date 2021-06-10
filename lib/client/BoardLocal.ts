@@ -4,8 +4,10 @@ import MemDown from 'memdown';
 import { LevelDownResponse } from './LevelDownResponse';
 
 export type Domain = string; // An internet-style m-ld domain name
-export type Version = 'v0' | 'v1' | 'v2' | 'v3';
-export const CURRENT_VERSION: Version = 'v3';
+export type Version = 'v0' | 'v1' | 'v2'
+  | 'v3' // Moved to Cache API
+  | 'v4'; // Journal and encoding changes for fusions
+export const CURRENT_VERSION: Version = 'v4';
 export const INDEXED_DB_VERSIONS: Version[] = ['v0', 'v1', 'v2'];
 
 const CACHE_KEY = 'board-data';
@@ -26,7 +28,8 @@ export class BoardLocal extends EventEmitter {
   /** Return of '' means create a new domain */
   targetDomain(domain: Domain | 'new'): Domain | '' {
     const first = this.domains.find(v => v[0] === CURRENT_VERSION)?.[1];
-    const invalid = (domain: Domain) => this.domains.some(v => v[0] !== CURRENT_VERSION && v[1] === domain);
+    const invalid = (domain: Domain) => this.domains.some(
+      v => v[0] !== CURRENT_VERSION && v[1] === domain);
     if (domain === 'new' || invalid(domain) || (!domain && !first)) {
       // Create a new domain
       return '';
@@ -41,12 +44,12 @@ export class BoardLocal extends EventEmitter {
     return (local.get<Domain[]>('m-ld.domains') ?? []).map(toVersioned);
   }
 
-  private setDomains(domains: [Version, Domain][]) {
+  private static setDomains(domains: [Version, Domain][]) {
     local.set<Domain[]>('m-ld.domains', domains.map(fromVersioned));
   }
 
   async removeDomain([version, name]: [Version, Domain]) {
-    this.setDomains(this.domains.filter(v => v[1] !== name));
+    BoardLocal.setDomains(this.domains.filter(v => v[1] !== name));
     if (INDEXED_DB_VERSIONS.includes(version)) {
       return new Promise((resolve, reject) => {
         const req = indexedDB.deleteDatabase(`level-js-${name}`);
@@ -89,7 +92,7 @@ export class BoardLocal extends EventEmitter {
     let localDomains = this.domains;
     localDomains = localDomains.filter(v => v[1] !== domain);
     localDomains.unshift([CURRENT_VERSION, domain]);
-    this.setDomains(localDomains);
+    BoardLocal.setDomains(localDomains);
     // Do we have a cache for this backend?
     const data = await (await this.cache).match(domain);
     // FIXME: location hack prevents multiple tabs on same domain
