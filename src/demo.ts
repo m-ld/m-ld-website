@@ -6,13 +6,9 @@ import { AblyRemotes } from '@m-ld/m-ld/dist/ably';
 import { WrtcPeering } from '@m-ld/m-ld/dist/wrtc';
 import { configureLogging, Grecaptcha, modernizd } from '@m-ld/io-web-runtime/dist/client';
 import * as d3 from 'd3';
-import { BoardLocal } from '../lib/client/BoardLocal'
+import { BoardLocal } from '../lib/client/BoardLocal';
 import {
-  initPopupControls,
-  loadingFinished,
-  showAbout,
-  showError,
-  showNotModern
+  initPopupControls, loadingFinished, showAbout, showError, showNotModern
 } from '../lib/client/PopupControls';
 import { initBoardControls } from '../lib/client/BoardControls';
 import { fetchConfig } from '../lib/client/Api';
@@ -23,7 +19,7 @@ import { debounce, debounceTime, filter, last, startWith, takeUntil } from 'rxjs
 import EventEmitter = require('events');
 
 window.onload = async function () {
-  await modernizd(['indexeddb']).catch(showNotModern);
+  await modernizd([]).catch(showNotModern);
   new Demo().initialise().catch(err =>
     showError(err, { href: '#new', text: 'create a new board' }));
 }
