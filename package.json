@@ -30,12 +30,13 @@
   },
   "dependencies": {
     "@m-ld/io-web-runtime": "^0.1.7",
-    "@m-ld/m-ld": "^0.7.0-0",
+    "@m-ld/m-ld": "^0.7.0-2",
     "@types/d3": "^5.16.4",
     "@types/jsoneditor": "^8.6.0",
     "@types/local-storage": "^1.4.0",
     "@types/memdown": "^3.0.0",
     "@types/rbush": "^3.0.0",
+    "ably": "^1.2.10",
     "compromise": "^13.7.0",
     "d3": "^5.16.0",
     "fast-array-diff": "^1.0.1",
@@ -48,6 +49,7 @@
     "page-lifecycle": "^0.1.2",
     "rbush": "^3.0.1",
     "rxjs": "^6.6.3",
+    "simple-peer": "^9.11.0",
     "timeago.js": "^4.0.2",
     "void-elements": "^3.1.0"
   },

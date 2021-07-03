@@ -51,13 +51,13 @@
   <section id="streams" class="section">
     <div class="columns has-text-centered">
       <div class="column">
-        <a class="box" href="/doc/#architecture" style="height: 100%">
-          <h1 class="title is-4">architecture</h1>
+        <a class="box" href="/doc/" style="height: 100%">
+          <h1 class="title is-4">docs</h1>
           <img src="/media/architecture.svg" />
         </a>
       </div>
       <div class="column">
-        <a class="box" href="http://spec.m-ld.org/" style="height: 100%">
+        <a class="box" href="https://spec.m-ld.org/#clone-api" style="height: 100%">
           <h1 class="title is-4">api</h1>
           <div class="content has-text-left">
             <pre>{% include 'api-example-1.json' %}</pre>
@@ -90,6 +90,18 @@
         </div>
       </div>
     </div>
+    <div class="box">
+      <div class="columns has-text-centered">
+        {% assign items = "news,demo,playground,faq,hello" | split: ',' %}
+        {%- for item in items -%}
+        <div class="column">
+          <a class="level-item button is-light is-medium" href="/{{ item }}/">
+            {% if item == 'hello' %}feedback{% else %}{{ item }}{% endif %}
+          </a>
+        </div>
+        {%- endfor -%}
+      </div>
+    </div>
   </section>
   <section id="why" class="section">
     <div class="columns">
@@ -113,11 +125,6 @@
         </article>
         {%- endfor -%}
       </div>
-    </div>
-  </section>
-  <section class="hero is-small mt-5">
-    <div class="hero-body">
-      {% include 'navbar', indexPage: true %}
     </div>
   </section>
   <footer class="footer">

@@ -1,11 +1,9 @@
 <nav class="navbar mb-3" role="navigation" aria-label="main navigation">
   <div class="container is-fluid">
     <div class="navbar-brand">
-      {% unless indexPage %}
       <a class="navbar-item" href="/">
         <img src="/m-ld.svg" width="112" />
       </a>
-      {% endunless %}
       <script>
       function navbarToggle() {
         document.querySelector('#navbarBurger').classList.toggle('is-active');
@@ -28,11 +26,9 @@
           docs
         </a>
         <div class="navbar-item has-dropdown is-hoverable">
-          {% unless indexPage %}
           <a class="navbar-link">
             platforms
           </a>
-          {% endunless %}
           <div class="navbar-dropdown">
             {%- for platform in index.platforms -%}
             {% if platform.url %}
@@ -70,7 +66,7 @@
         <div class="navbar-item">
           <div class="buttons">
             <a class="button is-info" href="/faq/">
-              <strong>FAQ</strong>
+              <strong>faq</strong>
             </a>
             <a href="/hello/" class="button is-primary">
               <strong>feedback</strong>
