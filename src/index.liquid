@@ -26,6 +26,20 @@
       </div>
     </div>
   </section>
+  <section class="section is-small">
+    <div class="columns has-text-centered">
+      {% assign items = "news,demo,playground,faq,hello" | split: ',' %}
+      {%- for item in items -%}
+        <div class="column">
+          <a class="level-item button is-medium is-light has-text-dark"
+             href="/{{ item }}/"
+             {% if item == 'demo' or item == 'playground' %}target="_blank"{% endif %}>
+            {% if item == 'hello' %}feedback{% else %}{{ item }}{% endif %}
+          </a>
+        </div>
+      {%- endfor -%}
+    </div>
+  </section>
   <section id="intro" class="section">
     <div class="columns">
       <div class="column is-8-desktop is-offset-2-desktop">
@@ -88,18 +102,6 @@
             {%- endfor -%}
           </div>
         </div>
-      </div>
-    </div>
-    <div class="box">
-      <div class="columns has-text-centered">
-        {% assign items = "news,demo,playground,faq,hello" | split: ',' %}
-        {%- for item in items -%}
-        <div class="column">
-          <a class="level-item button is-light is-medium" href="/{{ item }}/">
-            {% if item == 'hello' %}feedback{% else %}{{ item }}{% endif %}
-          </a>
-        </div>
-        {%- endfor -%}
       </div>
     </div>
   </section>
