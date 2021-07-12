@@ -14,7 +14,7 @@ import { initBoardControls } from '../lib/client/BoardControls';
 import { fetchConfig } from '../lib/client/Api';
 import * as lifecycle from 'page-lifecycle';
 import * as LOG from 'loglevel';
-import { EMPTY, fromEvent, merge } from 'rxjs';
+import { fromEvent, merge, of } from 'rxjs';
 import { debounce, debounceTime, filter, last, startWith, takeUntil } from 'rxjs/operators';
 import EventEmitter = require('events');
 
@@ -119,7 +119,7 @@ class Demo {
       // Stop when meld is closed
       takeUntil(meld.status.pipe(last())),
       // Save and do not overlap saves
-      debounce(() => this.local.dirty ? autoSave() : EMPTY)
+      debounce(() => this.local.dirty ? autoSave() : of(0))
     ).subscribe(() =>
       // Only allow navigation when saved
       this.navigateIfPending());

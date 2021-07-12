@@ -7,14 +7,15 @@ import {
   initPopupControls, showInfo, showMessage, showNotModern, showWarning
 } from '../lib/client/PopupControls';
 import { fetchConfig } from '../lib/client/Api';
-import { clone, MeldClone, isRead, isWrite, MeldUpdate } from '@m-ld/m-ld';
+import { clone, isRead, isWrite, MeldClone, MeldUpdate } from '@m-ld/m-ld';
 import { AblyRemotes, MeldAblyConfig } from '@m-ld/m-ld/dist/ably';
-import MemDown from 'memdown';
+import { MemDown } from '../lib/MemDown';
 import { render as renderTime } from 'timeago.js';
 import { parse, stringify } from 'querystring';
 import * as local from 'local-storage';
 import { LevelDownResponse } from '../lib/client/LevelDownResponse';
 import { WrtcPeering } from '@m-ld/m-ld/dist/wrtc';
+
 const queryTemplates = require('../lib/templates/query-templates.json');
 const txnTemplates = require('../lib/templates/txn-templates.json');
 

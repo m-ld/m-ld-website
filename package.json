@@ -5,9 +5,8 @@
   "scripts": {
     "link-locals": "npm link ../m-ld-js ../m-ld-io-web-base/build ../m-ld-io-web-base/runtime",
     "clean": "rm -rf _site",
-    "build": "jest && npx eleventy",
-    "local": "now dev",
-    "dev": "jest --watch"
+    "build": "npx eleventy",
+    "local": "now dev"
   },
   "repository": {
     "type": "git",
@@ -21,11 +20,8 @@
   "homepage": "https://github.com/m-ld/m-ld-website#readme",
   "devDependencies": {
     "@m-ld/io-web-build": "^0.1.5",
-    "@types/jest": "^26.0.15",
     "@types/readable-stream": "^2.3.9",
-    "jest": "^26.6.3",
     "keypress": "^0.2.1",
-    "ts-jest": "^26.4.4",
     "typescript": "^4.2.4"
   },
   "dependencies": {
@@ -37,7 +33,6 @@
     "@types/memdown": "^3.0.0",
     "@types/rbush": "^3.0.0",
     "ably": "^1.2.10",
-    "compromise": "^13.7.0",
     "d3": "^5.16.0",
     "fast-array-diff": "^1.0.1",
     "jsoneditor": "^9.1.4",
@@ -45,31 +40,12 @@
     "line2": "^0.2.1",
     "local-storage": "^2.0.0",
     "loglevel": "^1.7.1",
-    "memdown": "^5.1.0",
+    "memdown": "^6.0.0",
     "page-lifecycle": "^0.1.2",
     "rbush": "^3.0.1",
-    "rxjs": "^6.6.3",
+    "rxjs": "^7.2.0",
     "simple-peer": "^9.11.0",
     "timeago.js": "^4.0.2",
     "void-elements": "^3.1.0"
-  },
-  "jest": {
-    "roots": [
-      "<rootDir>/lib/",
-      "<rootDir>/test/"
-    ],
-    "testMatch": [
-      "<rootDir>/test/**/*.test.ts"
-    ],
-    "transform": {
-      "^.+\\.(ts|tsx)?$": "ts-jest"
-    },
-    "globals": {
-      "ts-jest": {
-        "tsConfig": {
-          "esModuleInterop": true
-        }
-      }
-    }
   }
 }

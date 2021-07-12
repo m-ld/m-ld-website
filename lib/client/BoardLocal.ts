@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
 import * as local from 'local-storage';
-import MemDown from 'memdown';
+import { MemDown } from '../MemDown';
 import { LevelDownResponse } from './LevelDownResponse';
 
 export type Domain = string; // An internet-style m-ld domain name

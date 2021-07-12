@@ -18,7 +18,7 @@ module.exports = class {
 
   /**
    * @param {{ data: object, fileSlug: string }} topic Eleventy collection entry
-   * @returns {TopicIndexEntry} index entry, see ../api/chat.ts
+   * @returns {TopicIndexEntry} index entry
    */
   getTopicIndexEntry(topic) {
     return {
