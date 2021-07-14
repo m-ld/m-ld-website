@@ -4,7 +4,7 @@ tags:
   - news # 1th tag is page
 title: Securing Shared Decentralised Live Information
 patterns:
-  - 'Javascript'
+  - 'NLnet'
 summary: a grant funded project with NLnet
 author:
   git: gsvarovsky
@@ -35,6 +35,6 @@ collaboration with NLnet and its partners.
 NGI Assure is made possible with financial support from the European
 Commission's Next [Generation Internet programme](https://ngi.eu/).
 
-Look out for our introductory article, coming soon; and you'll also be able to
-keep track of the project on [GitHub](https://github.com/m-ld). As always, your
+Check out the project on
+[GitHub](https://github.com/m-ld/m-ld-security-spec). As always, your
 [feedback](/hello/) is most welcome! Do you have a use-case we can talk about?
