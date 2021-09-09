@@ -1,11 +1,11 @@
 import * as d3 from 'd3';
-import { setAttr, svgPoint, SVG, node } from './d3Util';
+import { node, setAttr, SVG, svgPoint } from './d3Util';
 import { Rectangle } from '../Shapes';
 
 export abstract class InfiniteView {
   readonly svg: SVG;
 
-  constructor(selectSvg: string) {
+  protected constructor(selectSvg: string) {
     this.svg = d3.select(selectSvg);
     window.onresize = () => {
       // Coerce the viewbox to the aspect ratio of the screen but keep the zoom
@@ -66,9 +66,9 @@ export abstract class InfiniteView {
   }
 
   svgRect(el: Element): Rectangle {
-    var { left, top, right, bottom } = el.getBoundingClientRect();
-    var [left, top] = this.clientToSvg([left, top]),
-      [right, bottom] = this.clientToSvg([right, bottom]);
+    let { left, top, right, bottom } = el.getBoundingClientRect();
+    [left, top] = this.clientToSvg([left, top]);
+    [right, bottom] = this.clientToSvg([right, bottom]);
     return new Rectangle([left, top], [right - left, bottom - top]);
   }
 

@@ -1,7 +1,8 @@
 ---
 tags:
   - topic # mandatory
-  - why # 1th tag is page
+  - index # 1th tag is page
+  - why
 title: Decentralise all the things!
 patterns:
   - 'decentralise'

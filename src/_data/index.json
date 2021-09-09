@@ -11,12 +11,14 @@
       "name": "Java",
       "icon": "fab fa-java",
       "soon": true,
+      "url": "https://github.com/m-ld/m-ld-spec/issues/42",
       "summary": "For Java environments, typically servers."
     },
     {
       "name": "Docker",
       "icon": "fab fa-docker",
       "soon": true,
+      "url": "https://github.com/m-ld/m-ld-spec/issues/41",
       "summary": "For microservice, serverless and server environments."
     },
     {
@@ -36,7 +38,7 @@
     {
       "name": "What do you need?",
       "icon": "fas fa-edit",
-      "url": "https://github.com/m-ld/m-ld-spec/issues",
+      "url": "https://github.com/m-ld/m-ld-spec/issues/new",
       "summary": "Please create a ticket for the platform you need."
     }
   ],
