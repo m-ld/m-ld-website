@@ -1,7 +1,8 @@
 ---
 tags:
   - topic # mandatory
-  - why # 1th tag is page
+  - index # 1th tag is page
+  - why
 title: Composing knowledge from events
 patterns:
   - '(state|data|knowledge) && (event|message)'

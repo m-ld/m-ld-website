@@ -1,7 +1,8 @@
 ---
 tags:
   - topic # mandatory
-  - why # 1th tag is page
+  - index # 1th tag is page
+  - why
 title: Offline and collaboration features
 patterns:
   - 'collaboration'

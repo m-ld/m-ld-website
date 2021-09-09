@@ -3,6 +3,7 @@ tags:
   - topic # mandatory
   - news # 1th tag is page
 title: The Data Æther
+image: data-aether.jpg
 patterns:
   - 'data * ether'
   - 'data * aether'
