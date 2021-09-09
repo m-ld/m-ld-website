@@ -2,7 +2,7 @@
 tags:
   - topic # mandatory
   - news # 1th tag is page
-title: July 2021
+title: July 2021 Update
 patterns:
   - 'Javascript'
 summary: vision sharing, a new release & projects underway

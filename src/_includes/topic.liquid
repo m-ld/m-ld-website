@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <!--
+  This is a placeholder page for topic meta properties.
+  Navigating to this page with a browser will redirect to the relevant
+  aggregation page for the page tag.
+  -->
+  {% capture page_path %}{% if tags[1] == 'index' %}/#{{ page.fileSlug }}{% else %}/{{ tags[1] }}/#{{ page.fileSlug }}{% endif %}{% endcapture %}
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>m-ld | {{ title }}</title>
+  <meta property="og:type" content="article" />
+  {% if author %}
+  <meta property="article:author" content="https://github.com/{{author.git}}"/>
+  {% endif %}
+  <meta property="og:title" content="{{ title }}"/>
+  {% if summary %}
+  <meta property="og:description" content="{{ summary }}"/>
+  {% endif %}
+  <meta property="og:image" content="https://m-ld.org/media/{{ image | default: 'just-lists.jpg' }}">
+  <meta property="og:url" content="https://m-ld.org{{ page_path }}" />
+  <meta property="og:site_name" content="m-ld" />
+  <meta property="twitter:image" content="https://m-ld.org/media/{{ image | default: 'just-lists.jpg' }}">
+  <!--suppress JSValidateTypes -->
+  <script>
+    // Re-direct all topics to the relevant aggregation page
+    window.location = '{{ page_path }}'
+  </script>
+</head>
+
+<body>
+</body>
+
+</html>
