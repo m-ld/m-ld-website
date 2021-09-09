@@ -3,6 +3,7 @@ tags:
   - topic # mandatory
   - news # 1th tag is page
 title: Realtime Information Sharing with RDF
+image: conference.jpg
 patterns:
   - 'RDF'
   - 'Semantics'
