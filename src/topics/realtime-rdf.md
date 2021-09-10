@@ -13,7 +13,7 @@ author:
   git: gsvarovsky
   name: George
 date: 2021-09-09
-linkedin: TODO
+linkedin: m-ld-io_realtime-information-sharing-with-rdf-activity-6842042137136123904-2c9r
 ---
 This week we were proud to present a posters & demos track paper about **m-ld** at [SEMANTiCS](https://2021-eu.semantics.cc/)!
 
