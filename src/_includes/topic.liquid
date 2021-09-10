@@ -7,27 +7,36 @@
   Navigating to this page with a browser will redirect to the relevant
   aggregation page for the page tag.
   -->
-  {% capture page_path %}{% if tags[1] == 'index' %}/#{{ page.fileSlug }}{% else %}/{{ tags[1] }}/#{{ page.fileSlug }}{% endif %}{% endcapture %}
-
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>m-ld | {{ title }}</title>
-  <meta property="og:type" content="article" />
+  <meta name="type" property="og:type" content="article"/>
+  <meta name="title" property="og:title" content="{{ title }}"/>
   {% if author %}
-  <meta property="article:author" content="https://github.com/{{author.git}}"/>
+    <meta name="author" property="article:author"
+          content="https://github.com/{{ author.git }}"/>
   {% endif %}
-  <meta property="og:title" content="{{ title }}"/>
+  {% if date %}
+    <meta property="article:published_time" content="{{ date | date: '%Y-%m-%d' }}"/>
+  {% endif %}
   {% if summary %}
-  <meta property="og:description" content="{{ summary }}"/>
+    <meta name="description" property="og:description" content="{{ summary }}"/>
   {% endif %}
-  <meta property="og:image" content="https://m-ld.org/media/{{ image | default: 'just-lists.jpg' }}">
-  <meta property="og:url" content="https://m-ld.org/topics/{{ page.fileSlug }}/" />
-  <meta property="og:site_name" content="m-ld" />
-  <meta property="twitter:image" content="https://m-ld.org/media/{{ image | default: 'just-lists.jpg' }}">
+  {% if image %}
+    {% capture image_url %}https://m-ld.org/media/{{ image | default: 'just-lists.jpg' }}{% endcapture %}
+    <meta name="image" property="og:image" content="{{ image_url }}">
+    <meta property="twitter:image" content="{{ image_url }}">
+  {% endif %}
+  <meta property="og:url" content="https://m-ld.org/topics/{{ page.fileSlug }}/"/>
+  <meta property="og:site_name" content="m-ld"/>
   <!--suppress JSValidateTypes -->
   <script>
     // Re-direct all topics to the relevant aggregation page
-    window.location = '{{ page_path }}'
+    {% if tags[1] == 'index' %}
+    window.location = '/#{{ page.fileSlug }}';
+    {% else %}
+    window.location = '/{{ tags[1] }}/#{{ page.fileSlug }}';
+    {% endif %}
   </script>
 </head>
 
