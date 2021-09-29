@@ -31,7 +31,7 @@
       {% assign items = "news,demo,playground,faq,hello" | split: ',' %}
       {%- for item in items -%}
         <div class="column">
-          <a class="level-item button is-medium is-light has-text-dark"
+          <a class="level-item button is-medium is-light is-link"
              href="/{{ item }}/"
              {% if item == 'demo' or item == 'playground' %}target="_blank"{% endif %}>
             {% if item == 'hello' %}feedback{% else %}{{ item }}{% endif %}
