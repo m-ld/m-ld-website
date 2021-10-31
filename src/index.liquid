@@ -26,15 +26,13 @@
       </div>
     </div>
   </section>
-  <section class="section is-small">
+  <section id="homenu" class="section is-small">
     <div class="columns has-text-centered">
-      {% assign items = "news,demo,playground,faq,hello" | split: ',' %}
-      {%- for item in items -%}
+      {%- for item in index.homenu -%}
         <div class="column">
-          <a class="level-item button is-medium is-light is-link"
-             href="/{{ item }}/"
-             {% if item == 'demo' or item == 'playground' %}target="_blank"{% endif %}>
-            {% if item == 'hello' %}feedback{% else %}{{ item }}{% endif %}
+          <a class="level-item button is-medium is-light is-link" href="{{ item.href }}"
+             {% if item.target %}target="{{ item.target }}"{% endif %}>
+            {{ item.label }}
           </a>
         </div>
       {%- endfor -%}
@@ -108,13 +106,17 @@
   <section id="why" class="section">
     <div class="columns">
       <div class="column is-8-desktop is-offset-2-desktop">
-        <h1 class="title is-4 has-text-centered">why?</h1>
+        <h1 class="title is-4 has-text-centered">why</h1>
         {%- for why in collections.why -%}
         <article id="{{ why.fileSlug }}" class="media">
           <figure class="media-left">
+            {% if why.data.icon contains ".svg" %}
             <svg viewBox="0 0 512 512" width="64">
               {% include why.data.icon %}
             </svg>
+            {% else %}
+            <img src="{{ why.data.icon }}" alt="why.data.title"/>
+            {%  endif %}
           </figure>
           <div class="media-content">
             <div class="content has-text-weight-bold is-medium">
