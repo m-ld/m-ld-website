@@ -13,7 +13,7 @@ export class LevelDownResponse {
   private pos = 0;
 
   static async readInto(
-    backend: AbstractLevelDOWN<Uint8Array, Uint8Array>, response: Response) {
+    backend: AbstractLevelDOWN<string, Buffer>, response: Response) {
     if (response.body != null) {
       const reading = new LevelDownResponse(response.body.getReader());
       while (true) {
@@ -21,7 +21,7 @@ export class LevelDownResponse {
         if (key != null && value != null)
           await new Promise((resolve, reject) => backend.put(
             // Must convert to Buffer because memdown detects Buffer._isBuffer
-            Buffer.from(key), Buffer.from(value),
+            key.toString(), Buffer.from(value),
             err => err ? reject(err) : resolve(null)));
         else
           break;
@@ -30,7 +30,7 @@ export class LevelDownResponse {
   }
 
   static readFrom(
-    backend: AbstractLevelDOWN<Uint8Array, Uint8Array>): Response {
+    backend: AbstractLevelDOWN<string, Buffer>): Response {
     const iterator = backend.iterator();
     const stream = new ReadableStream({
       async pull(controller) {
@@ -43,7 +43,7 @@ export class LevelDownResponse {
             controller.close();
           } else {
             controller.enqueue(new Uint8Array([
-              ...int32Buf(key.length), ...key,
+              ...int32Buf(key.length), ...Buffer.from(key),
               ...int32Buf(value.length), ...value
             ]));
           }

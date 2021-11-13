@@ -9,7 +9,7 @@ import {
 import { fetchConfig } from '../lib/client/Api';
 import { clone, isRead, isWrite, MeldClone, MeldUpdate } from '@m-ld/m-ld';
 import { AblyRemotes, MeldAblyConfig } from '@m-ld/m-ld/dist/ably';
-import { MemDown } from '../lib/MemDown';
+import { MeldMemDown } from '@m-ld/m-ld/dist/memdown';
 import { render as renderTime } from 'timeago.js';
 import { parse, stringify } from 'querystring';
 import * as local from 'local-storage';
@@ -192,7 +192,7 @@ class Playground extends D3View<HTMLDivElement> {
 
   async downloadClone() {
     const config = await fetchConfig(this.domain);
-    const backend = new MemDown;
+    const backend = new MeldMemDown;
     const tempClone = await clone(backend, this.remotes(config), config);
     await tempClone.status.becomes({ outdated: false });
     return new Promise<void>((resolve, reject) => tempClone.read(() => {
@@ -223,7 +223,7 @@ class Playground extends D3View<HTMLDivElement> {
         const config = await fetchConfig(this.domain);
         this.domain = this.previousDomain = config['@domain'];
         Object.assign(config['@context'] ??= {}, this.options.context);
-        this.clone = await clone(new MemDown, this.remotes(config), config);
+        this.clone = await clone(new MeldMemDown, this.remotes(config), config);
         this.clone.follow(update => this.onUpdate(update));
         await this.clone.status.becomes({ outdated: false });
         showInfo(`Connected to ${config['@domain']}`);
