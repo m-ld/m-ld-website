@@ -6,8 +6,9 @@ import { LevelDownResponse } from './LevelDownResponse';
 export type Domain = string; // An internet-style m-ld domain name
 export type Version = 'v0' | 'v1' | 'v2'
   | 'v3' // Moved to Cache API
-  | 'v4'; // Journal and encoding changes for fusions
-export const CURRENT_VERSION: Version = 'v4';
+  | 'v4' // Journal and encoding changes for fusions
+  | 'v5'; // TIDs in key-values
+export const CURRENT_VERSION: Version = 'v5';
 export const INDEXED_DB_VERSIONS: Version[] = ['v0', 'v1', 'v2'];
 
 const CACHE_KEY = 'board-data';
