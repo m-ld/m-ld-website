@@ -13,10 +13,10 @@ export async function fetchConfig(
   domain: string | ''): Promise<Config.Response> {
   const req: Config.Request =
     authorisedRequest(uuid(), domain, `v3:${await Grecaptcha.execute('config')}`);
-  const config: Config.Response = await fetchJson('/api/config', req, async res => {
+  const config: Config.Response = await fetchApiJson('config', req, async res => {
     if (res.status === 401)
       // Google thinks we're a bot, try interactive reCAPTCHA
-      return fetchJson('/api/config', { ...req, token: `v2:${await showGrecaptcha()}` });
+      return fetchApiJson('config', { ...req, token: `v2:${await showGrecaptcha()}` });
   });
   config.ably.token = config.token;
   config.ably.authCallback = async (_, cb) =>
@@ -34,10 +34,10 @@ function renewToken(config: Config.Response): Promise<Renew.Response> {
     ...authorisedRequest(config['@id'], config['@domain'], `jwt:${config.token}`),
     logLevel: config.logLevel
   };
-  return fetchJson('/api/renew', req, async res => {
+  return fetchApiJson('renew', req, async res => {
     // Token renewal failed, possibly due to a period of passivation
     if (res.status === 401 && lifecycle.state === 'active')
-      return fetchJson('/api/renew',
+      return fetchApiJson('renew',
         { ...req, token: `recaptcha:${await showGrecaptcha()}` });
   });
 }
@@ -46,9 +46,9 @@ function authorisedRequest(id: string, domain: string, token: string): Authorise
   return { '@id': id, '@domain': domain, token, origin: window.location.origin };
 }
 
-async function fetchJson<Q extends AuthorisedRequest, S>(
-  api: string, req: Q, fallback?: (res: Response) => Promise<S | undefined>): Promise<S> {
-  const res = await fetch(api, {
+async function fetchApiJson<Q extends AuthorisedRequest, S>(
+  api: 'config' | 'renew', req: Q, fallback?: (res: Response) => Promise<S | undefined>): Promise<S> {
+  const res = await fetch(`/api/${api}`, {
     method: 'post',
     headers: { 'Content-type': 'application/json; charset=UTF-8' },
     body: JSON.stringify(req)
