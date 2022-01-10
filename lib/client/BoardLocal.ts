@@ -2,6 +2,14 @@ import { EventEmitter } from 'events';
 import * as local from 'local-storage';
 import { MeldMemDown } from '@m-ld/m-ld/dist/memdown';
 import { LevelDownResponse } from './LevelDownResponse';
+import type { LockManager } from 'navigator.locks';
+
+require('navigator.locks'); // Polyfill
+declare global {
+  interface Navigator {
+    locks: LockManager;
+  }
+}
 
 export type Domain = string; // An internet-style m-ld domain name
 export type Version = 'v0' | 'v1' | 'v2'

@@ -1,9 +1,8 @@
 import { BoardView } from '../lib/client/BoardView';
 import { MessageSubject } from '../lib/Message';
 import { node } from '../lib/client/d3Util';
-import { clone, MeldClone, shortId } from '@m-ld/m-ld';
-import { AblyRemotes } from '@m-ld/m-ld/dist/ably';
-import { WrtcPeering } from '@m-ld/m-ld/dist/wrtc';
+import { clone, MeldClone, MeldConfig, shortId } from '@m-ld/m-ld';
+import { AblyWrtcRemotes } from '@m-ld/m-ld/dist/ably';
 import { configureLogging, Grecaptcha, modernizd } from '@m-ld/io-web-runtime/dist/client';
 import * as d3 from 'd3';
 import { BoardLocal } from '../lib/client/BoardLocal';
@@ -16,13 +15,13 @@ import * as lifecycle from 'page-lifecycle';
 import * as LOG from 'loglevel';
 import { fromEvent, merge, of } from 'rxjs';
 import { debounce, debounceTime, filter, last, startWith, takeUntil } from 'rxjs/operators';
-import EventEmitter = require('events');
+import { EventEmitter } from 'events';
 
 window.onload = async function () {
   await modernizd([]).catch(showNotModern);
   new Demo().initialise().catch(err =>
     showError(err, { href: '#new', text: 'create a new board' }));
-}
+};
 
 window.onhashchange = function () {
   location.reload();
@@ -46,13 +45,24 @@ class Demo {
     configureLogging(config, LOG);
     domain = config['@domain'];
 
-    history.replaceState(null, '', '#' + domain);
+    await navigator.locks.request(domain, { ifAvailable: true },
+      lock => new Promise(async (resolve, reject) => {
+        if (lock == null) {
+          reject(`${domain} is open on another tab`);
+        } else {
+          window.addEventListener('unload', resolve);
+          this.loadDomain(config).catch(reject);
+        }
+      }));
+  }
+
+  async loadDomain(config: MeldConfig) {
+    history.replaceState(null, '', '#' + config['@domain']);
 
     // Initialise the m-ld clone with a local backend
-    const backend = await this.local.load(domain);
+    const backend = await this.local.load(config['@domain']);
     const backendEvents = new EventEmitter;
-    const remotes = new AblyRemotes(config, { peering: new WrtcPeering(config) });
-    const meld = await clone(backend, remotes, config, { backendEvents });
+    const meld = await clone(backend, AblyWrtcRemotes, config, { backendEvents });
     window.addEventListener('unload', () => meld.close());
 
     // Set up auto-save.
@@ -69,7 +79,7 @@ class Demo {
     loadingFinished();
 
     // The welcome message uses the id of the domain - it can't be deleted
-    const welcomeId = shortId(domain);
+    const welcomeId = shortId(config['@domain']);
 
     // Create the board UI View
     new BoardView('#board', meld, welcomeId);
@@ -79,7 +89,7 @@ class Demo {
     if (isNew) {
       await meld.write(MessageSubject.create({
         '@id': welcomeId,
-        text: `Welcome to your message board, ${domain}!<br>
+        text: `Welcome to your message board, ${config['@domain']}!<br>
         For help using this app, click the (?) button on the left.`,
         x: 200, y: 100
       }));

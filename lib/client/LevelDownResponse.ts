@@ -20,8 +20,8 @@ export class LevelDownResponse {
         const [key, value] = await reading.read();
         if (key != null && value != null)
           await new Promise((resolve, reject) => backend.put(
-            // Must convert to Buffer because memdown detects Buffer._isBuffer
-            key.toString(), Buffer.from(value),
+            // Must convert value to Buffer because memdown detects Buffer._isBuffer
+            Buffer.from(key).toString(), Buffer.from(value),
             err => err ? reject(err) : resolve(null)));
         else
           break;
