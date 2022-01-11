@@ -30,6 +30,9 @@ export function initBoardControls(local: BoardLocal) {
         'You can keep working, but don\'t refresh the page.');
   });
 
+  d3.select('.download-board').on(
+    'mousedown', () => local.download());
+
   function updateBoardPicks() {
     const boardPicks = boardPicker.select('#boards')
       .selectAll('.pick-board').data(local.domains)

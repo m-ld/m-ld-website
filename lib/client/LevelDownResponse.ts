@@ -1,4 +1,5 @@
 import { AbstractLevelDOWN } from 'abstract-leveldown';
+import { decode } from '@ably/msgpack-js';
 
 export function int32Buf(int: number) {
   return new Uint8Array(new Uint32Array([int]).buffer);
@@ -13,7 +14,10 @@ export class LevelDownResponse {
   private pos = 0;
 
   static async readInto(
-    backend: AbstractLevelDOWN<string, Buffer>, response: Response) {
+    backend: AbstractLevelDOWN<string, Buffer>, response: Response
+  ) {
+    if (response.headers.get('Content-Type') !== 'application/octet-stream')
+      throw new Error('Unsupported content type');
     if (response.body != null) {
       const reading = new LevelDownResponse(response.body.getReader());
       while (true) {
@@ -30,8 +34,11 @@ export class LevelDownResponse {
   }
 
   static readFrom(
-    backend: AbstractLevelDOWN<string, Buffer>): Response {
+    backend: AbstractLevelDOWN<string, Buffer>,
+    type: 'application/octet-stream' | 'application/json' = 'application/octet-stream'
+  ): Response {
     const iterator = backend.iterator();
+    let i = 0;
     const stream = new ReadableStream({
       async pull(controller) {
         iterator.next((err, key, value) => {
@@ -40,17 +47,32 @@ export class LevelDownResponse {
             controller.error(err);
           } else if (key == null || value == null) {
             iterator.end(err => err && console.warn(err));
+            if (type === 'application/json')
+              controller.enqueue(Buffer.from('\n}'));
             controller.close();
           } else {
-            controller.enqueue(new Uint8Array([
-              ...int32Buf(key.length), ...Buffer.from(key),
-              ...int32Buf(value.length), ...value
-            ]));
+            switch (type) {
+              case 'application/octet-stream':
+                controller.enqueue(new Uint8Array([
+                  ...int32Buf(key.length), ...Buffer.from(key),
+                  ...int32Buf(value.length), ...value
+                ]));
+                break;
+              case 'application/json':
+                // Key may emerge as a buffer
+                const keyStr = Buffer.from(key).toString('utf8');
+                const kvpStr = JSON.stringify({
+                  // Using some insider knowledge of the persistence format
+                  [keyStr]: keyStr.startsWith('_qs:') ? decode(value) : value
+                }).slice(1, -1);
+                controller.enqueue(Buffer.from(`${i++ ? ',' : '{'}\n${kvpStr}`));
+                break;
+            }
           }
         });
       }
     });
-    const headers = new Headers({ 'Content-Type': 'application/octet-stream' });
+    const headers = new Headers({ 'Content-Type': type });
     return new Response(stream, { headers });
   }
 
