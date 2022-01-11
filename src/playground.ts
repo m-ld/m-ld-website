@@ -8,13 +8,12 @@ import {
 } from '../lib/client/PopupControls';
 import { fetchConfig } from '../lib/client/Api';
 import { clone, isRead, isWrite, MeldClone, MeldUpdate } from '@m-ld/m-ld';
-import { AblyRemotes, MeldAblyConfig } from '@m-ld/m-ld/dist/ably';
-import { MemDown } from '../lib/MemDown';
+import { AblyWrtcRemotes } from '@m-ld/m-ld/dist/ably';
+import { MeldMemDown } from '@m-ld/m-ld/dist/memdown';
 import { render as renderTime } from 'timeago.js';
 import { parse, stringify } from 'querystring';
 import * as local from 'local-storage';
 import { LevelDownResponse } from '../lib/client/LevelDownResponse';
-import { WrtcPeering } from '@m-ld/m-ld/dist/wrtc';
 
 const queryTemplates = require('../lib/templates/query-templates.json');
 const txnTemplates = require('../lib/templates/txn-templates.json');
@@ -192,8 +191,8 @@ class Playground extends D3View<HTMLDivElement> {
 
   async downloadClone() {
     const config = await fetchConfig(this.domain);
-    const backend = new MemDown;
-    const tempClone = await clone(backend, this.remotes(config), config);
+    const backend = new MeldMemDown;
+    const tempClone = await clone(backend, AblyWrtcRemotes, config);
     await tempClone.status.becomes({ outdated: false });
     return new Promise<void>((resolve, reject) => tempClone.read(() => {
       LevelDownResponse.readFrom(backend).blob().then(blob => {
@@ -223,7 +222,7 @@ class Playground extends D3View<HTMLDivElement> {
         const config = await fetchConfig(this.domain);
         this.domain = this.previousDomain = config['@domain'];
         Object.assign(config['@context'] ??= {}, this.options.context);
-        this.clone = await clone(new MemDown, this.remotes(config), config);
+        this.clone = await clone(new MeldMemDown, AblyWrtcRemotes, config);
         this.clone.follow(update => this.onUpdate(update));
         await this.clone.status.becomes({ outdated: false });
         showInfo(`Connected to ${config['@domain']}`);
@@ -234,10 +233,6 @@ class Playground extends D3View<HTMLDivElement> {
         this.loading = false;
       }
     }
-  }
-
-  private remotes(config: MeldAblyConfig) {
-    return new AblyRemotes(config, { peering: new WrtcPeering(config) });
   }
 
   private onUpdate(update: MeldUpdate) {

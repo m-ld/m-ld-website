@@ -1,19 +1,28 @@
 import { EventEmitter } from 'events';
 import * as local from 'local-storage';
-import { MemDown } from '../MemDown';
+import { MeldMemDown } from '@m-ld/m-ld/dist/memdown';
 import { LevelDownResponse } from './LevelDownResponse';
+import type { LockManager } from 'navigator.locks';
+
+require('navigator.locks'); // Polyfill
+declare global {
+  interface Navigator {
+    locks: LockManager;
+  }
+}
 
 export type Domain = string; // An internet-style m-ld domain name
 export type Version = 'v0' | 'v1' | 'v2'
   | 'v3' // Moved to Cache API
-  | 'v4'; // Journal and encoding changes for fusions
-export const CURRENT_VERSION: Version = 'v4';
+  | 'v4' // Journal and encoding changes for fusions
+  | 'v5'; // TIDs in key-values
+export const CURRENT_VERSION: Version = 'v5';
 export const INDEXED_DB_VERSIONS: Version[] = ['v0', 'v1', 'v2'];
 
 const CACHE_KEY = 'board-data';
 
 export class BoardLocal extends EventEmitter {
-  private backend: MemDown<Uint8Array, Uint8Array> | undefined;
+  private backend: MeldMemDown | undefined;
   private domain: Domain | undefined;
   private cache: Promise<Cache>;
   private _destination: Domain | 'home' | 'new' | undefined;
@@ -96,7 +105,7 @@ export class BoardLocal extends EventEmitter {
     // Do we have a cache for this backend?
     const data = await (await this.cache).match(domain);
     // FIXME: location hack prevents multiple tabs on same domain
-    const backend = this.backend = Object.assign(new MemDown, { location: domain });
+    const backend = this.backend = Object.assign(new MeldMemDown, { location: domain });
     this.domain = domain;
     if (data != null) {
       await LevelDownResponse.readInto(backend, data);

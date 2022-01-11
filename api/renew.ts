@@ -1,6 +1,7 @@
 import { Renew } from '../lib/dto';
-import { responder } from '@m-ld/io-web-runtime/dist/lambda';
-import { ablyJwtAuth, ablyToken, PrefixAuth, recaptchaV2Auth } from '../lib/api/authorisations';
+import { PrefixAuth, responder } from '@m-ld/io-web-runtime/dist/lambda';
+import { recaptchaV2Auth } from '@m-ld/io-web-runtime/dist/server/recaptcha';
+import { ablyJwtAuth, ablyToken } from '@m-ld/io-web-runtime/dist/server/ably';
 
 // Authorisation for token renewal can be a previous token or a reCAPTCHA
 export default responder<Renew.Request, Renew.Response>(new PrefixAuth({

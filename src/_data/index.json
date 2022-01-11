@@ -1,5 +1,33 @@
 {
   "tagline": "live information sharing",
+  "homenu": [
+    {
+      "href": "#why",
+      "label": "why"
+    },
+    {
+      "href": "/news/",
+      "label": "news"
+    },
+    {
+      "href": "/demo/",
+      "label": "demo",
+      "target": "_blank"
+    },
+    {
+      "href": "/playground/",
+      "label": "playground",
+      "target": "_blank"
+    },
+    {
+      "href": "/faq/",
+      "label": "faq"
+    },
+    {
+      "href": "/hello/",
+      "label": "feedback"
+    }
+  ],
   "platforms": [
     {
       "name": "Javascript",
