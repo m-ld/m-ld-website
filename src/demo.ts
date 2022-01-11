@@ -1,21 +1,14 @@
 import { BoardView } from '../lib/client/BoardView';
 import { MessageSubject } from '../lib/Message';
-import { node } from '../lib/client/d3Util';
-import { clone, MeldClone, MeldConfig, shortId } from '@m-ld/m-ld';
-import { AblyWrtcRemotes } from '@m-ld/m-ld/dist/ably';
+import { MeldConfig, shortId } from '@m-ld/m-ld';
 import { configureLogging, Grecaptcha, modernizd } from '@m-ld/io-web-runtime/dist/client';
-import * as d3 from 'd3';
 import { BoardLocal } from '../lib/client/BoardLocal';
 import {
   initPopupControls, loadingFinished, showAbout, showError, showNotModern
 } from '../lib/client/PopupControls';
 import { initBoardControls } from '../lib/client/BoardControls';
 import { fetchConfig } from '../lib/client/Api';
-import * as lifecycle from 'page-lifecycle';
 import * as LOG from 'loglevel';
-import { fromEvent, merge, of } from 'rxjs';
-import { debounce, debounceTime, filter, last, startWith, takeUntil } from 'rxjs/operators';
-import { EventEmitter } from 'events';
 
 window.onload = async function () {
   await modernizd([]).catch(showNotModern);
@@ -60,13 +53,7 @@ class Demo {
     history.replaceState(null, '', '#' + config['@domain']);
 
     // Initialise the m-ld clone with a local backend
-    const backend = await this.local.load(config['@domain']);
-    const backendEvents = new EventEmitter;
-    const meld = await clone(backend, AblyWrtcRemotes, config, { backendEvents });
-    window.addEventListener('unload', () => meld.close());
-
-    // Set up auto-save.
-    this.setupAutoSave(meld, backendEvents);
+    const meld = await this.local.load(config);
 
     // Wait for the latest state from the clone
     // (Remove this line to see rev-ups as they happen)
@@ -94,53 +81,5 @@ class Demo {
         x: 200, y: 100
       }));
     }
-  }
-
-  setupAutoSave(meld: MeldClone, backendEvents: EventEmitter) {
-    // Safety net in case the user manages to unload in the dirty state
-    this.local.on('dirty', dirty => lifecycle[dirty ?
-      'addUnsavedChanges' : 'removeUnsavedChanges'](this));
-
-    const autoSave = () => new Promise((resolve, reject) =>
-      // We want to save from a consistent read state, but memdown iterates a
-      // snapshot so we don't have to keep the state locked
-      meld.read(() => this.local.save().then(resolve, reject)));
-
-    // When commits are made in the backend, set the dirty status
-    backendEvents.on('commit', () => { this.local.dirty = true; });
-
-    merge(
-      // Clicked save button
-      fromEvent(node<HTMLButtonElement>(d3.select('#save-board')), 'click'),
-      // Navigating away
-      fromEvent(this.local, 'navigate'),
-      // Debounced five seconds after update
-      fromEvent(this.local, 'dirty').pipe(
-        startWith(...this.local.dirty ? ['dirty'] : []),
-        debounceTime(5000)),
-      // Passivation of the page
-      fromEvent(lifecycle, 'statechange').pipe(
-        filter(event => event.newState === 'passive')),
-      // Mouse leaves (e.g. to navigate)
-      fromEvent(document.body, 'mouseleave'),
-      // Trying to unload
-      fromEvent(window, 'beforeunload')
-    ).pipe(
-      // Stop when meld is closed
-      takeUntil(meld.status.pipe(last())),
-      // Save and do not overlap saves
-      debounce(() => this.local.dirty ? autoSave() : of(0))
-    ).subscribe(() =>
-      // Only allow navigation when saved
-      this.navigateIfPending());
-  }
-
-  private navigateIfPending() {
-    if (this.local.destination === 'new')
-      location.hash = 'new';
-    else if (this.local.destination === 'home')
-      location.href = '/';
-    else if (this.local.destination != null)
-      location.hash = this.local.destination;
   }
 }

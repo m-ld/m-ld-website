@@ -1,7 +1,7 @@
 import * as d3 from 'd3';
 import JSONEditor, { JSONEditorOptions } from 'jsoneditor';
 import { D3View } from '../lib/client/D3View';
-import { d3Selection, fromTemplate, node } from '../lib/client/d3Util';
+import { d3Selection, fromTemplate } from '../lib/client/d3Util';
 import { Grecaptcha, modernizd } from '@m-ld/io-web-runtime/dist/client';
 import {
   initPopupControls, showInfo, showMessage, showNotModern, showWarning
@@ -14,6 +14,7 @@ import { render as renderTime } from 'timeago.js';
 import { parse, stringify } from 'querystring';
 import * as local from 'local-storage';
 import { LevelDownResponse } from '../lib/client/LevelDownResponse';
+import { saveAs } from 'file-saver';
 
 const queryTemplates = require('../lib/templates/query-templates.json');
 const txnTemplates = require('../lib/templates/txn-templates.json');
@@ -94,7 +95,11 @@ const NOT_A_WRITE = 'Transaction pattern is not a write operation';
 const NOT_A_CONTEXT = 'A m-ld context must be a JSON object';
 const CONFIRM_CHANGE_DOMAIN = 'You may have unsaved data. Continue changing domain?';
 
-function setupJson(key: string, setup: { [key: string]: string | string[] | undefined }, def: any): any {
+function setupJson(
+  key: string,
+  setup: { [key: string]: string | string[] | undefined },
+  def: any
+): any {
   const val = setup[key];
   try {
     return typeof val == 'string' ? JSON.parse(val) : def;
@@ -107,7 +112,7 @@ class Playground extends D3View<HTMLDivElement> {
   queryCard: JsonEditorCard;
   txnCard: JsonEditorCard;
   dataEditor: JSONEditor;
-  clone?: MeldClone;
+  meld?: { clone: MeldClone, backend: MeldMemDown };
   options: OptionsDialog;
   previousDomain?: string;
 
@@ -138,12 +143,12 @@ class Playground extends D3View<HTMLDivElement> {
       this.runQuery('warn');
     });
     d3.select('#txn-apply').on('click', async () => {
-      if (this.clone != null) {
+      if (this.meld != null) {
         try {
           const pattern = this.txnCard.jsonEditor.get();
           if (!isWrite(pattern))
             throw NOT_A_WRITE;
-          await this.clone.write(pattern);
+          await this.meld.clone.write(pattern);
         } catch (err) {
           showWarning(err);
         }
@@ -180,35 +185,27 @@ class Playground extends D3View<HTMLDivElement> {
   }
 
   async close() {
-    if (this.clone != null)
-      await this.clone.close();
-    this.clone = undefined;
+    if (this.meld != null)
+      await this.meld.clone.close();
+    delete this.meld;
   }
 
   get unsaved() {
-    return this.clone?.status.value.silo;
+    return this.meld?.clone.status.value.silo;
   }
 
   async downloadClone() {
-    const config = await fetchConfig(this.domain);
-    const backend = new MeldMemDown;
-    const tempClone = await clone(backend, AblyWrtcRemotes, config);
-    await tempClone.status.becomes({ outdated: false });
-    return new Promise<void>((resolve, reject) => tempClone.read(() => {
-      LevelDownResponse.readFrom(backend).blob().then(blob => {
-        try {
-          const blobUrl = URL.createObjectURL(blob);
-          const link = this.d3.append('a')
-            .attr('href', blobUrl).attr('download', `${this.domain}.mld`);
-          node(link).click();
-          link.remove();
-          URL.revokeObjectURL(blobUrl);
-          resolve();
-        } catch (err) {
-          reject(err);
+    if (this.meld != null) {
+      return this.meld!.clone.read(async () => {
+        if (this.meld != null) {
+          const blob = await LevelDownResponse.readFrom(
+            this.meld.backend, 'application/json').blob();
+          saveAs(blob, `${this.domain}.json`);
+        } else {
+          throw 'Local clone has closed';
         }
-      }, reject);
-    }));
+      });
+    }
   }
 
   async loadDomain() {
@@ -222,9 +219,10 @@ class Playground extends D3View<HTMLDivElement> {
         const config = await fetchConfig(this.domain);
         this.domain = this.previousDomain = config['@domain'];
         Object.assign(config['@context'] ??= {}, this.options.context);
-        this.clone = await clone(new MeldMemDown, AblyWrtcRemotes, config);
-        this.clone.follow(update => this.onUpdate(update));
-        await this.clone.status.becomes({ outdated: false });
+        const backend = new MeldMemDown;
+        this.meld = { clone: await clone(backend, AblyWrtcRemotes, config), backend };
+        this.meld.clone.follow(update => this.onUpdate(update));
+        await this.meld.clone.status.becomes({ outdated: false });
         showInfo(`Connected to ${config['@domain']}`);
         this.runQuery('warn');
       } catch (err) {
@@ -241,8 +239,8 @@ class Playground extends D3View<HTMLDivElement> {
       this.updatesLog
         .insert(() => fromTemplate<HTMLDivElement>('update'), ':first-child')
         .attr('id', null).classed('is-hidden', false), {}, {
-      mode: 'code', mainMenuBar: false, statusBar: false, onEditable: () => false
-    }, update);
+        mode: 'code', mainMenuBar: false, statusBar: false, onEditable: () => false
+      }, update);
     editorCard.title.attr('datetime', new Date().toISOString());
     renderTime(editorCard.title.node() ?? [], 'en_US', { minInterval: 10 });
     // Starting with the next sibling, group cards by time unless they are expanded
@@ -250,13 +248,13 @@ class Playground extends D3View<HTMLDivElement> {
   }
 
   async runQuery(warn?: 'warn') {
-    if (this.clone != null) {
+    if (this.meld != null) {
       try {
         this.querying = true;
         const pattern = this.queryCard.jsonEditor.get();
         if (!isRead(pattern))
           throw NOT_A_READ;
-        const subjects = await this.clone.read(pattern);
+        const subjects = await this.meld.clone.read(pattern);
         this.dataEditor.update(subjects);
       } catch (err) {
         if (warn)
@@ -294,7 +292,7 @@ class Playground extends D3View<HTMLDivElement> {
   set loading(loading: boolean) {
     this.domainJoinIcon.classed('fa-spinner fa-spin', loading);
     this.domainJoinIcon.classed('fa-level-down-alt fa-rotate-90 is-hidden', !loading);
-    d3.selectAll('.requires-domain').property('disabled', loading || !this.clone);
+    d3.selectAll('.requires-domain').property('disabled', loading || !this.meld);
     this.newDomainButton.property('disabled', loading);
     this.domainInput.property('disabled', loading);
   }
@@ -314,7 +312,8 @@ class JsonEditorCard extends D3View<HTMLDivElement> {
     card: d3Selection<HTMLDivElement> | string,
     templates: object,
     options?: JSONEditorOptions,
-    json?: any) {
+    json?: any
+  ) {
     super(typeof card == 'string' ? d3.select(`#${card}-card`) : card);
     this.name = typeof card == 'string' ? card : undefined;
     this.d3.datum(this);
@@ -355,7 +354,7 @@ class JsonEditorCard extends D3View<HTMLDivElement> {
       if (this.name != null) {
         const icon = this.linkButton.select('i');
         const link = new URL(window.location.href);
-        link.hash = `#${stringify({ [this.name]: JSON.stringify(this.jsonEditor.get()) })}`
+        link.hash = `#${stringify({ [this.name]: JSON.stringify(this.jsonEditor.get()) })}`;
         navigator.clipboard.writeText(link.href).then(() => {
           icon.classed('fa-link', false).classed('fa-check', true);
           setTimeout(() => icon.classed('fa-check', false).classed('fa-link', true), 1000);
