@@ -12,5 +12,3 @@ developers, welcoming [feedback&nbsp;and&nbsp;interest](/hello/). The
 [documentation](/doc/) includes a number of indications of forthcoming features.
 Also see the [main&nbsp;repository](https://github.com/m-ld/m-ld-spec/issues)
 for other active requests.
-
-**m-ld** should not be used in production scenarios or for sensitive data, yet.
