@@ -10,7 +10,7 @@ author:
   git: gsvarovsky
   name: George
 date: 2022-01-17
-linkedin: TODO
+linkedin: m-ld-io_news-activity-6890339146960105472-rJkj
 ---
 The next version of the **m-ld** [Javascript&nbsp;Engine](https://js.m-ld.org/) has been published (on [npm](https://www.npmjs.com/package/@m-ld/m-ld))! We've been working hard on usability and performance, and we've also included the latest [prototype work](https://github.com/m-ld/m-ld-js/pull/85) from the [Security Project](https://github.com/m-ld/m-ld-security-spec) (we believe in continuous integration).
 
