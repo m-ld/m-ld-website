@@ -19,14 +19,14 @@
 </head>
 
 <body>
-  <section class="hero is-medium is-light">
+  <section class="hero is-medium is-info">
     <div class="hero-body">
       <div class="container has-text-centered">
         <img src="m-ld.svg" width="400em" />
       </div>
     </div>
   </section>
-  <section id="homenu" class="section is-small">
+  <section id="homenu" class="section is-small has-background-warning">
     <div class="columns has-text-centered">
       {%- for item in index.homenu -%}
         <div class="column">
@@ -48,6 +48,7 @@
       </div>
     </div>
   </section>
+{% comment %}
   <section id="news-banner" class="hero is-warning">
     <div class="hero-body">
       <div class="container content has-text-centered is-size-5">
@@ -60,6 +61,7 @@
       </div>
     </div>
   </section>
+{% endcomment %}
   <section id="streams" class="section">
     <div class="columns has-text-centered">
       <div class="column">
