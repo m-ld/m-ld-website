@@ -1,10 +1,10 @@
 import { EventEmitter } from 'events';
 import * as local from 'local-storage';
-import { MeldMemDown } from '@m-ld/m-ld/dist/memdown';
+import { MeldMemDown } from '@m-ld/m-ld/ext/memdown';
 import { LevelDownResponse } from './LevelDownResponse';
 import type { LockManager } from 'navigator.locks';
 import { clone, MeldClone, MeldConfig } from '@m-ld/m-ld';
-import { AblyWrtcRemotes } from '@m-ld/m-ld/dist/ably/index';
+import { AblyWrtcRemotes } from '@m-ld/m-ld/ext/ably/index';
 import * as lifecycle from 'page-lifecycle';
 import { fromEvent, merge, of } from 'rxjs';
 import { node } from './d3Util';
@@ -14,6 +14,7 @@ import { saveAs } from 'file-saver';
 
 require('navigator.locks'); // Polyfill
 declare global {
+  // noinspection JSUnusedGlobalSymbols
   interface Navigator {
     locks: LockManager;
   }
@@ -23,8 +24,9 @@ export type Domain = string; // An internet-style m-ld domain name
 export type Version = 'v0' | 'v1' | 'v2'
   | 'v3' // Moved to Cache API
   | 'v4' // Journal and encoding changes for fusions
-  | 'v5'; // TIDs in key-values
-export const CURRENT_VERSION: Version = 'v5';
+  | 'v5' // TIDs in key-values
+  | 'v6'; // Principal and agreement in operations
+export const CURRENT_VERSION: Version = 'v6';
 export const INDEXED_DB_VERSIONS: Version[] = ['v0', 'v1', 'v2'];
 
 const CACHE_KEY = 'board-data';

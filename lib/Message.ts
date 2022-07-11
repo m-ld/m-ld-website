@@ -1,11 +1,11 @@
 import {
-  any, array, MeldReadState, MeldState, Reference, shortId, Subject, Construct, Describe
+  any, array, Describe, MeldReadState, MeldState, Reference, shortId, Subject
 } from '@m-ld/m-ld';
-import { isPropertyObject, isReference } from '@m-ld/m-ld/dist/jrql-support';
+import { isPropertyObject, isReference } from '@m-ld/m-ld/ext/jrql-support';
 import { Observable } from 'rxjs';
 import { mergeMap } from 'rxjs/operators';
 import { Rectangle } from './Shapes';
-import { getPatch, applyPatch } from 'fast-array-diff';
+import { applyPatch, getPatch } from 'fast-array-diff';
 
 export interface Message {
   '@id': string;
@@ -61,13 +61,13 @@ export namespace MessageSubject {
       y: init.y,
       linkTo: init.linkTo
     };
-  };
+  }
 
   export function textId(id: string): string {
     return `${id}_text`;
   }
 
-  export function load(state: MeldReadState, id = any()): Observable<MessageSubject> {
+  export function load(state: MeldReadState): Observable<MessageSubject> {
     return state.read<Describe>({
       '@describe': '?id',
       '@where': { '@id': '?id', '@type': 'Message' }

@@ -8,8 +8,8 @@ import {
 } from '../lib/client/PopupControls';
 import { fetchConfig } from '../lib/client/Api';
 import { clone, isRead, isWrite, MeldClone, MeldUpdate } from '@m-ld/m-ld';
-import { AblyWrtcRemotes } from '@m-ld/m-ld/dist/ably';
-import { MeldMemDown } from '@m-ld/m-ld/dist/memdown';
+import { AblyWrtcRemotes } from '@m-ld/m-ld/ext/ably';
+import { MeldMemDown } from '@m-ld/m-ld/ext/memdown';
 import { render as renderTime } from 'timeago.js';
 import { parse, stringify } from 'querystring';
 import * as local from 'local-storage';
@@ -108,6 +108,7 @@ function setupJson(
   }
 }
 
+// noinspection JSMethodCanBeStatic
 class Playground extends D3View<HTMLDivElement> {
   queryCard: JsonEditorCard;
   txnCard: JsonEditorCard;
@@ -147,7 +148,7 @@ class Playground extends D3View<HTMLDivElement> {
         try {
           const pattern = this.txnCard.jsonEditor.get();
           if (!isWrite(pattern))
-            throw NOT_A_WRITE;
+            return showWarning(NOT_A_WRITE);
           await this.meld.clone.write(pattern);
         } catch (err) {
           showWarning(err);
@@ -253,7 +254,7 @@ class Playground extends D3View<HTMLDivElement> {
         this.querying = true;
         const pattern = this.queryCard.jsonEditor.get();
         if (!isRead(pattern))
-          throw NOT_A_READ;
+          return warn && showWarning(NOT_A_READ);
         const subjects = await this.meld.clone.read(pattern);
         this.dataEditor.update(subjects);
       } catch (err) {
@@ -305,7 +306,6 @@ class Playground extends D3View<HTMLDivElement> {
 class JsonEditorCard extends D3View<HTMLDivElement> {
   name?: string;
   jsonEditor: JSONEditor;
-  created = Date.now();
   expanded: boolean = false;
 
   constructor(
