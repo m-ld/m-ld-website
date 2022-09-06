@@ -32,19 +32,46 @@
     {
       "name": "Javascript",
       "icon": "fab fa-js",
+      "visible": true,
       "url": "https://js.m-ld.org/",
       "summary": "For node.js, modern browsers and other Javascript engines. Typescript is supported and recommended."
     },
     {
+      "name": "Swift",
+      "icon": "fab fa-swift",
+      "visible": true,
+      "soon": true,
+      "url": "https://github.com/m-ld/m-ld-spec/issues/97",
+      "summary": "For peer-to-peer live data among iOS, iPadOS and MacOS devices."
+    },
+    {
+      "name": "Rust",
+      "icon": "fab fa-rust",
+      "visible": true,
+      "soon": true,
+      "url": "https://github.com/m-ld/m-ld-spec/issues/54",
+      "summary": "For cross-platform live data - endpoint devices and servers."
+    },
+    {
+      "name": "Python",
+      "icon": "fab fa-python",
+      "visible": true,
+      "request": true,
+      "url": "https://github.com/m-ld/m-ld-spec/issues/40",
+      "summary": "For scripting, data science and general computing environments."
+    },
+    {
       "name": "Java",
       "icon": "fab fa-java",
-      "soon": true,
+      "visible": true,
+      "request": true,
       "url": "https://github.com/m-ld/m-ld-spec/issues/42",
       "summary": "For Java environments, typically servers."
     },
     {
       "name": "Docker",
       "icon": "fab fa-docker",
+      "visible": false,
       "soon": true,
       "url": "https://github.com/m-ld/m-ld-spec/issues/41",
       "summary": "For microservice, serverless and server environments."
@@ -52,22 +79,17 @@
     {
       "name": ".NET",
       "icon": "fab fa-microsoft",
+      "visible": true,
       "request": true,
       "url": "https://github.com/m-ld/m-ld-spec/issues/39",
       "summary": "For mobile, native client and server environments using .NET."
     },
     {
-      "name": "Python",
-      "icon": "fab fa-python",
-      "request": true,
-      "url": "https://github.com/m-ld/m-ld-spec/issues/40",
-      "summary": "For scripting, data science and general computing environments."
-    },
-    {
       "name": "What do you need?",
       "icon": "fas fa-edit",
-      "url": "https://github.com/m-ld/m-ld-spec/issues/new",
-      "summary": "Please create a ticket for the platform you need."
+      "visible": true,
+      "url": "https://github.com/m-ld/m-ld-spec/discussions/96",
+      "summary": "Talk to us about the platform you need."
     }
   ],
   "industries": [

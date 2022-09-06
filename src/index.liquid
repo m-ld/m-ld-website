@@ -48,14 +48,14 @@
       </div>
     </div>
   </section>
-  <section id="news-banner" class="hero is-warning">
+  <section id="news-banner" class="hero is-success">
     <div class="hero-body">
       <div class="container content has-text-centered is-size-5">
-        <a href="/news/#securing-shared-information">
-          <span>NEWS: security research in partnership with </span>
-          <img src="./media/logo_nlnet.svg" alt="NLnet" />
+        <a href="/news/#news_2022-08-30">
+          <span>NEWS: Federated Timesheets in partnership with </span>
+          <img src="./media/logo-pondersource.jpeg" alt="Ponder Source" />
           <span> and </span>
-          <img src="./media/NGIAssure.svg" alt="NGI Assure" />
+          <img src="./media/EvoluData-logo-web.png" alt="EvoluData" />
         </a>
       </div>
     </div>
@@ -84,19 +84,21 @@
           <h1 class="title is-4">platforms</h1>
           <div class="buttons are-medium">
             {%- for platform in index.platforms -%}
-            {% if platform.url %}
-            <a class="button is-light is-fullwidth" href="{{platform.url}}">
-            {% else %}
-            <a class="button is-light is-fullwidth is-static">
-            {% endif %}
-              <span class="icon"><i class="{{platform.icon}}"></i></span>
-              <span class="has-text-dark">{{platform.name | downcase}}</span>
-              {% if platform.soon %}
-              <span class="tag is-warning" style="margin-left: 1em;">soon!</span>
-              {% elsif platform.request %}
-              <span class="tag is-primary" style="margin-left: 1em;">request</span>
+              {% if platform.visible %}
+                {% if platform.url %}
+                <a class="button is-size-6 is-light is-fullwidth" href="{{platform.url}}">
+                {% else %}
+                <a class="button is-size-6 is-light is-fullwidth is-static">
+                {% endif %}
+                  <span class="icon"><i class="{{platform.icon}}"></i></span>
+                  <span class="has-text-dark">{{platform.name | downcase}}</span>
+                {% if platform.soon %}
+                  <span class="tag is-warning" style="margin-left: 1em;">soon!</span>
+                {% elsif platform.request %}
+                  <span class="tag is-primary" style="margin-left: 1em;">request</span>
+                {% endif %}
+                </a>
               {% endif %}
-            </a>
             {%- endfor -%}
           </div>
         </div>
