@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
 import * as local from 'local-storage';
-import { MeldMemDown } from '@m-ld/m-ld/ext/memdown';
+import { MemoryLevel } from 'memory-level';
 import { LevelDownResponse } from './LevelDownResponse';
 import type { LockManager } from 'navigator.locks';
 import { clone, MeldClone, MeldConfig } from '@m-ld/m-ld';
@@ -32,7 +32,7 @@ export const INDEXED_DB_VERSIONS: Version[] = ['v0', 'v1', 'v2'];
 const CACHE_KEY = 'board-data';
 
 export class BoardLocal extends EventEmitter {
-  private meld?: { domain: string, clone: MeldClone, backend: MeldMemDown };
+  private meld?: { domain: string, clone: MeldClone, backend: MemoryLevel<string, Buffer> };
   private backendEvents = new EventEmitter;
   private cache: Promise<Cache>;
   private _destination: Domain | 'home' | 'new' | undefined;
@@ -114,7 +114,7 @@ export class BoardLocal extends EventEmitter {
     BoardLocal.setDomains(localDomains);
     // Do we have a cache for this backend?
     const data = await (await this.cache).match(config['@domain']);
-    const backend = new MeldMemDown;
+    const backend = new MemoryLevel<string, Buffer>();
     if (data != null) {
       await LevelDownResponse.readInto(backend, data);
       this.dirty = false;

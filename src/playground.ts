@@ -9,7 +9,7 @@ import {
 import { fetchConfig } from '../lib/client/Api';
 import { clone, isRead, isWrite, MeldClone, MeldUpdate } from '@m-ld/m-ld';
 import { AblyWrtcRemotes } from '@m-ld/m-ld/ext/ably';
-import { MeldMemDown } from '@m-ld/m-ld/ext/memdown';
+import { MemoryLevel } from 'memory-level';
 import { render as renderTime } from 'timeago.js';
 import { parse, stringify } from 'querystring';
 import * as local from 'local-storage';
@@ -113,7 +113,7 @@ class Playground extends D3View<HTMLDivElement> {
   queryCard: JsonEditorCard;
   txnCard: JsonEditorCard;
   dataEditor: JSONEditor;
-  meld?: { clone: MeldClone, backend: MeldMemDown };
+  meld?: { clone: MeldClone, backend: MemoryLevel<string, Buffer> };
   options: OptionsDialog;
   previousDomain?: string;
 
@@ -220,7 +220,7 @@ class Playground extends D3View<HTMLDivElement> {
         const config = await fetchConfig(this.domain);
         this.domain = this.previousDomain = config['@domain'];
         Object.assign(config['@context'] ??= {}, this.options.context);
-        const backend = new MeldMemDown;
+        const backend = new MemoryLevel<string, Buffer>();
         this.meld = { clone: await clone(backend, AblyWrtcRemotes, config), backend };
         this.meld.clone.follow(update => this.onUpdate(update));
         await this.meld.clone.status.becomes({ outdated: false });
