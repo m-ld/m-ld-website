@@ -19,7 +19,7 @@
   },
   "homepage": "https://github.com/m-ld/m-ld-website#readme",
   "devDependencies": {
-    "@m-ld/io-web-build": "^0.1.6",
+    "@m-ld/io-web-build": "^0.1.8",
     "@types/readable-stream": "^2.3.9",
     "keypress": "^0.2.1",
     "typescript": "^4.2.4"
