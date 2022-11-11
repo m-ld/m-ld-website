@@ -1,4 +1,4 @@
-import { AbstractLevelDOWN } from 'abstract-leveldown';
+import { AbstractLevel } from 'abstract-level';
 import { decode } from '@ably/msgpack-js';
 
 export function int32Buf(int: number) {
@@ -14,7 +14,7 @@ export class LevelDownResponse {
   private pos = 0;
 
   static async readInto(
-    backend: AbstractLevelDOWN<string, Buffer>, response: Response
+    backend: AbstractLevel<any, string, Buffer>, response: Response
   ) {
     if (response.headers.get('Content-Type') !== 'application/octet-stream')
       throw new Error('Unsupported content type');
@@ -23,10 +23,9 @@ export class LevelDownResponse {
       while (true) {
         const [key, value] = await reading.read();
         if (key != null && value != null)
-          await new Promise((resolve, reject) => backend.put(
+          await backend.put(
             // Must convert value to Buffer because memdown detects Buffer._isBuffer
-            Buffer.from(key).toString(), Buffer.from(value),
-            err => err ? reject(err) : resolve(null)));
+            Buffer.from(key).toString(), Buffer.from(value), { valueEncoding: 'buffer' });
         else
           break;
       }
@@ -34,19 +33,19 @@ export class LevelDownResponse {
   }
 
   static readFrom(
-    backend: AbstractLevelDOWN<string, Buffer>,
+    backend: AbstractLevel<any, string, Buffer>,
     type: 'application/octet-stream' | 'application/json' = 'application/octet-stream'
   ): Response {
-    const iterator = backend.iterator();
+    const iterator = backend.iterator({ valueEncoding: 'buffer' });
     let i = 0;
     const stream = new ReadableStream({
       async pull(controller) {
         iterator.next((err, key, value) => {
           if (err) {
-            iterator.end(err => err && console.warn(err));
+            iterator.close().catch(console.warn);
             controller.error(err);
           } else if (key == null || value == null) {
-            iterator.end(err => err && console.warn(err));
+            iterator.close().catch(console.warn);
             if (type === 'application/json')
               controller.enqueue(Buffer.from('\n}'));
             controller.close();

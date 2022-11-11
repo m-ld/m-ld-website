@@ -1,7 +1,7 @@
-import { MeldAblyConfig } from '@m-ld/m-ld/dist/ably';
+import { MeldAblyConfig } from '@m-ld/m-ld/ext/ably';
 import { Answer } from './BotBrain';
 import { AuthorisedRequest, Session } from '@m-ld/io-web-runtime/dist/dto';
-import { MeldWrtcConfig } from '@m-ld/m-ld/dist/wrtc';
+import { MeldWrtcConfig } from '@m-ld/m-ld/ext/wrtc';
 
 export namespace Config {
   export interface Request

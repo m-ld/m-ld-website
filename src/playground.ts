@@ -8,8 +8,8 @@ import {
 } from '../lib/client/PopupControls';
 import { fetchConfig } from '../lib/client/Api';
 import { clone, isRead, isWrite, MeldClone, MeldUpdate } from '@m-ld/m-ld';
-import { AblyWrtcRemotes } from '@m-ld/m-ld/dist/ably';
-import { MeldMemDown } from '@m-ld/m-ld/dist/memdown';
+import { AblyWrtcRemotes } from '@m-ld/m-ld/ext/ably';
+import { MemoryLevel } from 'memory-level';
 import { render as renderTime } from 'timeago.js';
 import { parse, stringify } from 'querystring';
 import * as local from 'local-storage';
@@ -108,11 +108,12 @@ function setupJson(
   }
 }
 
+// noinspection JSMethodCanBeStatic
 class Playground extends D3View<HTMLDivElement> {
   queryCard: JsonEditorCard;
   txnCard: JsonEditorCard;
   dataEditor: JSONEditor;
-  meld?: { clone: MeldClone, backend: MeldMemDown };
+  meld?: { clone: MeldClone, backend: MemoryLevel<string, Buffer> };
   options: OptionsDialog;
   previousDomain?: string;
 
@@ -147,7 +148,7 @@ class Playground extends D3View<HTMLDivElement> {
         try {
           const pattern = this.txnCard.jsonEditor.get();
           if (!isWrite(pattern))
-            throw NOT_A_WRITE;
+            return showWarning(NOT_A_WRITE);
           await this.meld.clone.write(pattern);
         } catch (err) {
           showWarning(err);
@@ -219,7 +220,7 @@ class Playground extends D3View<HTMLDivElement> {
         const config = await fetchConfig(this.domain);
         this.domain = this.previousDomain = config['@domain'];
         Object.assign(config['@context'] ??= {}, this.options.context);
-        const backend = new MeldMemDown;
+        const backend = new MemoryLevel<string, Buffer>();
         this.meld = { clone: await clone(backend, AblyWrtcRemotes, config), backend };
         this.meld.clone.follow(update => this.onUpdate(update));
         await this.meld.clone.status.becomes({ outdated: false });
@@ -253,7 +254,7 @@ class Playground extends D3View<HTMLDivElement> {
         this.querying = true;
         const pattern = this.queryCard.jsonEditor.get();
         if (!isRead(pattern))
-          throw NOT_A_READ;
+          return warn && showWarning(NOT_A_READ);
         const subjects = await this.meld.clone.read(pattern);
         this.dataEditor.update(subjects);
       } catch (err) {
@@ -305,7 +306,6 @@ class Playground extends D3View<HTMLDivElement> {
 class JsonEditorCard extends D3View<HTMLDivElement> {
   name?: string;
   jsonEditor: JSONEditor;
-  created = Date.now();
   expanded: boolean = false;
 
   constructor(
