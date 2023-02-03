@@ -7,7 +7,7 @@ patterns:
   - what (can|does) (m-ld|mld|meld) do
   - what do I use (m-ld|mld|meld) for
   - what is (m-ld|mld|meld) for
-summary: <b>m-ld</b> helps implement data sharing in an application.
+summary: <b>m-ld</b> enables live data sharing in and between applications.
 ---
 **m-ld** is a protocol and a set of engines to help software engineers deliver
 sharing of structured data. Using **m-ld** allows features such as online
