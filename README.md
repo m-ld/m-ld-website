@@ -22,7 +22,7 @@ console](https://www.google.com/u/1/recaptcha/admin/site/350626045).
 To update content:
 1. Clone this repo locally.
 1. Switch to the `edge` branch by entering `git switch edge`.
-1. Create a new local branch for the changes by entering `git switch -c <my-new-branch`.
+1. Create a new local branch for the changes by entering `git switch -c <my-new-branch>`.
 
 To run locally:
 1. Install [now](https://vercel.com/download) and set auth credentials.
