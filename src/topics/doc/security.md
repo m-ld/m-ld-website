@@ -40,7 +40,7 @@ It is the app's responsibility to authenticate and authorise its users. For the
 reason above, and unlike some centralised data management systems, **m-ld** does
 not have a first-class 'user' concept with special semantics. This includes any
 notion of credentials, such as passwords. (Note that this does not prevent an
-app from storing user information in **m-ld**, so long as it has suitable access
+app from storing user information in **m-ld**, so long as it uses suitable access
 controls.)
 
 This means an app is free to authenticate its users by any chosen means, such as
