@@ -1,11 +1,12 @@
 ---
 tags:
   - topic # mandatory
-  - faq # 1th tag is page
+  - faqs # 1th tag is page
 title: How does m-ld work?
 patterns:
   -  how does . work
 summary: <b>m-ld</b> uses cutting-edge published computer science and established standards.
+date: 2023-01-03
 ---
 **m-ld** stands on the shoulders of giants. It utilises a combination of:
 - published computer science, to provide its data convergence characteristics, and

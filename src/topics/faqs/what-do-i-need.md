@@ -1,11 +1,12 @@
 ---
 tags:
   - topic # mandatory
-  - faq # 1th tag is page
+  - faqs # 1th tag is page
 title: To use m-ld, what do I need?
 patterns:
   - what * (you|I) need
 summary: For <b>m-ld</b> you need an engine and a messaging layer.
+date: 2023-01-08
 ---
 **m-ld** is usually deployed embedded in your app so that access latency
 is zero, and data from other users is visible immediately. So, first you need a

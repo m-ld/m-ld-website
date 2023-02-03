@@ -1,13 +1,14 @@
 ---
 tags:
   - topic # mandatory
-  - faq # 1th tag is page
+  - faqs # 1th tag is page
 title: What can m-ld do?
 patterns:
   - what (can|does) (m-ld|mld|meld) do
   - what do I use (m-ld|mld|meld) for
   - what is (m-ld|mld|meld) for
 summary: <b>m-ld</b> enables live data sharing in and between applications.
+date: 2023-01-02
 ---
 **m-ld** is a protocol and a set of engines to help software engineers deliver
 sharing of structured data. Using **m-ld** allows features such as online

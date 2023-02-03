@@ -1,7 +1,7 @@
 ---
 tags:
   - topic # mandatory
-  - faq # 1th tag is page
+  - faqs # 1th tag is page
 title: Why shouldn't I use X?
 patterns:
   - why not .
@@ -28,6 +28,7 @@ patterns:
   - sqlserver
   - db2
 summary: <b>m-ld</b> is one of a number of data technologies with different trade-offs.
+date: 2023-01-10
 ---
 **m-ld** is one of a number of technologies for data, with different trade-offs
 and strengths. These range from decentralised realtime data stores, through
