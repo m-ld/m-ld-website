@@ -8,7 +8,7 @@
   {% include 'gtag.liquid' %}
   <link rel="stylesheet" href="main.css">
   <script>
-    // Re-direct faq and news questions to the relevant pages
+    // Re-direct faqs and news questions to the relevant pages
     {% for topic in collections.topic %}
     {% unless topic.data.tags[1] == 'index' %}
     if (window.location.hash === '#{{ topic.fileSlug }}')

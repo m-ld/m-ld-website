@@ -1,11 +1,12 @@
 ---
 tags:
   - topic # mandatory
-  - faq # 1th tag is page
+  - faqs # 1th tag is page
 title: Where is my data?
 patterns:
   - where * (data|state)
 summary: <b>m-ld</b> data is physically in clones.
+date: 2023-01-07
 ---
 The data is physically stored locally to an app in a *clone*, which is typically
 embedded in the app via a library called an *engine*, or very close by in a

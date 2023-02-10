@@ -1,12 +1,13 @@
 ---
 tags:
   - topic # mandatory
-  - faq # 1th tag is page
+  - faqs # 1th tag is page
 title: Is my data secure?
 patterns:
   - '(secure|security|secured) * @hasQuestionMark'
   - '(security && @hasQuestionMark)'
 summary: <b>m-ld</b> data is secured in collaboration with the app.
+date: 2023-01-06
 ---
 **m-ld** data is secured *in motion* and *at rest*, in collaboration with the
 app using **m-ld** for data.

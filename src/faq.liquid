@@ -1,10 +1,10 @@
 ---
 layout: page.liquid
-title: FAQ
+title: FAQs
 width: max-desktop
 ---
 <h1 class="title">frequently asked questions</h1>
-{%- for faq in collections.faq -%}
+{%- for faq in collections.faqs -%}
 <div id="{{ faq.fileSlug }}" class="content has-text-weight-bold is-medium">
   {{ faq.data.title }}
 </div>
