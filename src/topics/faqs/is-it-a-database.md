@@ -1,11 +1,12 @@
 ---
 tags:
   - topic # mandatory
-  - faq # 1th tag is page
+  - faqs # 1th tag is page
 title: Is m-ld a database?
 patterns:
   - 'database * @hasQuestionMark'
 summary: <b>m-ld</b> is very different to a traditional back-end database.
+date: 2023-01-05
 ---
 **m-ld** is a data store, but it has a very different approach to a back-end
 database. A database stores all of the data centrally, on a server, and provides
