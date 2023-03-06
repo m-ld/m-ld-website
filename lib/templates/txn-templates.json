@@ -23,6 +23,11 @@
       "<item2>"
     ]
   },
+  "Delete a subject": {
+    "@delete": {
+      "@id": "<identity>"
+    }
+  },
   "Delete a subject property": {
     "@delete": {
       "@id": "<identity>",
@@ -104,5 +109,27 @@
         }
       ]
     }
+  },
+  "Add a property values constraint": {
+    "@context": {
+      "mld": "http://m-ld.org/#",
+      "js": "http://js.m-ld.org/#",
+      "sh": "http://www.w3.org/ns/shacl#"
+    },
+    "@id": "http://m-ld.org/extensions",
+    "@list": [
+      {
+        "@type": "js:CommonJSExport",
+        "js:require": "@m-ld/m-ld/ext/shacl",
+        "js:class": "ShapeConstrained",
+        "mld:controlled-shape": {
+          "sh:path": {
+            "@vocab": "<property1>"
+          },
+          "sh:minCount": 1,
+          "sh:maxCount": 1
+        }
+      }
+    ]
   }
 }

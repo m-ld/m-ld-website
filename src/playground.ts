@@ -16,6 +16,10 @@ import * as local from 'local-storage';
 import { LevelDownResponse } from '../lib/client/LevelDownResponse';
 import { saveAs } from 'file-saver';
 
+// Ensure that the SHACL plugin exists for schema constraints
+require('@m-ld/m-ld/ext/shacl');
+globalThis.require = require;
+
 const queryTemplates = require('../lib/templates/query-templates.json');
 const txnTemplates = require('../lib/templates/txn-templates.json');
 
