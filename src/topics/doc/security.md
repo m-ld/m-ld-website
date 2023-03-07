@@ -15,11 +15,7 @@ collaboration with the app implementation, since the app must be allowed
 privileged access to the data in order to function.
 
 ### Threats
-The threats that must be controlled in collaboration with a clone engine are a
-subset of the threats to the app. These include threats to:
-- *Confidentiality*: reading of data to steal information
-- *Integrity*: modification of data to mislead information consumers
-- *Availability*: prevention of normal function for sabotage or coercion
+The threats that must be controlled in collaboration with a clone engine are a subset of the threats to the app. These include threats to *Confidentiality*, *Integrity* and *Availability*.
 
 The attack surface of an engine generally comprises:
 - The local device storage being used by the engine
@@ -27,56 +23,28 @@ The attack surface of an engine generally comprises:
 - The clone API presented to the app
 
 ### Trust Model
-A decentralised data store does not have a privileged, trusted central authority
-(although the trust model of such a central authority may never have been as
-straightforward as it seemed, as evidenced by damaging data leakages by such
-authorities). Since an app must be free to decide its own security model, and
-since the **m-ld** engine is not itself afforded any special privilege because
-of its deployment, an engine *trusts the app* in principle. The consequences of
-this are explained in the sections below.
+An app using **m-ld** is free to decide its own security model. Because the **m-ld** engine is embedded in the app, it not itself afforded any special privilege because of its deployment. In particular, a **m-ld** domain does not inherently have a privileged, trusted central authority. However, an app may choose to deploy **m-ld** clones to its own trusted service or data tier.
 
-### Authentication & Authorisation
-It is the app's responsibility to authenticate and authorise its users. For the
-reason above, and unlike some centralised data management systems, **m-ld** does
-not have a first-class 'user' concept with special semantics. This includes any
-notion of credentials, such as passwords. (Note that this does not prevent an
-app from storing user information in **m-ld**, so long as it uses suitable access
-controls.)
+### Authentication
+It is the app's responsibility to authenticate its users by any chosen means, such as device-native login, or using a third-party single sign-on system. The app should gate access, using the authentication, to its functions which access the **m-ld** engine.
 
-This means an app is free to authenticate its users by any chosen means, such as
-device-native login, or using a third-party single sign-on system. The app
-should gate access, using the authentication, to its functions which access the
-**m-ld** engine.
+Data is transmitted between clones using a choice of [messaging](/doc/#messaging) provider. Since this data is at risk from network attacks, the messaging system itself should be authenticated, either with the user credentials or some token obtained with them.
 
-> 🚧 In future, **m-ld** will allow an app to negotiate a 'local key' credential
-> that the engine can use to:
-> - confirm the identity of the app instance, for example after a re-start
-> - selectively encrypt data in storage and on the network (see below)
-> - identify and suppress malware (see below)
->
-> A specification document for future security features will shortly be
-> available in this portal. Please [feed-back](/hello/) any specific concerns
-> you have.
+An example app login behaviour:
+1. Redirect the user to login via an identity provider
+2. Retrieve a signed token from identity provider
+3. Connect to the messaging system using the token
+4. Initialise the **m-ld** clone with the messaging system connection
+
+### Authorisation
+In many apps, authenticated users will have read/write access to the domain as a whole. The app controls which domains the user can select from and connect a clone to. To prevent unauthorised access to data-in-transit from other domains, it is generally necessary to control access to the _channels_ of the messaging system in use.
+
+Fine-grained write access control within a single domain can be achieved using _constraints_.
+
+> 🚧 Using constraints for fine-grained write access control is currently experimental. You can read the [white paper here](https://github.com/m-ld/m-ld-security-spec/blob/main/design/suac.md), and explore the [prototype support](https://js.m-ld.org/classes/writepermitted.html) in the Javascript engine. Please [contact us](/hello/) to discuss your security requirements.
 
 ### Auditing & Non-Repudiation
-Once a user is authorised to the application, it may be important to record
-their activity, as well as that of any other system actor such as a bot, in
-tamper-proof way, for later auditing. This can generally be achieved with the
-use of audit stamps (time & user) on updates. If necessary, these stamps could
-be digitally signed by the app.
-
-Clones maintain a 'journal' of updates, so audit data of this kind is
-effectively distributed in the domain. However, the journal is subject to
-truncation based on a clone-internal strategy for managing storage. To ensure
-long-term archival, an app-specific strategy can be adopted to stream update
-events to some other storage.
-
-> 🚧 The clone journal is currently an internal feature with no API access.
-> Continuous updates are available via the `follow` API.
-> 
-> Furthermore, **m-ld** has been designed from the outset to be able to
-> *natively* track app/user activity in a cryptographically-verifiable way.
-> Details will be included in the forthcoming security specification.
+Once a user is authorised to the application, it may be important to record their activity, as well as that of any other system actor such as a bot, in tamper-proof way, for later auditing. This can generally be achieved with the use of audit stamps (time & user) on updates. If necessary, these stamps can be digitally signed by the app.
 
 ### Storage & Network
 A **m-ld** engine may use storage to automatically persist data between and
@@ -103,18 +71,6 @@ Typical app controls will include encryption of data at rest and on the wire.
 This has the advantage that it prevents unauthorised access and tampering by any
 device without credentials.
 
-> 🚧 The app's ownership of storage and network handles could be combined with
-> its authentication mechanism to control access *per user*. For example, a
-> local user not being authorised to see some data belonging to another user.
-> However, this approach requires the app to have knowledge of the engine's
-> storage data format, and the **m-ld** protocol's data format. These may not be
-> easy to manipulate. It also requires the app instance to have privileges above
-> that of the local user. On some devices this may not be possible.
->
-> We are working on an entension to the **m-ld** protocol that will support
-> automatic application of selective data encryption. Details will be included
-> in the forthcoming security specification.
-
 ### Malware
 In common with other decentralised technologies, in principle **m-ld** has no
 central data gatekeeper with a controlled implementation.
@@ -130,12 +86,3 @@ privileged access to domain data, both for read and write.
 
 It is therefore critical that the app is protected from malware at the level of
 the compute platform.
-
-> 🚧 This vulnerability can arise in distributed computing of any kind (except
-> in a trusted compute platform, and that has problems of its own). But once it
-> has arisen, identifying and suppressing malware requires coordination among
-> the peers of a decentralised system.
->
-> We are working on an entension to the **m-ld** protocol that will support
-> early identification and suppression of malware and suspicious activity.
-> Details will be included in the forthcoming security specification.

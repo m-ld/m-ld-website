@@ -2,6 +2,7 @@
 tags:
   - topic # mandatory
   - doc # 1th tag is page
+  - principle
 title: Concurrency
 patterns:
   - concurrency
@@ -43,7 +44,7 @@ like:
 - This property refers to some other entity which exists
 
 In a programming language, you might find these rules expressed in the type
-system. In a relational database, the rules are called "constraints".
+system. In a relational database, the rules are the schema and constraints.
 
 In **m-ld**, integrity is a collaboration between the domain, engine, app and
 user. **m-ld** supports constraints (see below), but first it is important to
@@ -77,7 +78,7 @@ the following categories:
   for example in the next user workflow step, or even by a housekeeping process
   which applies a procedural fix.
 - *Procedure*. A conflict may manifest as a nonsensical or ambiguous state for
-  which it is possible to automaticaly make a correction or decide an outcome.
+  which it is possible to automatically make a correction or decide an outcome.
   The correction can be implemented in the app code. However, since each app
   instance may at any time 'see' a different state, these corrections can
   potentially compete with each other, so care must be taken not to create a
@@ -89,13 +90,18 @@ the following categories:
   to the domain via any clone using a normal transaction.
 
 ### Constraints
-The **m-ld** [specification](http://spec.m-ld.org/#data-semantics) defines a set
-of declarative constraints that can be applied to a domain. Unlike app-based
-integrity rules, these do not require that the app recognise and handle rule
-violations – the app is able to rely on the data it perceives always being
-compliant with the rule.
+A **m-ld** domain can be configured with _constraints_, which are rules that apply to both local and remote transactions. Unlike app-based integrity rules, these do not require that the app recognise and handle rule violations – the app is able to rely on the data it perceives always being compliant with the rule.
 
-> 🚧 Inclusion of declarative integrity constraints in **m-ld** is an
-> experimental feature, and the subject of active research. The available
-> constraints and the means by which they are declared for a domain is likely to
-> change. Please do [contact&nbsp;us](/hello/) with your requirements.
+Constraints are an [extension](/doc/#extensibility) point, allowing apps to choose a pre-existing implementation or to create their own. The implementation of constraints may require handling of concurrency edge-cases to ensure that convergence is still guaranteed.
+
+Consult the [platform engine](/doc/#platforms) documentation for details on the available constraints and how to configure them.
+
+### Agreements
+Some state changes in a distributed system require the _agreement_ of system participants. This is associated with the potential for a user, who is somehow unaware of the agreement (for example, by being offline), to have their changes declared _void_ – that is, entirely revoked. For example:
+
+- Changes concurrent with a data schema change – the state may no longer be compatible with the schema
+- Changes concurrent with access control changes – the concurrent change might not be allowed
+
+An _agreement_ is a coordinated change of state, as distinct from an inherently uncoordinated conflict-free change. An agreement is binding on all participants, but its coordination may involve any subset of them, such as a majority consensus, or even just one participant who has the "authority" to unilaterally agree.
+
+> 🚧 Agreements support in **m-ld** is currently experimental. You can read the [white paper here](https://github.com/m-ld/m-ld-security-spec/blob/main/design/suac.md), and explore the [prototype support](https://js.m-ld.org/interfaces/agreementcondition.html) in the Javascript engine. Please [contact us](/hello/) to discuss your integrity requirements.
