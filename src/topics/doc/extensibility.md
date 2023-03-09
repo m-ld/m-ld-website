@@ -18,7 +18,7 @@ Some extensions must be pre-selected by the app in order to connect a new clone 
 **m-ld** defines a number of extension points:
 - [Messaging](/doc/#messaging) is usually pre-selected by the app.
 - Constraints (see above) define integrity rules on the domain's data.
-- Transport Security allows an app to encrypt and apply digital signatures to **m-ld** protocol network traffic.
+- Transport Security allows an app to protect **m-ld** network traffic by encrypting and/or digitally signing it.
 - Agreement Conditions assert necessary preconditions for an [agreement](/doc/#agreements).
 
 > 🚧 Transport Security and Agreement Conditions are currently experimental. You can read the [white paper here](https://github.com/m-ld/m-ld-security-spec/blob/main/design/suac.md), and explore the [prototype support](https://js.m-ld.org/#extensions) in the Javascript engine. Please [contact us](/hello/) to discuss your requirements.

@@ -23,10 +23,10 @@ The attack surface of an engine generally comprises:
 - The clone API presented to the app
 
 ### Trust Model
-An app using **m-ld** is free to decide its own security model. Because the **m-ld** engine is embedded in the app, it not itself afforded any special privilege because of its deployment. In particular, a **m-ld** domain does not inherently have a privileged, trusted central authority. However, an app may choose to deploy **m-ld** clones to its own trusted service or data tier.
+An app using **m-ld** is free to decide its own security model. Because the **m-ld** engine is embedded in the app, it does not have any special privilege because of its deployment. In particular, a **m-ld** domain does not inherently have any privileged, trusted central authority. However, an app may choose to deploy **m-ld** clones to its own trusted service or data tier.
 
 ### Authentication
-It is the app's responsibility to authenticate its users by any chosen means, such as device-native login, or using a third-party single sign-on system. The app should gate access, using the authentication, to its functions which access the **m-ld** engine.
+It is the app's responsibility to authenticate its users by any chosen method, such as device-native login, or using a third-party single sign-on system, in order to gate access to its functions which access the **m-ld** engine.
 
 Data is transmitted between clones using a choice of [messaging](/doc/#messaging) provider. Since this data is at risk from network attacks, the messaging system itself should be authenticated, either with the user credentials or some token obtained with them.
 
@@ -44,7 +44,9 @@ Fine-grained write access control within a single domain can be achieved using _
 > 🚧 Using constraints for fine-grained write access control is currently experimental. You can read the [white paper here](https://github.com/m-ld/m-ld-security-spec/blob/main/design/suac.md), and explore the [prototype support](https://js.m-ld.org/classes/writepermitted.html) in the Javascript engine. Please [contact us](/hello/) to discuss your security requirements.
 
 ### Auditing & Non-Repudiation
-Once a user is authorised to the application, it may be important to record their activity, as well as that of any other system actor such as a bot, in tamper-proof way, for later auditing. This can generally be achieved with the use of audit stamps (time & user) on updates. If necessary, these stamps can be digitally signed by the app.
+Once a user is authorised to the application, it may be important to record their activity, as well as that of any other system actor such as a bot, in tamper-proof way, for later auditing. In common with other systems, it is usually most efficient to use a dedicated system component for this. In an app using **m-ld**, a clone of the data can be located with the audit logging component.
+
+It is possible to use the Transport Security [extension](/doc/#extensibility) point to provide assurance of user identity to the audit logging system, by means of digital signatures.
 
 ### Storage & Network
 A **m-ld** engine may use storage to automatically persist data between and
