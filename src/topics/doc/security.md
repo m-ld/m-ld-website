@@ -44,7 +44,7 @@ Fine-grained write access control within a single domain can be achieved using _
 > 🚧 Using constraints for fine-grained write access control is currently experimental. You can read the [white paper here](https://github.com/m-ld/m-ld-security-spec/blob/main/design/suac.md), and explore the [prototype support](https://js.m-ld.org/classes/writepermitted.html) in the Javascript engine. Please [contact us](/hello/) to discuss your security requirements.
 
 ### Auditing & Non-Repudiation
-Once a user is authorised to the application, it may be important to record their activity, as well as that of any other system actor such as a bot, in tamper-proof way, for later auditing. In common with other systems, it is usually most efficient to use a dedicated system component for this. In an app using **m-ld**, a clone of the data can be located with the audit logging component.
+Once a user is authorised to the application, it may be important to record their activity, as well as that of any other system actor such as a bot, in a tamper-proof way, for later auditing. In common with other systems, it is usually most efficient to use a dedicated system component for this. In an app using **m-ld**, a clone of the data can be located with the audit logging component.
 
 It is possible to use the Transport Security [extension](/doc/#extensibility) point to provide assurance of user identity to the audit logging system, by means of digital signatures.
 
