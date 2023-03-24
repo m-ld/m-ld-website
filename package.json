@@ -6,7 +6,7 @@
     "link-locals": "npm link ../m-ld-js ../m-ld-io-web-base/build ../m-ld-io-web-base/runtime",
     "clean": "rm -rf _site",
     "build": "npx eleventy",
-    "local": "now dev"
+    "local": "vercel dev"
   },
   "repository": {
     "type": "git",
