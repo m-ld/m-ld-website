@@ -1,7 +1,6 @@
 import { Config } from '../lib/dto';
 import { fetch, LOG, PrefixAuth, responder } from '@m-ld/io-web-runtime/dist/lambda';
 import { recaptchaV2Auth, recaptchaV3Auth } from '@m-ld/io-web-runtime/dist/server/recaptcha';
-import { loadWrtcConfig } from '@m-ld/io-web-runtime/dist/server/xirsys';
 import { ablyToken } from '@m-ld/io-web-runtime/dist/server/ably';
 import { randomWord } from '@m-ld/io-web-runtime/dist/server/words';
 
@@ -25,8 +24,8 @@ export default responder<Config.Request, Config.Response>(new PrefixAuth({
   const [customConfig, wrtc, token] = await Promise.all([
     // Try to load a custom config for this domain
     genesis ? undefined : loadCustomConfig(domain),
-    // Load WebRTC config
-    loadWrtcConfig(SERVICE_TIMEOUT),
+    // WebRTC config
+    getWrtcConfig(),
     // Tokens are Ably JWTs - used for both our config and Ably's
     ablyToken(domain, configReq['@id'])
   ]);
@@ -62,4 +61,20 @@ async function newDomain(domain: string) {
     domain = `${part1}-${part2}.m-ld.org`;
   }
   return { domain, genesis };
+}
+
+/**
+ * @see https://www.metered.ca/tools/openrelay/
+ */
+function getWrtcConfig() {
+  const username = process.env.METERED_USERNAME;
+  const credential = process.env.METERED_PASSWORD;
+  return {
+    iceServers: [
+      { urls: 'stun:relay.metered.ca:80' },
+      { urls: 'turn:relay.metered.ca:80', username, credential },
+      { urls: 'turn:relay.metered.ca:443', username, credential },
+      { urls: 'turn:relay.metered.ca:443?transport=tcp', username, credential }
+    ]
+  };
 }
