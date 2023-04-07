@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html id="storyboard">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>m-ld | storyboard</title>
+  {% include 'gtag.liquid' %}
+  <link rel="stylesheet" href="/main.css" type="text/css">
+  <link rel="stylesheet" href="/jsoneditor.min.css" type="text/css">
+  <script src="../modernizr-custom.js"></script>
+  <script src="https://www.google.com/recaptcha/api.js?render={{ env.RECAPTCHA_SITE }}"></script>
+  <script src="storyboard.js"></script>
+  <style>
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .text-pane {
+      padding: 1em;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .tseq-pane {
+      padding: 1em;
+      flex: 1;
+    }
+    .card-json {
+      height: 200px;
+    }
+    .vflow-item:not(:last-child) {
+      margin-bottom: 16px;
+    }
+    .fill-down {
+      flex: 1;
+    }
+    .card {
+      overflow: visible;
+    }
+    .card-preview {
+      max-width: 25em;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .operation-card .card-header-title {
+      font-weight: unset;
+    }
+    #author-input {
+      min-width: 300px;
+    }
+    .jsoneditor-menu {
+        background-color: darkgrey;
+        border-bottom: thin solid darkgrey;
+    }
+    .jsoneditor {
+        border: thin solid darkgrey;
+    }
+  </style>
+</head>
+
+<body>
+  {% include 'popups.liquid', help: 'storyboard-help.html' %}
+  <nav class="navbar" role="navigation" aria-label="main navigation">
+    <div class="navbar-brand">
+      <div class="navbar-item">
+        <a href="/"><img src="/m-ld.svg" width="112" /></a>
+        storyboard
+      </div>
+      <script>
+      function storyboardNavbarToggle() {
+        document.querySelector('#storyboard-burger').classList.toggle('is-active');
+        document.querySelector('#storyboard-navbar').classList.toggle('is-active');
+      }
+      </script>
+      <a role="button" id="storyboard-burger" class="navbar-burger burger" onclick="storyboardNavbarToggle()"
+        aria-label="menu" aria-expanded="false" data-target="storyboard-navbar">
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+      </a>
+    </div>
+    <div id="storyboard-navbar" class="navbar-menu">
+      <div class="navbar-start">
+        <div class="navbar-item">
+          <input id="author-input" class="input is-fullwidth" type="text"
+            placeholder="new author name (blank to generate)">
+        </div>
+        <div class="navbar-item buttons">
+          <button id="author-new" class="button">
+            <span class="icon">
+              <i class="fas fa-chalkboard-teacher"></i>
+            </span>
+            <span>add</span>
+          </button>
+        </div>
+      </div>
+      <div class="navbar-end">
+        <div class="navbar-item buttons">
+          <button id="show-help" class="button" title="Help">
+            <span class="icon">
+              <i class="fas fa-question"></i>
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </nav>
+  <div id="operation-template" class="card operation-card is-fullwidth vflow-item is-hidden">
+    <header class="card-header">
+      <p class="card-header-title">just now</p>
+      <pre class="card-preview"></pre>
+      <a class="card-header-icon card-toggle">
+        <i class="fa fa-angle-down"></i>
+      </a>
+    </header>
+    <div class="card-content is-hidden">
+      <div class="card-json vflow-item"></div>
+    </div>
+  </div>
+  <section id="author-template" class="columns is-hidden">
+    <div class="column text-pane">
+      <div class="card is-fullwidth">
+        <header class="card-header">
+          <label for="textarea" class="card-header-title">Text</label>
+        </header>
+      </div>
+      <textarea class="textarea vflow-item fill-down" rows="10"></textarea>
+    </div>
+    <div class="tseq-pane column">
+      <div class="tseq-card card is-fullwidth vflow-item">
+        <header class="card-header">
+          <p class="card-header-title">Data</p>
+          <a class="card-header-icon card-toggle">
+            <i class="fa fa-angle-up"></i>
+          </a>
+        </header>
+        <div class="card-content">
+          <div class="card-json vflow-item"></div>
+          <nav class="level vflow-item">
+            <div class="level-left">
+              <button class="tseq-sync button level-item is-primary">sync</button>
+              <a class="level-item button card-link" title="Copy permalink">
+                <span class="icon is-small">
+                  <i class="fas fa-link"></i>
+                </span>
+              </a>
+            </div>
+          </nav>
+        </div>
+      </div>
+      <div class="operations-log vflow-item">
+      </div>
+    </div>
+  </section>
+</body>
+
+</html>

@@ -1,20 +1,19 @@
 import * as d3 from 'd3';
-import JSONEditor, { JSONEditorOptions } from 'jsoneditor';
+import JSONEditor from 'jsoneditor';
 import { D3View } from '../lib/client/D3View';
-import { d3Selection, fromTemplate } from '../lib/client/d3Util';
+import { fromTemplate, Setup, setupJson } from '../lib/client/d3Util';
 import { Grecaptcha, modernizd } from '@m-ld/io-web-runtime/dist/client';
-import {
-  initPopupControls, showInfo, showMessage, showNotModern, showWarning
-} from '../lib/client/PopupControls';
+import { initPopupControls, showInfo, showMessage, showNotModern, showWarning } from '../lib/client/PopupControls';
 import { fetchConfig } from '../lib/client/Api';
 import { clone, isRead, isWrite, MeldClone, MeldUpdate } from '@m-ld/m-ld';
 import { AblyWrtcRemotes } from '@m-ld/m-ld/ext/ably';
 import { MemoryLevel } from 'memory-level';
 import { render as renderTime } from 'timeago.js';
-import { parse, stringify } from 'querystring';
+import { parse } from 'querystring';
 import * as local from 'local-storage';
 import { LevelDownResponse } from '../lib/client/LevelDownResponse';
 import { saveAs } from 'file-saver';
+import { JsonEditorCard } from '../lib/client/JsonEditorCard';
 
 // Ensure that the SHACL plugin exists for schema constraints
 require('@m-ld/m-ld/ext/shacl');
@@ -99,20 +98,7 @@ const NOT_A_WRITE = 'Transaction pattern is not a write operation';
 const NOT_A_CONTEXT = 'A m-ld context must be a JSON object';
 const CONFIRM_CHANGE_DOMAIN = 'You may have unsaved data. Continue changing domain?';
 
-function setupJson(
-  key: string,
-  setup: { [key: string]: string | string[] | undefined },
-  def: any
-): any {
-  const val = setup[key];
-  try {
-    return typeof val == 'string' ? JSON.parse(val) : def;
-  } catch (err) {
-    return def;
-  }
-}
-
-// noinspection JSMethodCanBeStatic
+// noinspection JSIgnoredPromiseFromCall, ES6MissingAwait
 class Playground extends D3View<HTMLDivElement> {
   queryCard: JsonEditorCard;
   txnCard: JsonEditorCard;
@@ -121,7 +107,7 @@ class Playground extends D3View<HTMLDivElement> {
   options: OptionsDialog;
   previousDomain?: string;
 
-  constructor(setup: { [key: string]: string | string[] | undefined }) {
+  constructor(setup: Setup) {
     super(d3.select('#playground-ide'));
     this.queryCard = new JsonEditorCard('query', queryTemplates, {
       mode: 'code', mainMenuBar: false, statusBar: false, onValidate: json =>
@@ -305,132 +291,4 @@ class Playground extends D3View<HTMLDivElement> {
   set querying(querying: boolean) {
     d3.select('#data-spinner').classed('is-hidden', !querying);
   }
-}
-
-class JsonEditorCard extends D3View<HTMLDivElement> {
-  name?: string;
-  jsonEditor: JSONEditor;
-  expanded: boolean = false;
-
-  constructor(
-    card: d3Selection<HTMLDivElement> | string,
-    templates: object,
-    options?: JSONEditorOptions,
-    json?: any
-  ) {
-    super(typeof card == 'string' ? d3.select(`#${card}-card`) : card);
-    this.name = typeof card == 'string' ? card : undefined;
-    this.d3.datum(this);
-
-    this.toggle.on('click', () => {
-      this.expanded = this.content.classed('is-hidden');
-      this.icon.classed('fa-angle-up', this.expanded);
-      this.icon.classed('fa-angle-down', !this.expanded);
-      this.content.classed('is-hidden', !this.expanded);
-      this.preview.classed('is-hidden', this.expanded);
-      if (this.expanded)
-        this.jsonEditor.focus();
-    });
-
-    if (!this.preview.empty()) {
-      const prevOnChange = options?.onChange;
-      options = {
-        ...options,
-        onChange: async () => {
-          this.updatePreview(options);
-          prevOnChange?.();
-        }
-      };
-    }
-
-    this.jsonEditor = new JSONEditor(
-      this.d3.select('.card-json').node() as HTMLElement, options, json);
-
-    this.templatesContent
-      .selectAll('.dropdown-item').data(Object.entries(templates))
-      .join('a').classed('dropdown-item', true).text(e => e[0])
-      .on('click', e => {
-        this.jsonEditor.set(e[1]);
-        this.updatePreview(options);
-      });
-
-    this.linkButton?.on('click', () => {
-      if (this.name != null) {
-        const icon = this.linkButton.select('i');
-        const link = new URL(window.location.href);
-        link.hash = `#${stringify({ [this.name]: JSON.stringify(this.jsonEditor.get()) })}`;
-        navigator.clipboard.writeText(link.href).then(() => {
-          icon.classed('fa-link', false).classed('fa-check', true);
-          setTimeout(() => icon.classed('fa-check', false).classed('fa-link', true), 1000);
-        });
-      }
-    });
-
-    options?.onChange?.();
-  }
-
-  private async updatePreview(options?: JSONEditorOptions) {
-    try {
-      const pattern = this.jsonEditor.get();
-      const errs = await options?.onValidate?.(pattern);
-      if (errs != null && errs.length > 0)
-        this.preview.html(previewErrHtml(errs.map(err => err.message)));
-      else
-        this.preview.html(JSON.stringify(pattern));
-    } catch (err) {
-      this.preview.html(previewErrHtml('JSON not valid'));
-    }
-  }
-
-  mergeFollowing(skip?: 'skip') {
-    const nextSibling = this.element.nextElementSibling;
-    if (nextSibling != null) {
-      const next = d3.select<Element, JsonEditorCard>(nextSibling).datum();
-      if (skip || this.expanded || this.title.text() !== next.title.text()) {
-        next.mergeFollowing();
-      } else {
-        try {
-          const json = [].concat(this.jsonEditor.get()).concat(next.jsonEditor.get());
-          this.jsonEditor.set(json);
-          this.preview.html(JSON.stringify(json));
-          next.d3.remove();
-          this.mergeFollowing();
-        } catch (err) {
-          next.mergeFollowing();
-        }
-      }
-    }
-  }
-
-  get title() {
-    return this.d3.select<HTMLDivElement>('.card-header-title');
-  }
-
-  get content() {
-    return this.d3.select<HTMLDivElement>('.card-content');
-  }
-
-  get preview() {
-    return this.d3.select<HTMLPreElement>('.card-preview');
-  }
-
-  get toggle() {
-    return this.d3.select<HTMLAnchorElement>('.card-toggle');
-  }
-
-  get icon() {
-    return this.toggle.select('.fa');
-  }
-
-  get templatesContent() {
-    return this.d3.select('.templates-menu .dropdown-content');
-  }
-
-  get linkButton() {
-    return this.d3.select<HTMLAnchorElement>('.card-link');
-  }
-}
-
-function previewErrHtml(err: any): string {
-  return `<i class="fas fa-exclamation-triangle" title="${err}"></i>`;
 }

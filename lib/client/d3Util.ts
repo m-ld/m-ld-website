@@ -49,3 +49,15 @@ export function svgParent(el: SVGElement): SVGElement {
     throw new Error('SVG parent expected');
 }
 
+export type Setup = { [key: string]: string | string[] | undefined };
+/**
+ * Extracts a JSON value from a parsed query string (using `querystring`)
+ */
+export function setupJson(key: string, setup: Setup, def?: any): any {
+  const val = setup[key];
+  try {
+    return typeof val == 'string' ? JSON.parse(val) : def;
+  } catch (err) {
+    return def;
+  }
+}
