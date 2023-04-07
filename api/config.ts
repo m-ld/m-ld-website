@@ -1,5 +1,5 @@
 import { Config } from '../lib/dto';
-import { fetch, LOG, PrefixAuth, responder } from '@m-ld/io-web-runtime/dist/lambda';
+import { fetch, fetchJson, LOG, PrefixAuth, responder } from '@m-ld/io-web-runtime/dist/lambda';
 import { recaptchaV2Auth, recaptchaV3Auth } from '@m-ld/io-web-runtime/dist/server/recaptcha';
 import { ablyToken } from '@m-ld/io-web-runtime/dist/server/ably';
 import { randomWord } from '@m-ld/io-web-runtime/dist/server/words';
@@ -10,6 +10,7 @@ import { randomWord } from '@m-ld/io-web-runtime/dist/server/words';
  */
 const SERVICE_TIMEOUT = 10000 / 2;
 
+// noinspection JSUnusedGlobalSymbols
 export default responder<Config.Request, Config.Response>(new PrefixAuth({
   v2: recaptchaV2Auth, v3: recaptchaV3Auth
 }), async configReq => {
@@ -66,15 +67,10 @@ async function newDomain(domain: string) {
 /**
  * @see https://www.metered.ca/tools/openrelay/
  */
-function getWrtcConfig() {
-  const username = process.env.METERED_USERNAME;
-  const credential = process.env.METERED_PASSWORD;
+async function getWrtcConfig(): Promise<RTCConfiguration> {
+  const apiKey = process.env.METERED_API_KEY;
   return {
-    iceServers: [
-      { urls: 'stun:relay.metered.ca:80' },
-      { urls: 'turn:relay.metered.ca:80', username, credential },
-      { urls: 'turn:relay.metered.ca:443', username, credential },
-      { urls: 'turn:relay.metered.ca:443?transport=tcp', username, credential }
-    ]
+    iceServers: await fetchJson<RTCIceServer[]>(
+      'https://m-ld.metered.live/api/v1/turn/credentials', { apiKey })
   };
 }
