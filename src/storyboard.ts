@@ -1,14 +1,20 @@
 import * as d3 from 'd3';
 import { D3View } from '../lib/client/D3View';
-import { d3Selection, fromTemplate, node, Setup, setupJson } from '../lib/client/d3Util';
+import { d3Selection, fromTemplate, Setup, setupJson } from '../lib/client/d3Util';
 import { Grecaptcha, modernizd } from '@m-ld/io-web-runtime/dist/client';
-import { initPopupControls, showError, showNotModern, showWarning } from '../lib/client/PopupControls';
+import {
+  initPopupControls,
+  showError,
+  showNotModern,
+  showWarning
+} from '../lib/client/PopupControls';
 import { TSeq, TSeqOperation } from '@m-ld/m-ld/ext/tseq';
 import { render as renderTime } from 'timeago.js';
 import { parse } from 'querystring';
 import { JsonEditorCard } from '../lib/client/JsonEditorCard';
 import { shortId } from '@m-ld/m-ld';
-import { diff_match_patch } from 'diff-match-patch';
+import { HtmlTextView } from '../lib/client/HtmlTextView';
+
 
 window.onload = async function () {
   try {
@@ -41,12 +47,14 @@ class Storyboard extends D3View<HTMLDivElement> {
       tseq = new TSeq(shortId());
     }
     this.addAuthor(tseq);
-    this.addAuthorButton.on('click', () => {
-      this.addAuthor(TSeq.fromJSON(
-        this.authorInput.property('value') || shortId(),
-        this.authors[0].tseq.toJSON()
-      ));
-    });
+    this.addAuthorButton.on('click', () => this.cloneAuthor(this.authors[0]));
+  }
+
+  cloneAuthor(author: Author) {
+    this.addAuthor(TSeq.fromJSON(
+      this.authorInput.property('value') || shortId(),
+      author.tseq.toJSON()
+    ));
   }
 
   broadcast(operations: TSeqOperation[]) {
@@ -82,8 +90,7 @@ class Storyboard extends D3View<HTMLDivElement> {
 // noinspection JSIgnoredPromiseFromCall, ES6MissingAwait
 class Author extends D3View<HTMLDivElement> {
   tseqCard: JsonEditorCard;
-  textArea: d3Selection<HTMLTextAreaElement>;
-  dmp = new diff_match_patch();
+  textArea: HtmlTextView<HTMLTextAreaElement>;
 
   constructor(
     readonly board: Storyboard,
@@ -93,9 +100,8 @@ class Author extends D3View<HTMLDivElement> {
     super(div);
     div.datum(this);
     div.select('.card-header-title').text(`Text according to ${tseq.pid}`);
-    this.textArea = div.select('.textarea');
-    const textArea = node(this.textArea);
-    textArea.value = tseq.toString();
+    this.textArea = new HtmlTextView(div.select('.textarea'));
+    this.textArea.element.value = tseq.toString();
     this.tseqCard = new JsonEditorCard(
       this.d3.select('.tseq-card'),
       {},
@@ -106,27 +112,27 @@ class Author extends D3View<HTMLDivElement> {
         statusBar: false,
         onEditable: () => false
       },
-      tseq.toJSON()
+      this.tseq.toJSON()
     );
-    const diff = new class {
-      before: string;
-
-      mark() {
-        this.before = this.current;
+    this.textArea.on('update', (...splices) => {
+      try {
+        const operations: TSeqOperation[] = [];
+        for (let splice of splices)
+          operations.push(...this.tseq.splice(...splice));
+        this.tseqCard.json = this.tseq.toJSON();
+        this.logOperations(operations);
+      } catch (e) {
+        showWarning(e);
       }
-
-      get current() {
-        return textArea.value;
-      }
-    }();
-    this.textArea.on('beforeinput', () => diff.mark());
-    this.textArea.on('input', () => this.onInput(diff));
+    });
     this.d3.select('.tseq-sync').on('click', async () => {
       try {
+        if (this.board.authors.length === 1)
+          this.board.cloneAuthor(this);
         const operations = [].concat(
           ...this.d3.selectAll<HTMLDivElement, JsonEditorCard>('.operation-card')
             .data().map(editor => editor.jsonEditor.get()));
-        board.broadcast(operations.map(o => TSeqOperation.fromJSON(o)).reverse());
+        board.broadcast(operations.reverse());
         this.operationsLog.selectAll('.operation-card').remove();
       } catch (e) {
         showWarning(e);
@@ -136,42 +142,8 @@ class Author extends D3View<HTMLDivElement> {
 
   applyOperations(operations: TSeqOperation[]) {
     this.tseq.apply(operations);
-    this.tseqCard.jsonEditor.set(this.tseq.toJSON());
-    node(this.textArea).value = this.tseq.toString();
-  }
-
-  private onInput({ before, current }: { before: string, current: string }) {
-    const operations = this.applyInputChange(before, current);
-    this.tseqCard.jsonEditor.set(this.tseq.toJSON());
-    this.logOperations(operations);
-  }
-
-  private applyInputChange(before: string, current: string) {
-    const diffs = this.dmp.diff_main(before, current);
-    this.dmp.diff_cleanupSemantic(diffs);
-    const operations: TSeqOperation[] = [];
-    for (let d = 0, charIndex = 0; d < diffs.length; d++) {
-      let [type, content] = diffs[d];
-      switch (type) {
-        case 0:
-          charIndex += content.length;
-          break;
-        case -1:
-          const [nextType, nextContent] = diffs[d + 1] ?? [];
-          if (nextType === 1) {
-            operations.push(...this.tseq.splice(charIndex, content.length, nextContent));
-            charIndex += nextContent.length;
-            d++; // Skip next
-          } else {
-            operations.push(...this.tseq.splice(charIndex, content.length));
-          }
-          break;
-        case 1:
-          operations.push(...this.tseq.splice(charIndex, 0, content));
-          charIndex += content.length;
-      }
-    }
-    return operations;
+    this.tseqCard.json = this.tseq.toJSON();
+    this.textArea.element.value = this.tseq.toString();
   }
 
   private logOperations(operations: TSeqOperation[]) {

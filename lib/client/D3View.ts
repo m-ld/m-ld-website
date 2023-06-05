@@ -1,9 +1,12 @@
 import * as d3 from 'd3';
 import { d3Selection } from './d3Util';
+import { EventEmitter } from 'events';
 
-export class D3View<E extends Element = Element, D = unknown> {
+export class D3View<E extends Element = Element, D = unknown> extends EventEmitter {
   constructor(
-    readonly d3: d3Selection<E, D>) {
+    readonly d3: d3Selection<E, D>
+  ) {
+    super();
   }
 
   get element(): E {
@@ -21,7 +24,7 @@ export class GroupView<D = unknown> extends D3View<SVGGElement, D> {
 
   get position(): [number, number] {
     const match = this.d3.attr('transform')
-      .match(/translate\(([-0-9\.]+),\s+([-0-9\.]+)\)/);
+      .match(/translate\(([-0-9.]+),\s+([-0-9.]+)\)/);
     const pos = match?.slice(1).map(Number) ?? [];
     return [pos[0], pos[1]];
   }

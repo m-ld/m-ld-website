@@ -1,12 +1,12 @@
 import * as d3 from 'd3';
-import { setAttr, d3Selection, node, fromTemplate } from './d3Util';
+import { d3Selection, fromTemplate, node, setAttr } from './d3Util';
 import { BoardView } from './BoardView';
 import { Rectangle } from '../Shapes';
 import { GroupView } from './D3View';
 import { LinkView } from './LinkView';
 import { MIN_MESSAGE_SIZE } from '../BoardIndex';
-import { MessageSubject, MessageItem } from '../Message';
-import { HtmlList } from './HtmlList';
+import { MessageItem, MessageSubject } from '../Message';
+import { HtmlTextView, TextSplice } from './HtmlTextView';
 
 /** @see https://github.com/d3/d3-selection#local-variables */
 const VIEW_LOCAL = d3.local<MessageView>();
@@ -14,22 +14,22 @@ const VIEW_LOCAL = d3.local<MessageView>();
 export class MessageView extends GroupView {
   /** @see {@link msg} */
   private _msg: MessageItem;
-  readonly content: HtmlList;
+  readonly content: HtmlTextView<HTMLDivElement>;
 
   /**
    * Must be followed by a call to {@link update}, to initialise message
    * content.
-   * @param id identity of the Message being viewed
    */
   constructor(
     readonly src: MessageSubject,
-    readonly boardView: BoardView) {
+    readonly boardView: BoardView
+  ) {
     super(fromTemplate<SVGGElement>('board-message'));
     // We don't yet know the message size
     this._msg = new MessageItem(src);
     this.d3.classed('board-message', true).attr('id', src['@id']);
     this.box.classed('new-message', true);
-    this.content = new HtmlList(this.body.select('div'));
+    this.content = new HtmlTextView(this.body.select('div'));
     this.content.element.id = MessageSubject.textId(src['@id']);
     VIEW_LOCAL.set(this.element, this);
   }
@@ -63,8 +63,8 @@ export class MessageView extends GroupView {
     return this.d3.select(`.board-message-${name} circle`);
   }
 
-  async update(dirty?: 'dirty'): Promise<void> {
-    if (dirty) {
+  async update(text?: TextSplice[] | string): Promise<void> {
+    if (text != null) {
       // This will also update the nested list
       this._msg = new MessageItem(this.src);
       // Detect if the message has become invalid (deleted)
@@ -76,23 +76,11 @@ export class MessageView extends GroupView {
         return; // Nothing else to do
       } else {
         // Update the visible text
-        this.content.update(this._msg.textList);
+        this.content.update(text);
         // Update the position
         this.position = this._msg.position;
       }
     }
-    // We push the re-sizing to at least the next frame because Firefox
-    // sometimes hasn't updated the bounding client rect yet.
-    const images = this.content.d3.selectAll<HTMLImageElement, unknown>('img').nodes();
-    if (images.length)
-      await Promise.all(images.map(img =>
-        img.complete ? Promise.resolve() : new Promise((resolve, reject) => {
-          img.addEventListener('load', resolve);
-          img.addEventListener('error', resolve); // Ignore failed image load
-        })));
-    else
-      await new Promise(resolve => window.requestAnimationFrame(resolve));
-
     // Size the shape to the content
     const textRect = this.boardView.svgRect(this.content.element);
     // Chromium bug: The computed effective zoom is currently force-set to 1.0
@@ -110,7 +98,7 @@ export class MessageView extends GroupView {
     setAttr(this.body, { width, height });
     this._msg = new MessageItem(this.src, [width, height]);
 
-    if (dirty) // i.e. data has changed
+    if (text) // i.e. data has changed
       await this.syncLinks();
 
     // Update the position of all link lines

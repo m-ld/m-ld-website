@@ -1,25 +1,37 @@
 import * as d3 from 'd3';
-import { isStringText, MessageSubject } from '../Message';
-import { svgParent, getAttr, d3Selection, node } from './d3Util';
+import { MessageSubject } from '../Message';
+import { d3Selection, getAttr, node, svgParent } from './d3Util';
 import { InfiniteView } from './InfiniteView';
 import { MessageView } from './MessageView';
 import { GroupView } from './D3View';
-import { Rectangle, Circle, Shape, Line } from '../Shapes';
+import { Circle, Line, Rectangle, Shape } from '../Shapes';
 import {
-  MeldClone, asSubjectUpdates, SubjectUpdates, includesValue, SubjectUpdater
+  array,
+  asSubjectUpdates,
+  includesValue,
+  isConstraint,
+  isPropertyObject,
+  MeldClone,
+  Reference,
+  Select,
+  shortId,
+  SubjectUpdate,
+  SubjectUpdater,
+  SubjectUpdates,
+  Update
 } from '@m-ld/m-ld';
-import { shortId, Select, Update, Reference } from '@m-ld/m-ld';
 import { LinkView } from './LinkView';
 import { showError, showInfo, showWarning } from './PopupControls';
 import { BoardBushIndex, BoardIndex } from '../BoardIndex';
-import { HtmlListUpdate } from './HtmlList';
 import { debounce, tap } from 'rxjs/operators';
-import { fromEvent } from 'rxjs';
+import { fromEvent, lastValueFrom } from 'rxjs';
+import { TextSplice } from './HtmlTextView';
 
 const CLICK_DRAG_DISTANCE = 3;
 
 export class BoardView extends InfiniteView {
   private readonly _index: BoardBushIndex = new BoardBushIndex();
+  private readonly _updating = new Set<MessageView>();
 
   constructor(
     selectSvg: string,
@@ -29,8 +41,9 @@ export class BoardView extends InfiniteView {
 
     model.read(async state => {
       try {
-        const last = await MessageSubject.load(state).pipe(tap(src =>
-          this.updateMessageView(this.addMessageView(src)))).toPromise();
+        const last = await lastValueFrom(MessageSubject.loadAll(state).pipe(
+          tap(src => this.addMessageView(src))
+        ), { defaultValue: null });
         if (last != null && this.zoomToExtent())
           showInfo('Tip: You can look more closely by double-clicking.');
       } catch (err) {
@@ -62,28 +75,20 @@ export class BoardView extends InfiniteView {
   private updateView(updates: SubjectUpdates) {
     const updater = new SubjectUpdater(updates);
     Object.keys(updates).forEach(id => {
-      const insert = updates[id]['@insert'];
-      // An updated Subject can be a Message or a message text List. Since both
-      // may be in the same set of updates, keep track of which message views
-      // are affected so we don't double-spend.
+      const { '@insert': insert, '@update': update } = updates[id];
       const updated = this.withThatMessage(id, mv => {
         updater.update(mv.src);
-        this.updateMessageView(mv);
+        if (!this._updating.delete(mv)) // Don't update if it's us
+          this.updateMessageView(mv, [...getSplices(update)]);
       });
       if (updated.empty() && insert != null && insert['@type'] === 'Message') {
         // A message we haven't seen before
         const src = updater.update(MessageSubject.create({ '@id': id }));
         const mv = this.addMessageView(src);
-        this.updateMessageView(mv);
         if (id === this.welcomeId)
           this.forceEditFocus(mv, false);
       }
     });
-  }
-
-  private updateMessageView(mv: MessageView) {
-    // Update the index when the message view has re-sized itself
-    mv.update('dirty').then(() => this._index.update(mv.msg)).catch(showWarning);
   }
 
   private addMessageView(src: MessageSubject) {
@@ -94,8 +99,9 @@ export class BoardView extends InfiniteView {
       .on('mousedown', () => this.forceEditFocus(mv))
       .on('touchstart', () => this.forceEditFocus(mv));
     // Ensure that text updates don't overlap
-    fromEvent<HtmlListUpdate>(mv.content, 'update').pipe(
-      debounce(update => this.inputChange(mv, update))).subscribe();
+    fromEvent(mv.content, 'update').pipe(
+      debounce((update: TextSplice) => this.inputChange(mv, update))
+    ).subscribe();
     mv.content.d3
       .on('focus', () => this.inputStart(mv))
       .on('keydown', () => this.inputKey(mv))
@@ -115,7 +121,30 @@ export class BoardView extends InfiniteView {
       .on('end', this.withThisMessage(this.moveDragEnd)));
     mv.getButton('code')
       .on('click', () => this.showCode(mv));
+    this.updateMessageView(mv, src.text?.['@value']);
     return mv;
+  }
+
+  private updateMessageView(mv: MessageView, text?: TextSplice[] | string) {
+    // Update the index when the message view has re-sized itself
+    mv.update(text).then(() => this._index.update(mv.msg)).catch(showWarning);
+  }
+
+  private async inputChange(mv: MessageView, splice: TextSplice): Promise<unknown> {
+    // Immediately update the message's size to accommodate the input
+    mv.update().catch(showWarning);
+    if (mv.src.text != null) {
+      return this.model.write(async state => {
+        this._updating.add(mv);
+        try {
+          await state.write({
+            '@update': { '@id': mv.src['@id'], text: { '@splice': splice } },
+          });
+        } finally {
+          this._updating.delete(mv);
+        }
+      });
+    }
   }
 
   private showCode(mv: MessageView) {
@@ -173,21 +202,6 @@ export class BoardView extends InfiniteView {
       .on('start', this.withThisMessage(dragStart))
       .on('drag', this.withThisMessage(dragging))
       .on('end', this.withThisMessage(dragEnd));
-  }
-
-  private async inputChange(mv: MessageView, listUpdate: HtmlListUpdate): Promise<unknown> {
-    // Immediately update the message's size to accommodate the input
-    mv.update();
-    if (mv.src.text != null) {
-      const update: Update = isStringText(mv.src.text) ? {
-        '@delete': { '@id': mv.src['@id'], text: mv.src.text },
-        '@insert': { '@id': mv.src['@id'], text: mv.content.toString() }
-      } : {
-        '@delete': { '@id': mv.src.text['@id'], '@list': listUpdate['@delete'] },
-        '@insert': { '@id': mv.src.text['@id'], '@list': listUpdate['@insert'] }
-      };
-      return this.model.write(update);
-    }
   }
 
   private inputStart(mv: MessageView) {
@@ -399,4 +413,13 @@ interface DragSubject {
   cursor: string;
   target?: MessageView;
   link: LinkView;
+}
+
+function *getSplices(update: SubjectUpdate['@update']) {
+  if (isPropertyObject('text', update?.text)) {
+    for (let expr of array(update?.text)) {
+      if (isConstraint(expr))
+        yield expr['@splice'] as TextSplice;
+    }
+  }
 }

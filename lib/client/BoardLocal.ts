@@ -3,8 +3,9 @@ import * as local from 'local-storage';
 import { MemoryLevel } from 'memory-level';
 import { LevelDownResponse } from './LevelDownResponse';
 import type { LockManager } from 'navigator.locks';
-import { clone, MeldClone, MeldConfig } from '@m-ld/m-ld';
-import { AblyWrtcRemotes } from '@m-ld/m-ld/ext/ably/index';
+import { clone, combineExtensions, MeldClone, MeldConfig } from '@m-ld/m-ld';
+import { AblyWrtcRemotes } from '@m-ld/m-ld/ext/ably';
+import { TSeqDatatype } from '@m-ld/m-ld/ext/tseq';
 import * as lifecycle from 'page-lifecycle';
 import { fromEvent, merge, of } from 'rxjs';
 import { node } from './d3Util';
@@ -123,8 +124,14 @@ export class BoardLocal extends EventEmitter {
     }
     this.meld = {
       domain: config['@domain'],
-      clone: await clone(backend, AblyWrtcRemotes,
-        config, { backendEvents: this.backendEvents }),
+      clone: await clone(
+        backend,
+        AblyWrtcRemotes,
+        config,
+        combineExtensions([new TSeqDatatype()], {
+          backendEvents: this.backendEvents
+        })
+      ),
       backend
     };
     window.addEventListener('unload', () => this.meld?.clone.close());

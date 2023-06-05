@@ -2,7 +2,8 @@ import { D3View } from './D3View';
 import JSONEditor, { JSONEditorOptions } from 'jsoneditor';
 import { d3Selection } from './d3Util';
 import * as d3 from 'd3';
-import { stringify } from 'querystring';
+
+const stringify = require('json-stringify-pretty-compact');
 
 export class JsonEditorCard extends D3View<HTMLDivElement> {
   name?: string;
@@ -42,7 +43,9 @@ export class JsonEditorCard extends D3View<HTMLDivElement> {
     }
 
     this.jsonEditor = new JSONEditor(
-      this.d3.select('.card-json').node() as HTMLElement, options, json);
+      this.d3.select('.card-json').node() as HTMLElement, options);
+    if (json)
+      this.json = json;
 
     this.templatesContent
       .selectAll('.dropdown-item').data(Object.entries(templates))
@@ -103,6 +106,14 @@ export class JsonEditorCard extends D3View<HTMLDivElement> {
         }
       }
     }
+  }
+
+  get json() {
+    return this.jsonEditor.get();
+  }
+
+  set json(json: any) {
+    this.jsonEditor.setText(stringify(json, { maxLength: 64 }));
   }
 
   get title() {
