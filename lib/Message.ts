@@ -1,12 +1,5 @@
 import {
-  any,
-  array,
-  Describe,
-  MeldReadState,
-  MeldState,
-  Reference,
-  shortId,
-  Subject
+  any, array, Describe, MeldReadState, MeldState, Reference, shortId, Subject
 } from '@m-ld/m-ld';
 import { Observable } from 'rxjs';
 import { mergeMap } from 'rxjs/operators';
@@ -23,10 +16,7 @@ export interface Message {
 export interface MessageSubject extends Subject {
   '@id': string;
   '@type': 'Message';
-  text?: {
-    '@type': 'http://ext.m-ld.org/tseq/TSeq',
-    '@value': string
-  };
+  text?: string;
   x?: number | number[];
   y?: number | number[];
   linkTo?: Reference[];
@@ -38,10 +28,7 @@ export namespace MessageSubject {
     return {
       '@id': id,
       '@type': 'Message',
-      text: init.text != null ? {
-        '@type': 'http://ext.m-ld.org/tseq/TSeq',
-        '@value': init.text
-      } : undefined,
+      text: init.text,
       x: init.x,
       y: init.y,
       linkTo: init.linkTo

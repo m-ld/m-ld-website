@@ -6,19 +6,8 @@ import { MessageView } from './MessageView';
 import { GroupView } from './D3View';
 import { Circle, Line, Rectangle, Shape } from '../Shapes';
 import {
-  array,
-  asSubjectUpdates,
-  includesValue,
-  isConstraint,
-  isPropertyObject,
-  MeldClone,
-  Reference,
-  Select,
-  shortId,
-  SubjectUpdate,
-  SubjectUpdater,
-  SubjectUpdates,
-  Update
+  array, asSubjectUpdates, includesValue, isConstraint, isPropertyObject, MeldClone, Reference,
+  Select, shortId, SubjectUpdate, SubjectUpdater, SubjectUpdates, Update
 } from '@m-ld/m-ld';
 import { LinkView } from './LinkView';
 import { showError, showInfo, showWarning } from './PopupControls';
@@ -121,7 +110,7 @@ export class BoardView extends InfiniteView {
       .on('end', this.withThisMessage(this.moveDragEnd)));
     mv.getButton('code')
       .on('click', () => this.showCode(mv));
-    this.updateMessageView(mv, src.text?.['@value']);
+    this.updateMessageView(mv, src.text);
     return mv;
   }
 

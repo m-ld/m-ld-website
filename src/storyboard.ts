@@ -3,10 +3,7 @@ import { D3View } from '../lib/client/D3View';
 import { d3Selection, fromTemplate, Setup, setupJson } from '../lib/client/d3Util';
 import { Grecaptcha, modernizd } from '@m-ld/io-web-runtime/dist/client';
 import {
-  initPopupControls,
-  showError,
-  showNotModern,
-  showWarning
+  initPopupControls, showError, showNotModern, showWarning
 } from '../lib/client/PopupControls';
 import { TSeq, TSeqOperation } from '@m-ld/m-ld/ext/tseq';
 import { render as renderTime } from 'timeago.js';
@@ -14,7 +11,6 @@ import { parse } from 'querystring';
 import { JsonEditorCard } from '../lib/client/JsonEditorCard';
 import { shortId } from '@m-ld/m-ld';
 import { HtmlTextView } from '../lib/client/HtmlTextView';
-
 
 window.onload = async function () {
   try {
@@ -116,11 +112,9 @@ class Author extends D3View<HTMLDivElement> {
     );
     this.textArea.on('update', (...splices) => {
       try {
-        const operations: TSeqOperation[] = [];
         for (let splice of splices)
-          operations.push(...this.tseq.splice(...splice));
+          this.logOperation(this.tseq.splice(...splice));
         this.tseqCard.json = this.tseq.toJSON();
-        this.logOperations(operations);
       } catch (e) {
         showWarning(e);
       }
@@ -129,9 +123,9 @@ class Author extends D3View<HTMLDivElement> {
       try {
         if (this.board.authors.length === 1)
           this.board.cloneAuthor(this);
-        const operations = [].concat(
-          ...this.d3.selectAll<HTMLDivElement, JsonEditorCard>('.operation-card')
-            .data().map(editor => editor.jsonEditor.get()));
+        const operations =
+          this.d3.selectAll<HTMLDivElement, JsonEditorCard>('.operation-card')
+            .data().map(editor => editor.jsonEditor.get());
         board.broadcast(operations.reverse());
         this.operationsLog.selectAll('.operation-card').remove();
       } catch (e) {
@@ -141,12 +135,13 @@ class Author extends D3View<HTMLDivElement> {
   }
 
   applyOperations(operations: TSeqOperation[]) {
-    this.tseq.apply(operations);
+    for (let operation of operations)
+      this.tseq.apply(operation);
     this.tseqCard.json = this.tseq.toJSON();
     this.textArea.element.value = this.tseq.toString();
   }
 
-  private logOperations(operations: TSeqOperation[]) {
+  private logOperation(operation: TSeqOperation) {
     const editorCard = new JsonEditorCard(
       this.operationsLog
         .insert(() => fromTemplate<HTMLDivElement>('operation'), ':first-child')
@@ -155,7 +150,7 @@ class Author extends D3View<HTMLDivElement> {
       {
         mode: 'code', mainMenuBar: false, statusBar: false, onEditable: () => false
       },
-      operations
+      operation
     );
     editorCard.d3.datum(editorCard);
     editorCard.title.attr('datetime', new Date().toISOString());
