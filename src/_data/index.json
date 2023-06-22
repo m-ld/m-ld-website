@@ -37,20 +37,12 @@
       "summary": "For node.js, modern browsers and other Javascript engines. Typescript is supported and recommended."
     },
     {
-      "name": "Swift",
-      "icon": "fab fa-swift",
+      "name": "Docker",
+      "icon": "fab fa-docker",
       "visible": true,
       "soon": true,
-      "url": "https://github.com/m-ld/m-ld-spec/issues/97",
-      "summary": "For peer-to-peer live data among iOS, iPadOS and MacOS devices."
-    },
-    {
-      "name": "Rust",
-      "icon": "fab fa-rust",
-      "visible": true,
-      "soon": true,
-      "url": "https://github.com/m-ld/m-ld-spec/issues/54",
-      "summary": "For cross-platform live data - endpoint devices and servers."
+      "url": "https://github.com/m-ld/m-ld-spec/issues/41",
+      "summary": "For microservice, serverless and server environments."
     },
     {
       "name": "Python",
@@ -61,20 +53,28 @@
       "summary": "For scripting, data science and general computing environments."
     },
     {
+      "name": "Rust",
+      "icon": "fab fa-rust",
+      "visible": true,
+      "request": true,
+      "url": "https://github.com/m-ld/m-ld-spec/issues/54",
+      "summary": "For cross-platform live data - endpoint devices and servers."
+    },
+    {
+      "name": "Swift",
+      "icon": "fab fa-swift",
+      "visible": true,
+      "request": true,
+      "url": "https://github.com/m-ld/m-ld-spec/issues/97",
+      "summary": "For peer-to-peer live data among iOS, iPadOS and MacOS devices."
+    },
+    {
       "name": "Java",
       "icon": "fab fa-java",
-      "visible": true,
+      "visible": false,
       "request": true,
       "url": "https://github.com/m-ld/m-ld-spec/issues/42",
       "summary": "For Java environments, typically servers."
-    },
-    {
-      "name": "Docker",
-      "icon": "fab fa-docker",
-      "visible": false,
-      "soon": true,
-      "url": "https://github.com/m-ld/m-ld-spec/issues/41",
-      "summary": "For microservice, serverless and server environments."
     },
     {
       "name": ".NET",

@@ -34,12 +34,6 @@ export interface BoardIndex {
     size?: [number, number],
     startTheta?: number,
     margin?: number): [number, number];
-
-  /**
-   * Gets the most important messages on the board, e.g. for bot reaction.
-   * Messages from the current board user and new messages rank highest.
-   */
-  topMessages(count?: number, excludeIds?: Set<string>): string[];
 }
 
 /**
@@ -128,11 +122,5 @@ export class BoardBushIndex extends MessageBush implements BoardIndex {
     }
     // Sane default if we can't find a gap
     return [nx, ny + height];
-  }
-
-  topMessages(count?: number, excludeIds?: Set<string>): string[] {
-    return Array.from(this.top)
-      .reverse().filter(id => excludeIds == null || !excludeIds.has(id))
-      .slice(0, count).map(id => this.get(id)?.text ?? ''); // Should exist
   }
 }
