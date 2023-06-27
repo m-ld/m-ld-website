@@ -27,7 +27,7 @@
   "dependencies": {
     "@ably/msgpack-js": "^0.4.0",
     "@m-ld/io-web-runtime": "^0.2.2",
-    "@m-ld/m-ld": "^0.10.0-edge.0",
+    "@m-ld/m-ld": "^0.10.0-edge.1",
     "@types/d3": "^5.16.4",
     "@types/diff-match-patch": "^1.0.32",
     "@types/file-saver": "^2.0.4",

@@ -27,8 +27,9 @@ export type Version = 'v0' | 'v1' | 'v2'
   | 'v4' // Journal and encoding changes for fusions
   | 'v5' // TIDs in key-values
   | 'v6' // Principal and agreement in operations
-  | 'v7'; // Quadstore v12, shareable datatypes
-export const CURRENT_VERSION: Version = 'v7';
+  | 'v7' // Quadstore v12, shareable datatypes
+  | 'v8'; // Indirected datatypes have literal keys
+export const CURRENT_VERSION: Version = 'v8';
 export const INDEXED_DB_VERSIONS: Version[] = ['v0', 'v1', 'v2'];
 
 const CACHE_KEY = 'board-data';

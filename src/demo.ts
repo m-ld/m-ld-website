@@ -4,11 +4,7 @@ import { MeldConfig, shortId } from '@m-ld/m-ld';
 import { configureLogging, Grecaptcha, modernizd } from '@m-ld/io-web-runtime/dist/client';
 import { BoardLocal } from '../lib/client/BoardLocal';
 import {
-  initPopupControls,
-  loadingFinished,
-  showAbout,
-  showError,
-  showNotModern
+  initPopupControls, loadingFinished, showAbout, showError, showNotModern
 } from '../lib/client/PopupControls';
 import { initBoardControls } from '../lib/client/BoardControls';
 import { fetchConfig } from '../lib/client/Api';
@@ -80,7 +76,7 @@ class Demo {
     if (isNew) {
       await meld.write(MessageSubject.create({
         '@id': welcomeId,
-        text: `'Welcome to your message board, ${config['@domain']}!\n` +
+        text: `Welcome to your message board, ${config['@domain']}!\n` +
         'For help using this app, click the (?) button on the left.',
         x: 200, y: 100
       }));
