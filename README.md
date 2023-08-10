@@ -81,4 +81,4 @@ There is also a small png version, which is generated using
 * https://webkul.github.io/myscale/
 * https://modernizr.com/
 * https://ably.com/
-* https://global.xirsys.net/dashboard/services
+* https://www.metered.ca/
