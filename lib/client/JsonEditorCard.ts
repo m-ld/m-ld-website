@@ -1,14 +1,12 @@
-import { D3View } from './D3View';
 import JSONEditor, { JSONEditorOptions } from 'jsoneditor';
 import { d3Selection } from './d3Util';
 import * as d3 from 'd3';
+import { DetailsCard } from './DetailsCard';
 
 const stringify = require('json-stringify-pretty-compact');
 
-export class JsonEditorCard extends D3View<HTMLDivElement> {
-  name?: string;
+export class JsonEditorCard extends DetailsCard {
   jsonEditor: JSONEditor;
-  expanded: boolean = false;
 
   constructor(
     card: d3Selection<HTMLDivElement> | string,
@@ -16,19 +14,7 @@ export class JsonEditorCard extends D3View<HTMLDivElement> {
     options?: JSONEditorOptions,
     json?: any
   ) {
-    super(typeof card == 'string' ? d3.select(`#${card}-card`) : card);
-    this.name = typeof card == 'string' ? card : undefined;
-    this.d3.datum(this);
-
-    this.toggle.on('click', () => {
-      this.expanded = this.content.classed('is-hidden');
-      this.icon.classed('fa-angle-up', this.expanded);
-      this.icon.classed('fa-angle-down', !this.expanded);
-      this.content.classed('is-hidden', !this.expanded);
-      this.preview.classed('is-hidden', this.expanded);
-      if (this.expanded)
-        this.jsonEditor.focus();
-    });
+    super(card);
 
     if (!this.preview.empty()) {
       const prevOnChange = options?.onChange;
@@ -69,6 +55,13 @@ export class JsonEditorCard extends D3View<HTMLDivElement> {
     });
 
     options?.onChange?.();
+  }
+
+  protected onToggle() {
+    super.onToggle();
+    this.preview.classed('is-hidden', this.expanded);
+    if (this.expanded)
+      this.jsonEditor.focus();
   }
 
   private async updatePreview(options?: JSONEditorOptions) {
@@ -116,24 +109,8 @@ export class JsonEditorCard extends D3View<HTMLDivElement> {
     this.jsonEditor.setText(stringify(json, { maxLength: 64 }));
   }
 
-  get title() {
-    return this.d3.select<HTMLDivElement>('.card-header-title');
-  }
-
-  get content() {
-    return this.d3.select<HTMLDivElement>('.card-content');
-  }
-
   get preview() {
     return this.d3.select<HTMLPreElement>('.card-preview');
-  }
-
-  get toggle() {
-    return this.d3.select<HTMLAnchorElement>('.card-toggle');
-  }
-
-  get icon() {
-    return this.toggle.select('.fa');
   }
 
   get templatesContent() {

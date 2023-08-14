@@ -3,7 +3,9 @@ import JSONEditor from 'jsoneditor';
 import { D3View } from '../lib/client/D3View';
 import { fromTemplate, Setup, setupJson } from '../lib/client/d3Util';
 import { Grecaptcha, modernizd } from '@m-ld/io-web-runtime/dist/client';
-import { initPopupControls, showInfo, showMessage, showNotModern, showWarning } from '../lib/client/PopupControls';
+import {
+  initPopupControls, showInfo, showMessage, showNotModern, showWarning
+} from '../lib/client/PopupControls';
 import { fetchConfig } from '../lib/client/Api';
 import { clone, isRead, isWrite, MeldClone, MeldUpdate } from '@m-ld/m-ld';
 import { AblyWrtcRemotes } from '@m-ld/m-ld/ext/ably';
@@ -14,6 +16,8 @@ import * as local from 'local-storage';
 import { LevelDownResponse } from '../lib/client/LevelDownResponse';
 import { saveAs } from 'file-saver';
 import { JsonEditorCard } from '../lib/client/JsonEditorCard';
+import { DetailsCard } from '../lib/client/DetailsCard';
+import { Config } from '../lib/dto';
 
 // Ensure that the SHACL plugin exists for schema constraints
 require('@m-ld/m-ld/ext/shacl');
@@ -47,23 +51,36 @@ function validContext(context: any): boolean {
 }
 
 class OptionsDialog extends D3View<HTMLDivElement> {
-  contextEditor: JSONEditor;
-  prevContext: any = {};
+  private readonly contextEditor: JSONEditor;
+  private prevContext: any = {};
 
   constructor() {
     super(d3.select('#options-dialog'));
-    this.contextEditor = new JSONEditor(d3.select('#context-jsoneditor').node() as HTMLElement, {
-      mode: 'code', mainMenuBar: false, statusBar: false,
-      onChange: () => this.applyButton.property('disabled', !this.valid),
-      onValidate: json => validContext(json) ? [] : [{ path: [], message: NOT_A_CONTEXT }]
-    }, {}); // Default empty context
+    new DetailsCard('context');
+    new DetailsCard('debug');
+    this.contextEditor = new JSONEditor(
+      d3.select('#context-jsoneditor').node() as HTMLElement,
+      {
+        mode: 'code', mainMenuBar: false, statusBar: false,
+        onChange: () => this.applyButton.property('disabled', !this.valid),
+        onValidate: json => validContext(json) ? [] : [{ path: [], message: NOT_A_CONTEXT }]
+      },
+      {}
+    ); // Default empty context
     this.applyButton.on('click', () => {
       this.d3.classed('is-active', false);
+      this.emit('apply', this.prevContext);
     });
     this.cancelButton.on('click', () => {
       this.d3.classed('is-active', false);
       this.contextEditor.set(this.prevContext);
+      this.emit('cancel');
     });
+  }
+
+  show() {
+    this.d3.classed('is-active', true);
+    this.prevContext = this.context;
   }
 
   get context() {
@@ -72,8 +89,7 @@ class OptionsDialog extends D3View<HTMLDivElement> {
 
   get valid(): boolean {
     try {
-      const context = this.contextEditor.get();
-      return validContext(context);
+      return validContext(this.context);
     } catch (err) {
       return false;
     }
@@ -85,11 +101,6 @@ class OptionsDialog extends D3View<HTMLDivElement> {
 
   get cancelButton() {
     return d3.select('#options-cancel');
-  }
-
-  show() {
-    this.d3.classed('is-active', true);
-    this.prevContext = this.contextEditor.get();
   }
 }
 
@@ -103,7 +114,7 @@ class Playground extends D3View<HTMLDivElement> {
   queryCard: JsonEditorCard;
   txnCard: JsonEditorCard;
   dataEditor: JSONEditor;
-  meld?: { clone: MeldClone, backend: MemoryLevel<string, Buffer> };
+  meld?: { clone: MeldClone, backend: MemoryLevel<string, Buffer>, config: Config.Response };
   options: OptionsDialog;
   previousDomain?: string;
 
@@ -153,6 +164,7 @@ class Playground extends D3View<HTMLDivElement> {
     });
     d3.select('#show-options').on('click', () => this.options.show());
     this.options = new OptionsDialog();
+    this.options.on('apply', () => this.reloadDomain());
 
     this.intro.classed('is-hidden', this.introHidden);
     this.intro.select('.delete').on('click', () => this.introHidden = true);
@@ -200,27 +212,50 @@ class Playground extends D3View<HTMLDivElement> {
   }
 
   async loadDomain() {
-    if (this.previousDomain !== this.domain) {
-      if (this.unsaved && !window.confirm(CONFIRM_CHANGE_DOMAIN))
-        return this.domain = this.previousDomain ?? '';
-      try {
-        this.loading = true;
-        await this.close();
-        this.updatesLog.selectAll('.update-card').remove();
-        const config = await fetchConfig(this.domain);
-        this.domain = this.previousDomain = config['@domain'];
-        Object.assign(config['@context'] ??= {}, this.options.context);
-        const backend = new MemoryLevel<string, Buffer>();
-        this.meld = { clone: await clone(backend, AblyWrtcRemotes, config), backend };
-        this.meld.clone.follow(update => this.onUpdate(update));
-        await this.meld.clone.status.becomes({ outdated: false });
-        showInfo(`Connected to ${config['@domain']}`);
-        this.runQuery('warn');
-      } catch (err) {
-        showWarning(err);
-      } finally {
-        this.loading = false;
-      }
+    if (this.previousDomain === this.domain)
+      return;
+    if (this.unsaved && !window.confirm(CONFIRM_CHANGE_DOMAIN))
+      return this.domain = this.previousDomain ?? '';
+    this.doLoading(async () => {
+      this.updatesLog.selectAll('.update-card').remove();
+      const config = await fetchConfig(this.domain);
+      this.domain = this.previousDomain = config['@domain'];
+      const backend = new MemoryLevel<string, Buffer>();
+      const meld = await this.clone(backend, config);
+      await meld.clone.status.becomes({ outdated: false });
+      showInfo(`Connected to ${config['@domain']}`);
+    });
+  }
+
+  private async clone(backend: MemoryLevel<string, Buffer>, config: Config.Response) {
+    this.meld = {
+      clone: await clone(backend, AblyWrtcRemotes, {
+        ...config, '@context': { ...config['@context'], ...this.options.context }
+      }),
+      backend,
+      config
+    };
+    this.meld.clone.follow(update => this.onUpdate(update));
+    return this.meld;
+  }
+
+  reloadDomain() {
+    if (this.meld == null)
+      return;
+    const { backend, config } = this.meld;
+    this.doLoading(() => this.clone(backend, config));
+  }
+
+  async doLoading(loading: () => Promise<unknown>) {
+    try {
+      this.loading = true;
+      await this.close();
+      await loading();
+      this.runQuery('warn');
+    } catch (err) {
+      showWarning(err);
+    } finally {
+      this.loading = false;
     }
   }
 

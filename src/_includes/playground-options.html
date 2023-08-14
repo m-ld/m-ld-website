@@ -1,17 +1,22 @@
-<div class="card is-fullwidth vflow-item">
+<div id="context-card" class="card is-fullwidth vflow-item">
   <header class="card-header">
     <p class="card-header-title">Context</p>
+    <a class="card-header-icon card-toggle">
+      <i class="fa fa-angle-up"></i>
+    </a>
   </header>
-  <div class="card-content">
+  <div class="card-content is-hidden">
     <div id="context-jsoneditor" class="vflow-item"></div>
-    <div class="is-italic">applies when joining a domain</div>
   </div>
 </div>
-<div class="card is-fullwidth vflow-item">
+<div id="debug-card" class="card is-fullwidth vflow-item">
   <header class="card-header">
     <p class="card-header-title">Debugging</p>
+    <a class="card-header-icon card-toggle">
+      <i class="fa fa-angle-up"></i>
+    </a>
   </header>
-  <div class="card-content">
+  <div class="card-content is-hidden">
     <button id="domain-download" class="button requires-domain">
       <span class="icon">
         <i class="fas fa-download"></i>
@@ -22,7 +27,7 @@
 </div>
 <nav class="level vflow-item">
   <div class="level-left">
-    <button id="options-apply" class="level-item button is-primary">ok</button>
+    <button id="options-apply" class="level-item button is-primary" disabled>apply</button>
   </div>
   <div class="level-right">
     <button id="options-cancel" class="level-item button">cancel</button>
