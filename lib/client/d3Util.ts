@@ -5,7 +5,7 @@ export type SVG = d3.Selection<SVGSVGElement, unknown, HTMLElement, unknown>;
 export type d3Selection<E extends d3.BaseType = d3.BaseType, D = unknown> =
   d3.Selection<E, D, d3.BaseType, unknown>;
 
-export function node<E extends d3.BaseType>(selection: d3Selection<E>): E {
+export function node<E extends d3.BaseType>(selection: d3Selection<E>): NonNullable<E> {
   const node = selection.node();
   if (node == null)
     throw new Error('Node expected');

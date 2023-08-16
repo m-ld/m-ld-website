@@ -1,14 +1,15 @@
 import * as d3 from 'd3';
 import JSONEditor from 'jsoneditor';
 import { D3View } from '../lib/client/D3View';
-import { fromTemplate, Setup, setupJson } from '../lib/client/d3Util';
+import { d3Selection, fromTemplate, node, Setup, setupJson } from '../lib/client/d3Util';
 import { Grecaptcha, modernizd } from '@m-ld/io-web-runtime/dist/client';
 import {
   initPopupControls, showInfo, showMessage, showNotModern, showWarning
 } from '../lib/client/PopupControls';
 import { fetchConfig } from '../lib/client/Api';
 import { clone, isRead, isWrite, MeldClone, MeldUpdate } from '@m-ld/m-ld';
-import { AblyWrtcRemotes } from '@m-ld/m-ld/ext/ably';
+import { AblyRemotes, AblyWrtcRemotes } from '@m-ld/m-ld/ext/ably';
+import { IoRemotes } from '@m-ld/m-ld/ext/socket.io';
 import { MemoryLevel } from 'memory-level';
 import { render as renderTime } from 'timeago.js';
 import { parse } from 'querystring';
@@ -46,53 +47,132 @@ window.onload = async function () {
   window.onunload = () => pg.close();
 };
 
-function validContext(context: any): boolean {
-  return context != null && typeof context == 'object' && !Array.isArray(context);
+interface Options {
+  context: {};
+  gateway: Config.GatewayOptions;
 }
 
-class OptionsDialog extends D3View<HTMLDivElement> {
+class ContextCard extends DetailsCard {
   private readonly contextEditor: JSONEditor;
-  private prevContext: any = {};
 
   constructor() {
-    super(d3.select('#options-dialog'));
-    new DetailsCard('context');
-    new DetailsCard('debug');
+    super('context');
     this.contextEditor = new JSONEditor(
       d3.select('#context-jsoneditor').node() as HTMLElement,
       {
         mode: 'code', mainMenuBar: false, statusBar: false,
-        onChange: () => this.applyButton.property('disabled', !this.valid),
-        onValidate: json => validContext(json) ? [] : [{ path: [], message: NOT_A_CONTEXT }]
+        onChange: () => this.emit('change'),
+        onValidate: json => ContextCard.validContext(json) ? [] : [{
+          path: [], message: NOT_A_CONTEXT
+        }]
       },
-      {}
-    ); // Default empty context
-    this.applyButton.on('click', () => {
-      this.d3.classed('is-active', false);
-      this.emit('apply', this.prevContext);
-    });
-    this.cancelButton.on('click', () => {
-      this.d3.classed('is-active', false);
-      this.contextEditor.set(this.prevContext);
-      this.emit('cancel');
-    });
-  }
-
-  show() {
-    this.d3.classed('is-active', true);
-    this.prevContext = this.context;
+      {} // Default empty context
+    );
   }
 
   get context() {
     return this.contextEditor.get();
   }
 
-  get valid(): boolean {
+  set context(context: {}) {
+    this.contextEditor.set(context);
+  }
+
+  get valid() {
     try {
-      return validContext(this.context);
-    } catch (err) {
+      return ContextCard.validContext(this.context);
+    } catch (e) {
       return false;
     }
+  }
+
+  static validContext(context: any): context is {} {
+    return context != null && typeof context == 'object' && !Array.isArray(context);
+  }
+}
+
+class GatewayCard extends DetailsCard {
+  constructor() {
+    super('gateway');
+    const onChange = () => this.emit('change');
+    this.useGatewayCheckbox.on('change', onChange);
+    this.gatewayOriginInput.on('input', onChange);
+    this.gatewayUserInput.on('input', onChange);
+    this.gatewayKeyInput.on('input', onChange);
+  }
+
+  get gateway() {
+    return {
+      use: !!this.useGatewayCheckbox.property('checked'),
+      origin: this.gatewayOriginInput.property('value'),
+      user: this.gatewayUserInput.property('value'),
+      key: this.gatewayKeyInput.property('value')
+    };
+  }
+
+  get valid() {
+    return node(this.gatewayOriginInput).validity.valid &&
+      node(this.gatewayUserInput).validity.valid &&
+      node(this.gatewayKeyInput).validity.valid;
+  }
+
+  get useGatewayCheckbox(): d3Selection<HTMLInputElement> {
+    return d3.select('#use-gateway');
+  }
+
+  get gatewayOriginInput(): d3Selection<HTMLInputElement> {
+    return d3.select('#gateway-origin');
+  }
+
+  get gatewayUserInput(): d3Selection<HTMLInputElement> {
+    return d3.select('#gateway-user');
+  }
+
+  get gatewayKeyInput(): d3Selection<HTMLInputElement> {
+    return d3.select('#gateway-key');
+  }
+}
+
+class OptionsDialog extends D3View<HTMLDivElement> implements Options {
+  private previous: Options;
+  private contextCard: ContextCard;
+  private gatewayCard: GatewayCard;
+
+  constructor() {
+    super(d3.select('#options-dialog'));
+    const onChange = () => this.applyButton.property('disabled', !this.valid);
+    this.contextCard = new ContextCard().on('change', onChange);
+    this.gatewayCard = new GatewayCard().on('change', onChange);
+    new DetailsCard('debug');
+    this.applyButton.on('click', () => {
+      this.d3.classed('is-active', false);
+      this.emit('apply',
+        ['context', 'gateway'].filter(this.optionChanged));
+    });
+    this.cancelButton.on('click', () => {
+      this.d3.classed('is-active', false);
+      this.contextCard.context = this.previous?.context ?? {};
+      this.emit('cancel');
+    });
+  }
+
+  show() {
+    this.d3.classed('is-active', true);
+    this.applyButton.property('disabled', true);
+    const { context, gateway } = this;
+    this.previous = { context, gateway };
+  }
+
+  get context() {
+    return this.contextCard.context;
+  }
+
+  get gateway() {
+    return this.gatewayCard.gateway;
+  }
+
+  get valid(): boolean {
+    return this.contextCard.valid && this.gatewayCard.valid;
   }
 
   get applyButton() {
@@ -102,6 +182,9 @@ class OptionsDialog extends D3View<HTMLDivElement> {
   get cancelButton() {
     return d3.select('#options-cancel');
   }
+
+  private optionChanged = (option: keyof Options) =>
+    JSON.stringify(this[option]) !== JSON.stringify(this.previous?.[option]);
 }
 
 const NOT_A_READ = 'Query pattern is not a read operation';
@@ -111,15 +194,21 @@ const CONFIRM_CHANGE_DOMAIN = 'You may have unsaved data. Continue changing doma
 
 // noinspection JSIgnoredPromiseFromCall, ES6MissingAwait
 class Playground extends D3View<HTMLDivElement> {
-  queryCard: JsonEditorCard;
-  txnCard: JsonEditorCard;
-  dataEditor: JSONEditor;
-  meld?: { clone: MeldClone, backend: MemoryLevel<string, Buffer>, config: Config.Response };
-  options: OptionsDialog;
-  previousDomain?: string;
+  readonly queryCard: JsonEditorCard;
+  readonly txnCard: JsonEditorCard;
+  readonly dataEditor: JSONEditor;
+  readonly options: OptionsDialog;
+
+  private meld?: {
+    clone: MeldClone,
+    backend: MemoryLevel<string, Buffer>,
+    config: Config.Response
+  };
+  private previousDomain?: string;
 
   constructor(setup: Setup) {
     super(d3.select('#playground-ide'));
+    ////////////////////////////////////////////////////////////////////////////
     this.queryCard = new JsonEditorCard('query', queryTemplates, {
       mode: 'code', mainMenuBar: false, statusBar: false, onValidate: json =>
         isRead(json) ? [] : [{ path: [], message: NOT_A_READ }]
@@ -131,16 +220,22 @@ class Playground extends D3View<HTMLDivElement> {
     this.dataEditor = new JSONEditor(d3.select('#data-jsoneditor').node() as HTMLElement, {
       modes: ['code', 'view'], enableTransform: false, enableSort: false, onEditable: () => false
     }, []);
+    ////////////////////////////////////////////////////////////////////////////
     this.domain = typeof setup.domain == 'string' ? setup.domain : '';
     this.domainInput.on('keydown', () => {
       this.domainJoinIcon.classed('is-hidden', false);
       if (d3.event.key === 'Enter')
         this.loadDomain();
     });
-    this.newDomainButton.on('click', () => {
-      this.domain = '';
-      this.loadDomain();
-    });
+    for (let newDomainElement of this.newDomainControls.nodes()) {
+      const useGatewayDatum = newDomainElement.dataset.gateway;
+      const useGateway = useGatewayDatum == null ? undefined : useGatewayDatum === 'true';
+      d3.select(newDomainElement).on('click', () => {
+        this.domain = '';
+        this.loadDomain(useGateway);
+      });
+    }
+    ////////////////////////////////////////////////////////////////////////////
     d3.select('#query-apply').on('click', () => {
       this.runQuery('warn');
     });
@@ -163,15 +258,22 @@ class Playground extends D3View<HTMLDivElement> {
       }).catch(showWarning);
     });
     d3.select('#show-options').on('click', () => this.options.show());
+    ////////////////////////////////////////////////////////////////////////////
     this.options = new OptionsDialog();
-    this.options.on('apply', () => this.reloadDomain());
-
+    this.options.on('apply', changed => {
+      if (changed.includes('context'))
+        this.reloadDomain();
+      if (changed.includes('gateway'))
+        this.updateNewDefaults();
+    });
+    ////////////////////////////////////////////////////////////////////////////
     this.intro.classed('is-hidden', this.introHidden);
     this.intro.select('.delete').on('click', () => this.introHidden = true);
     d3.select('#show-intro').on('click', () => this.introHidden = false);
-
+    ////////////////////////////////////////////////////////////////////////////
     this.loading = false;
     this.loadDomain();
+    this.updateNewDefaults();
   }
 
   private get intro() {
@@ -211,14 +313,16 @@ class Playground extends D3View<HTMLDivElement> {
     }
   }
 
-  async loadDomain() {
+  async loadDomain(useGateway = this.options.gateway.use) {
     if (this.previousDomain === this.domain)
       return;
     if (this.unsaved && !window.confirm(CONFIRM_CHANGE_DOMAIN))
       return this.domain = this.previousDomain ?? '';
     this.doLoading(async () => {
       this.updatesLog.selectAll('.update-card').remove();
-      const config = await fetchConfig(this.domain);
+      const config = await fetchConfig(this.domain, {
+        ...this.options.gateway, use: useGateway
+      });
       this.domain = this.previousDomain = config['@domain'];
       const backend = new MemoryLevel<string, Buffer>();
       const meld = await this.clone(backend, config);
@@ -228,8 +332,11 @@ class Playground extends D3View<HTMLDivElement> {
   }
 
   private async clone(backend: MemoryLevel<string, Buffer>, config: Config.Response) {
+    const remoting = 'ably' in config ?
+      'wrtc' in config ? AblyWrtcRemotes : AblyRemotes :
+      IoRemotes;
     this.meld = {
-      clone: await clone(backend, AblyWrtcRemotes, {
+      clone: await clone(backend, remoting, {
         ...config, '@context': { ...config['@context'], ...this.options.context }
       }),
       backend,
@@ -307,8 +414,16 @@ class Playground extends D3View<HTMLDivElement> {
     return d3.select('#domain-join');
   }
 
-  get newDomainButton() {
-    return d3.select('#domain-new');
+  get newDomainControls(): d3Selection<HTMLElement> {
+    return d3.selectAll('.domain-new');
+  }
+
+  private updateNewDefaults() {
+    for (let el of this.newDomainControls.nodes())
+      d3.select(el)
+        .select('.domain-new-default')
+        .classed('is-hidden',
+          !(el.dataset.gateway === `${this.options.gateway.use}`));
   }
 
   get updatesLog() {
@@ -319,7 +434,7 @@ class Playground extends D3View<HTMLDivElement> {
     this.domainJoinIcon.classed('fa-spinner fa-spin', loading);
     this.domainJoinIcon.classed('fa-level-down-alt fa-rotate-90 is-hidden', !loading);
     d3.selectAll('.requires-domain').property('disabled', loading || !this.meld);
-    this.newDomainButton.property('disabled', loading);
+    this.newDomainControls.property('disabled', loading);
     this.domainInput.property('disabled', loading);
   }
 

@@ -1,8 +1,15 @@
-import { MeldAblyConfig } from '@m-ld/m-ld/ext/ably';
-import { AuthorisedRequest, Session } from '@m-ld/io-web-runtime/dist/dto';
-import { MeldWrtcConfig } from '@m-ld/m-ld/ext/wrtc';
+import type { MeldAblyConfig } from '@m-ld/m-ld/ext/ably';
+import type { MeldIoConfig } from '@m-ld/m-ld/ext/socket.io';
+import type { AuthorisedRequest, Session } from '@m-ld/io-web-runtime/dist/dto';
 
 export namespace Config {
+  export type GatewayOptions = {
+    use: boolean,
+    origin: string,
+    user: string,
+    key: string
+  };
+
   export interface Request
     extends AuthorisedRequest {
     /**
@@ -13,9 +20,13 @@ export namespace Config {
      * Google reCAPTCHA token
      */
     token: string;
+    /**
+     * Gateway details, if available
+     */
+    gateway?: GatewayOptions;
   }
 
-  export type Response = MeldAblyConfig & MeldWrtcConfig & AblyTokenSession;
+  export type Response = (MeldAblyConfig | MeldIoConfig) & AblyTokenSession;
 }
 
 export namespace Renew {
