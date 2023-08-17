@@ -3,7 +3,7 @@ import { d3Selection } from './d3Util';
 import * as d3 from 'd3';
 
 export class DetailsCard extends D3View<HTMLDivElement> {
-  name?: string;
+  readonly name?: string;
   expanded: boolean = false;
 
   constructor(

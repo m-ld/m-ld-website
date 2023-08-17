@@ -4,7 +4,7 @@ import { D3View } from '../lib/client/D3View';
 import { d3Selection, fromTemplate, node, Setup, setupJson } from '../lib/client/d3Util';
 import { Grecaptcha, modernizd } from '@m-ld/io-web-runtime/dist/client';
 import {
-  initPopupControls, showInfo, showMessage, showNotModern, showWarning
+  initPopupControls, initShareButton, showInfo, showMessage, showNotModern, showWarning
 } from '../lib/client/PopupControls';
 import { fetchConfig } from '../lib/client/Api';
 import { clone, isRead, isWrite, MeldClone, MeldUpdate } from '@m-ld/m-ld';
@@ -12,7 +12,7 @@ import { AblyRemotes, AblyWrtcRemotes } from '@m-ld/m-ld/ext/ably';
 import { IoRemotes } from '@m-ld/m-ld/ext/socket.io';
 import { MemoryLevel } from 'memory-level';
 import { render as renderTime } from 'timeago.js';
-import { parse } from 'querystring';
+import * as querystring from 'querystring';
 import * as local from 'local-storage';
 import { LevelDownResponse } from '../lib/client/LevelDownResponse';
 import { saveAs } from 'file-saver';
@@ -37,7 +37,7 @@ window.onload = async function () {
 
   await Grecaptcha.ready;
 
-  const pg = new Playground(parse(window.location.hash.slice(1)));
+  const pg = new Playground(querystring.parse(window.location.hash.slice(1)));
   window.addEventListener('beforeunload', e => {
     if (pg.unsaved) {
       e.preventDefault();
@@ -256,6 +256,10 @@ class Playground extends D3View<HTMLDivElement> {
         message.append('progress').classed('progress', true).attr('max', 100);
         return this.downloadClone();
       }).catch(showWarning);
+    });
+    initShareButton(d3.select('#share-domain'), {
+      getHash: () => querystring.stringify({ domain: this.domain }),
+      info: 'Playground link copied to clipboard.'
     });
     d3.select('#show-options').on('click', () => this.options.show());
     ////////////////////////////////////////////////////////////////////////////

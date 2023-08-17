@@ -2,8 +2,10 @@ import JSONEditor, { JSONEditorOptions } from 'jsoneditor';
 import { d3Selection } from './d3Util';
 import * as d3 from 'd3';
 import { DetailsCard } from './DetailsCard';
+import * as querystring from 'querystring';
+import { initShareButton } from './PopupControls';
 
-const stringify = require('json-stringify-pretty-compact');
+const jsonStringify = require('json-stringify-pretty-compact');
 
 export class JsonEditorCard extends DetailsCard {
   jsonEditor: JSONEditor;
@@ -42,17 +44,13 @@ export class JsonEditorCard extends DetailsCard {
         this.updatePreview(options);
       });
 
-    this.linkButton?.on('click', () => {
-      if (this.name != null) {
-        const icon = this.linkButton.select('i');
-        const link = new URL(window.location.href);
-        link.hash = `#${stringify({ [this.name]: JSON.stringify(this.jsonEditor.get()) })}`;
-        navigator.clipboard.writeText(link.href).then(() => {
-          icon.classed('fa-link', false).classed('fa-check', true);
-          setTimeout(() => icon.classed('fa-check', false).classed('fa-link', true), 1000);
-        });
-      }
-    });
+    if (this.name != null && this.linkButton != null) {
+      initShareButton(this.linkButton, {
+        getHash: () => querystring.stringify({
+          [this.name!]: JSON.stringify(this.jsonEditor.get())
+        })
+      });
+    }
 
     options?.onChange?.();
   }
@@ -106,7 +104,7 @@ export class JsonEditorCard extends DetailsCard {
   }
 
   set json(json: any) {
-    this.jsonEditor.setText(stringify(json, { maxLength: 64 }));
+    this.jsonEditor.setText(jsonStringify(json, { maxLength: 64 }));
   }
 
   get preview() {
