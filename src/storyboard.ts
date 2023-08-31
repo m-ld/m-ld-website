@@ -1,6 +1,6 @@
 import * as d3 from 'd3';
 import { D3View } from '../lib/client/D3View';
-import { d3Selection, fromTemplate, Setup, setupJson } from '../lib/client/d3Util';
+import { d3Selection, fromTemplate, node, Setup, setupJson } from '../lib/client/d3Util';
 import { Grecaptcha, modernizd } from '@m-ld/io-web-runtime/dist/client';
 import {
   initPopupControls, showError, showNotModern, showWarning
@@ -10,7 +10,7 @@ import { render as renderTime } from 'timeago.js';
 import { parse } from 'querystring';
 import { JsonEditorCard } from '../lib/client/JsonEditorCard';
 import { shortId } from '@m-ld/m-ld';
-import { HtmlTextView } from '../lib/client/HtmlTextView';
+import { ElementSpliceText } from '@m-ld/m-ld/ext/html';
 
 window.onload = async function () {
   try {
@@ -86,7 +86,7 @@ class Storyboard extends D3View<HTMLDivElement> {
 // noinspection JSIgnoredPromiseFromCall, ES6MissingAwait
 class Author extends D3View<HTMLDivElement> {
   tseqCard: JsonEditorCard;
-  textArea: HtmlTextView<HTMLTextAreaElement>;
+  textArea: ElementSpliceText<HTMLTextAreaElement>;
 
   constructor(
     readonly board: Storyboard,
@@ -96,7 +96,21 @@ class Author extends D3View<HTMLDivElement> {
     super(div);
     div.datum(this);
     div.select('.card-header-title').text(`Text according to ${tseq.pid}`);
-    this.textArea = new HtmlTextView(div.select('.textarea'));
+    this.textArea = new ElementSpliceText(
+      node(div.select('.textarea')),
+      tseq.toString(),
+      async splices => {
+        try {
+          for await (let splice of splices) {
+            const [index, deleteCount, content] = splice;
+            this.logOperation(this.tseq.splice(index, deleteCount, content));
+          }
+          this.tseqCard.json = this.tseq.toJSON();
+        } catch (e) {
+          showWarning(e);
+        }
+      }
+    );
     this.textArea.element.value = tseq.toString();
     this.tseqCard = new JsonEditorCard(
       this.d3.select('.tseq-card'),
@@ -110,15 +124,6 @@ class Author extends D3View<HTMLDivElement> {
       },
       this.tseq.toJSON()
     );
-    this.textArea.on('update', (...splices) => {
-      try {
-        for (let splice of splices)
-          this.logOperation(this.tseq.splice(...splice));
-        this.tseqCard.json = this.tseq.toJSON();
-      } catch (e) {
-        showWarning(e);
-      }
-    });
     this.d3.select('.tseq-sync').on('click', async () => {
       try {
         if (this.board.authors.length === 1)

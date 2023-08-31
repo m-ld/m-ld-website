@@ -4,33 +4,44 @@ import { BoardView } from './BoardView';
 import { Rectangle } from '../Shapes';
 import { GroupView } from './D3View';
 import { LinkView } from './LinkView';
-import { MIN_MESSAGE_SIZE } from '../BoardIndex';
-import { MessageItem, MessageSubject } from '../Message';
-import { HtmlTextView, TextSplice } from './HtmlTextView';
+import { MessageRect, MIN_MESSAGE_SIZE } from '../BoardIndex';
+import { ElementSpliceText } from '@m-ld/m-ld/ext/html';
+import { GraphSubject, propertyValue, Reference, SubjectLike } from '@m-ld/m-ld';
 
 /** @see https://github.com/d3/d3-selection#local-variables */
 const VIEW_LOCAL = d3.local<MessageView>();
 
 export class MessageView extends GroupView {
-  /** @see {@link msg} */
-  private _msg: MessageItem;
-  readonly content: HtmlTextView<HTMLDivElement>;
+  readonly src: SubjectLike & Reference;
 
   /**
    * Must be followed by a call to {@link update}, to initialise message
    * content.
    */
   constructor(
-    readonly src: MessageSubject,
+    src: GraphSubject,
     readonly boardView: BoardView
   ) {
     super(fromTemplate<SVGGElement>('board-message'));
-    // We don't yet know the message size
-    this._msg = new MessageItem(src);
+    const mv = this;
+    let textContent: ElementSpliceText<HTMLDivElement>;
+    this.src = Object.assign({
+      get text() {
+        return textContent;
+      },
+      set text(text: string | ElementSpliceText<HTMLDivElement>) {
+        if (typeof text == 'string') {
+          textContent = new ElementSpliceText(
+            node(mv.content),
+            propertyValue(src, 'text', String),
+            splices => boardView.updateMessage(mv, splices)
+          );
+          textContent.element.id = `${src['@id']}_text`;
+        }
+      }
+    }, src);
     this.d3.classed('board-message', true).attr('id', src['@id']);
     this.box.classed('new-message', true);
-    this.content = new HtmlTextView(this.body.select('div'));
-    this.content.element.id = MessageSubject.textId(src['@id']);
     VIEW_LOCAL.set(this.element, this);
   }
 
@@ -42,15 +53,6 @@ export class MessageView extends GroupView {
     return VIEW_LOCAL.get(node);
   }
 
-  /**
-   * Canonicalised Message being viewed, with conflicts resolved. This lags the
-   * actual view content while the model is being updated, until {@link update}
-   * is called.
-   */
-  get msg() {
-    return this._msg;
-  }
-
   get box(): d3Selection<SVGRectElement> {
     return this.d3.select('.board-message-box');
   }
@@ -59,35 +61,45 @@ export class MessageView extends GroupView {
     return this.d3.select('.board-message-body');
   }
 
+  get content(): d3Selection<HTMLDivElement> {
+    return this.body.select('div');
+  }
+
   getButton(name: 'close' | 'add' | 'move' | 'code') {
     return this.d3.select(`.board-message-${name} circle`);
   }
 
-  async update(text?: TextSplice[] | string): Promise<void> {
-    if (text != null) {
-      // This will also update the nested list
-      this._msg = new MessageItem(this.src);
+  get deleted() {
+    return this.src['@type'] == null;
+  }
+
+  get linkTo(): Reference[] {
+    return propertyValue(this.src, 'linkTo', Array, Reference);
+  }
+
+  async update(dataChanged = false): Promise<void> {
+    if (dataChanged) {
       // Detect if the message has become invalid (deleted)
-      if (this._msg.deleted) {
+      if (this.deleted) {
         this.d3.remove();
         // Remove all link-lines from and to the removed message
         LinkView.remove(this.allOutLinks);
         LinkView.remove(this.allInLinks);
         return; // Nothing else to do
-      } else {
-        // Update the visible text
-        this.content.update(text);
-        // Update the position
-        this.position = this._msg.position;
       }
+      // Update the position
+      this.position = [
+        Math.min(...propertyValue(this.src, 'x', Array, Number)),
+        Math.min(...propertyValue(this.src, 'y', Array, Number))
+      ];
     }
     // Size the shape to the content
-    const textRect = this.boardView.svgRect(this.content.element);
+    const textRect = this.boardView.svgRect(node(this.content));
     // Chromium bug: The computed effective zoom is currently force-set to 1.0
     // for foreignObjects. We can detect by comparing the body to the box,
     // because they are locked to having the same width attributes.
     // https://bugs.chromium.org/p/chromium/issues/detail?id=976224
-    const zoomScale = navigator.userAgent.indexOf("AppleWebKit") > -1 ?
+    const zoomScale = navigator.userAgent.indexOf('AppleWebKit') > -1 ?
       node(this.box).getBoundingClientRect().width /
       node(this.body).getBoundingClientRect().width : 1;
 
@@ -96,9 +108,8 @@ export class MessageView extends GroupView {
       height = Math.max(textRect.height * zoomScale, minHeight);
     setAttr(this.box, { width, height });
     setAttr(this.body, { width, height });
-    this._msg = new MessageItem(this.src, [width, height]);
 
-    if (text) // i.e. data has changed
+    if (dataChanged)
       await this.syncLinks();
 
     // Update the position of all link lines
@@ -112,16 +123,16 @@ export class MessageView extends GroupView {
   }
 
   private async syncLinks() {
-    const outLinks = this._msg.linkTo.map(ref => ref['@id']);
+    const outLinks = this.linkTo.map(ref => ref['@id']);
     // Remove non-existent outbound link-lines
     LinkView.remove(this.allOutLinks.filter(link => !outLinks.includes(link.toId)));
     // Create outbound link-lines if missing
     outLinks.forEach(thatId => this.withThat(thatId, that => this.link(that)));
 
-    const inLinks = await this.boardView.linksTo(this._msg['@id']);
+    const inLinks = await this.boardView.linksTo(this.src['@id']);
     // Remove non-existent inbound link-lines
     LinkView.remove(this.allInLinks.filter(link_1 => !inLinks.includes(link_1.fromId)));
-    // Create inound link-lines if missing
+    // Create inbound link-lines if missing
     inLinks.forEach(thatId_2 => this.withThat(thatId_2, that_2 => that_2.link(this)));
   }
 
@@ -130,27 +141,32 @@ export class MessageView extends GroupView {
   }
 
   get text(): string {
-    return this.content.toString();
+    return node(this.content).textContent ?? '';
   }
 
   private get allOutLinks() {
-    return LinkView.fromLinkLines(this.boardView.svg, this._msg['@id']);
+    return LinkView.fromLinkLines(this.boardView.svg, this.src['@id']);
   }
 
   private get allInLinks() {
-    return LinkView.toLinkLines(this.boardView.svg, this._msg['@id']);
+    return LinkView.toLinkLines(this.boardView.svg, this.src['@id']);
   }
 
   private link(that: MessageView) {
-    return LinkView.init(this.boardView.svg, this._msg['@id'], that._msg['@id']);
+    return LinkView.init(this.boardView.svg, this.src['@id'], that.src['@id']);
   }
 
   private withThat(thatId: string, action: (mv: MessageView) => any) {
     return this.boardView.withThatMessage(thatId, action);
   }
 
-  get rect(): Rectangle {
-    return new Rectangle(this.position, this.size);
+  get rect(): MessageRect {
+    const mv = this;
+    // noinspection JSUnusedGlobalSymbols - incorrect warning
+    return new class extends Rectangle {
+      '@id' = mv.src['@id'];
+      deleted = mv.deleted;
+    }(this.position, this.size);
   }
 
   get size(): [number, number] {
@@ -158,6 +174,6 @@ export class MessageView extends GroupView {
   }
 
   static same(mv1?: MessageView, mv2?: MessageView) {
-    return (!mv1 && !mv2) || (mv1 && mv2 && mv1._msg['@id'] == mv2._msg['@id']);
+    return (!mv1 && !mv2) || (mv1 && mv2 && mv1.src['@id'] === mv2.src['@id']);
   }
 }
