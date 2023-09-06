@@ -21,7 +21,7 @@ allows the app to choose an appropriate messaging service for its requirements
 and architecture, and also to secure access to the service prior to passing it
 to the clone.
 
-> ⭐️ The [**m-ld** Gateway](https://gw.m-ld/org/) provides secure message delivery (and data backup) for collaborative apps using **m-ld**. It's the easiest way to get started, without having to set up your own messaging.
+> ⭐️ The [**m-ld** Gateway](https://gw.m-ld.org/) provides secure message delivery (and data backup) for collaborative apps using **m-ld**. It's the easiest way to get started, without having to set up your own messaging.
 
 Self-service message-layer adapters are currently specified for:
 - [Socket.IO](https://socket.io/): enables real-time, bidirectional and event-based communication. Convenient to use when the app architecture has a live web server or app server, using HTTP.
