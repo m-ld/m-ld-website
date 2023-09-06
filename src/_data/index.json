@@ -1,5 +1,5 @@
 {
-  "tagline": "live information sharing",
+  "tagline": "live ⦁ shared ⦁ information",
   "homenu": [
     {
       "href": "#why",
@@ -25,7 +25,7 @@
     },
     {
       "href": "/hello/",
-      "label": "feedback"
+      "label": "get in touch"
     }
   ],
   "platforms": [
