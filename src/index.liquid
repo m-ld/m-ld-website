@@ -26,18 +26,6 @@
       </div>
     </div>
   </section>
-  <section id="homenu" class="section is-small">
-    <div class="columns has-text-centered">
-      {%- for item in index.homenu -%}
-        <div class="column">
-          <a class="level-item button is-medium is-light is-link" href="{{ item.href }}"
-             {% if item.target %}target="{{ item.target }}"{% endif %}>
-            {{ item.label }}
-          </a>
-        </div>
-      {%- endfor -%}
-    </div>
-  </section>
   <section id="intro" class="section">
     <div class="columns">
       <div class="column is-8-desktop is-offset-2-desktop">
@@ -58,6 +46,18 @@
           <img src="./media/NGIAssure.svg" alt="NGI Assure" />
         </a>
       </div>
+    </div>
+  </section>
+  <section id="homenu" class="section is-small">
+    <div class="columns has-text-centered">
+      {%- for item in index.homenu -%}
+        <div class="column">
+          <a class="level-item button is-medium is-light is-link" href="{{ item.href }}"
+             {% if item.target %}target="{{ item.target }}"{% endif %}>
+            {{ item.label }}
+          </a>
+        </div>
+      {%- endfor -%}
     </div>
   </section>
   <section id="streams" class="section">

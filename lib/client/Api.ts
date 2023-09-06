@@ -2,7 +2,7 @@ import { AuthorisedRequest, Grecaptcha, setLogToken } from '@m-ld/io-web-runtime
 import { Config, Renew } from '../dto';
 import { uuid } from '@m-ld/m-ld';
 import { showGrecaptcha } from './PopupControls';
-import * as lifecycle from 'page-lifecycle';
+import lifecycle from 'page-lifecycle';
 
 /**
  * @param domain name or empty string to request a new domain

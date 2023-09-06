@@ -3,6 +3,7 @@ npm-debug.log
 .sass-cache
 node_modules
 _site
+dist
 .now
 .env
 .vercel

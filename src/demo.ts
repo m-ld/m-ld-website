@@ -7,7 +7,7 @@ import {
 } from '../lib/client/PopupControls';
 import { initBoardControls } from '../lib/client/BoardControls';
 import { fetchConfig } from '../lib/client/Api';
-import * as LOG from 'loglevel';
+import LOG from 'loglevel';
 
 window.onload = async function () {
   await modernizd([]).catch(showNotModern);

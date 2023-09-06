@@ -6,7 +6,7 @@ import type { LockManager } from 'navigator.locks';
 import { clone, combinePlugins, MeldClone, MeldConfig } from '@m-ld/m-ld';
 import { AblyWrtcRemotes } from '@m-ld/m-ld/ext/ably';
 import { TSeqText } from '@m-ld/m-ld/ext/tseq';
-import * as lifecycle from 'page-lifecycle';
+import lifecycle from 'page-lifecycle';
 import { fromEvent, merge, of } from 'rxjs';
 import { node } from './d3Util';
 import * as d3 from 'd3';

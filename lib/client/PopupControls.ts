@@ -1,6 +1,6 @@
 import * as d3 from 'd3';
 import { d3Selection, fromTemplate, node } from './d3Util';
-import * as LOG from 'loglevel';
+import LOG from 'loglevel';
 import { Grecaptcha } from '@m-ld/io-web-runtime/dist/client';
 
 export function showNotModern(missing: string[]) {
