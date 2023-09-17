@@ -5,8 +5,8 @@ import { MessageView } from './MessageView';
 import { GroupView } from './D3View';
 import { Circle, Line, Rectangle, Shape } from '../Shapes';
 import {
-  any, asSubjectUpdates, Describe, GraphSubject, includesValue, MeldClone, Reference, Select,
-  shortId, SubjectUpdater, SubjectUpdates, TextSplice, Update
+  any, asSubjectUpdates, Describe, GraphSubject, includesValue, MeldClone, MeldState, Reference,
+  Select, shortId, StateProc, SubjectUpdater, SubjectUpdates, Update
 } from '@m-ld/m-ld';
 import { LinkView } from './LinkView';
 import { showError, showInfo, showWarning } from './PopupControls';
@@ -110,17 +110,11 @@ export class BoardView extends InfiniteView {
     return mv;
   }
 
-  async updateMessage(mv: MessageView, splices?: AsyncGenerator<TextSplice>) {
-    if (splices) {
+  async updateMessage(mv: MessageView, writeProc?: StateProc<MeldState>) {
+    if (writeProc) {
       // Immediately update the message's size to accommodate the input
       mv.update().catch(showWarning);
-      await this.model.write(async state => {
-        for await (let splice of splices) {
-          state = await state.write({
-            '@update': { '@id': mv.src['@id'], text: { '@splice': splice } }
-          });
-        }
-      });
+      await this.model.write(writeProc).catch(showWarning);
     }
     // Update the index when the message view has re-sized itself
     mv.update(true).then(() => this._index.update(mv.rect)).catch(showWarning);

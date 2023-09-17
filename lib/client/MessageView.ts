@@ -6,7 +6,9 @@ import { GroupView } from './D3View';
 import { LinkView } from './LinkView';
 import { MessageRect, MIN_MESSAGE_SIZE } from '../BoardIndex';
 import { ElementSpliceText } from '@m-ld/m-ld/ext/html';
-import { GraphSubject, propertyValue, Reference, SubjectLike } from '@m-ld/m-ld';
+import {
+  GraphSubject, MeldState, propertyValue, Reference, StateProc, SubjectLike
+} from '@m-ld/m-ld';
 
 /** @see https://github.com/d3/d3-selection#local-variables */
 const VIEW_LOCAL = d3.local<MessageView>();
@@ -24,17 +26,19 @@ export class MessageView extends GroupView {
   ) {
     super(fromTemplate<SVGGElement>('board-message'));
     const mv = this;
-    let textContent: ElementSpliceText<HTMLDivElement>;
+    let textContent: ElementSpliceText;
     this.src = Object.assign({
       get text() {
         return textContent;
       },
-      set text(text: string | ElementSpliceText<HTMLDivElement>) {
+      set text(text: string | ElementSpliceText) {
         if (typeof text == 'string') {
           textContent = new ElementSpliceText(
             node(mv.content),
-            propertyValue(src, 'text', String),
-            splices => boardView.updateMessage(mv, splices)
+            { write: (proc: StateProc<MeldState>) => boardView.updateMessage(mv, proc) },
+            src['@id'],
+            'text',
+            text
           );
           textContent.element.id = `${src['@id']}_text`;
         }
