@@ -20,9 +20,12 @@ import { JsonEditorCard } from '../lib/client/JsonEditorCard';
 import { DetailsCard } from '../lib/client/DetailsCard';
 import { Config } from '../lib/dto';
 
-// Ensure that the SHACL plugin exists for schema constraints
-require('@m-ld/m-ld/ext/shacl');
-globalThis.require = require;
+// Ensure that common plugins exist
+// @ts-ignore
+globalThis.require = mod => ({
+  '@m-ld/m-ld/ext/tseq': require('@m-ld/m-ld/ext/tseq'),
+  '@m-ld/m-ld/ext/shacl': require('@m-ld/m-ld/ext/shacl')
+}[mod]);
 
 const queryTemplates = require('../lib/templates/query-templates.json');
 const txnTemplates = require('../lib/templates/txn-templates.json');

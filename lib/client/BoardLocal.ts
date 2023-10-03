@@ -3,7 +3,7 @@ import * as local from 'local-storage';
 import { MemoryLevel } from 'memory-level';
 import { LevelDownResponse } from './LevelDownResponse';
 import type { LockManager } from 'navigator.locks';
-import { clone, combinePlugins, MeldClone, MeldConfig } from '@m-ld/m-ld';
+import { clone, MeldClone, MeldConfig } from '@m-ld/m-ld';
 import { AblyWrtcRemotes } from '@m-ld/m-ld/ext/ably';
 import { TSeqText } from '@m-ld/m-ld/ext/tseq';
 import lifecycle from 'page-lifecycle';
@@ -21,6 +21,12 @@ declare global {
   }
 }
 
+// Ensure that used plugins exist for dynamic load
+// @ts-ignore
+globalThis.require = mod => ({
+  '@m-ld/m-ld/ext/tseq': require('@m-ld/m-ld/ext/tseq')
+}[mod]);
+
 export type Domain = string; // An internet-style m-ld domain name
 export type Version = 'v0' | 'v1' | 'v2'
   | 'v3' // Moved to Cache API
@@ -28,8 +34,9 @@ export type Version = 'v0' | 'v1' | 'v2'
   | 'v5' // TIDs in key-values
   | 'v6' // Principal and agreement in operations
   | 'v7' // Quadstore v12, shareable datatypes
-  | 'v8'; // Indirected datatypes have literal keys
-export const CURRENT_VERSION: Version = 'v8';
+  | 'v8' // Indirected datatypes have literal keys
+  | 'v9' // newClock API removed, TSeq declared in data
+export const CURRENT_VERSION: Version = 'v9';
 export const INDEXED_DB_VERSIONS: Version[] = ['v0', 'v1', 'v2'];
 
 const CACHE_KEY = 'board-data';
@@ -130,12 +137,12 @@ export class BoardLocal extends EventEmitter {
         backend,
         AblyWrtcRemotes,
         config,
-        combinePlugins([new TSeqText('text')], {
-          backendEvents: this.backendEvents
-        })
+        { backendEvents: this.backendEvents }
       ),
       backend
     };
+    if (config.genesis)
+      await this.meld.clone.write(TSeqText.declare(0, 'text'));
     window.addEventListener('unload', () => this.meld?.clone.close());
     // Set up auto-save.
     this.setupAutoSave(this.meld.clone);
