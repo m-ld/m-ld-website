@@ -1,17 +1,77 @@
-<div class="card is-fullwidth vflow-item">
+<div id="context-card" class="card is-fullwidth vflow-item">
   <header class="card-header">
     <p class="card-header-title">Context</p>
+    <a class="card-header-icon card-toggle">
+      <i class="fa fa-angle-up"></i>
+    </a>
   </header>
-  <div class="card-content">
+  <div class="card-content is-hidden">
     <div id="context-jsoneditor" class="vflow-item"></div>
-    <div class="is-italic">applies when joining a domain</div>
   </div>
 </div>
-<div class="card is-fullwidth vflow-item">
+<div id="gateway-card" class="card is-fullwidth vflow-item">
+  <header class="card-header">
+    <p class="card-header-title">Gateway</p>
+    <a class="card-header-icon card-toggle">
+      <i class="fa fa-angle-up"></i>
+    </a>
+  </header>
+  <div class="card-content is-hidden">
+    <div class="field">
+      <div class="control">
+        <label class="checkbox">
+          <input id="use-gateway" type="checkbox">
+          Use the <b>m-ld</b> Gateway by default
+        </label>
+      </div>
+    </div>
+    <div class="field">
+      <label class="label" for="gateway-origin">Origin</label>
+      <div class="control">
+        <input id="gateway-origin"
+               class="input"
+               type="text"
+               onfocus="this.select()"
+               placeholder="Domain name or origin"
+               value="gw.m-ld.org"
+               required>
+      </div>
+      <p class="help">Can be a domain name or a URL origin</p>
+    </div>
+    <div class="field">
+      <label class="label" for="gateway-user">User</label>
+      <div class="control">
+        <input id="gateway-user"
+               class="input"
+               type="text"
+               onfocus="this.select()"
+               placeholder="User name"
+               pattern="[a-z0-9\-_]+"
+               value="public"
+               required>
+      </div>
+    </div>
+    <div class="field">
+      <label class="label" for="gateway-key">Key</label>
+      <div class="control">
+        <input id="gateway-key"
+               class="input"
+               type="password"
+               onfocus="this.select()"
+               placeholder="User key">
+      </div>
+      <p class="help">Leave blank for anonymous access</p>
+    </div>
+  </div>
+</div>
+<div id="debug-card" class="card is-fullwidth vflow-item">
   <header class="card-header">
     <p class="card-header-title">Debugging</p>
+    <a class="card-header-icon card-toggle">
+      <i class="fa fa-angle-up"></i>
+    </a>
   </header>
-  <div class="card-content">
+  <div class="card-content is-hidden">
     <button id="domain-download" class="button requires-domain">
       <span class="icon">
         <i class="fas fa-download"></i>
@@ -22,7 +82,7 @@
 </div>
 <nav class="level vflow-item">
   <div class="level-left">
-    <button id="options-apply" class="level-item button is-primary">ok</button>
+    <button id="options-apply" class="level-item button is-primary" disabled>apply</button>
   </div>
   <div class="level-right">
     <button id="options-cancel" class="level-item button">cancel</button>

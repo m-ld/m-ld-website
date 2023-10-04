@@ -1,16 +1,21 @@
 import { EventEmitter } from 'events';
 import type RBush from 'rbush';
-import { MessageItem } from './Message';
 import { Rectangle } from './Shapes';
 
-// This is required because rbush's exports are broken
-const MessageBush: new () => RBush<MessageItem> = require('rbush');
+export interface MessageRect extends Rectangle {
+  '@id': string;
+  deleted: boolean;
+}
+
+// This is required because rbush exports are broken
+// noinspection ES6ConvertRequireIntoImport
+const MessageBush: new () => RBush<MessageRect> = require('rbush');
 
 export const MIN_MESSAGE_SIZE: [number, number] = [115, 50];
 
 export namespace BoardIndex {
   export type Event = 'insert' | 'update' | 'remove';
-  export type EventHandler = (item: MessageItem) => any;
+  export type EventHandler = (item: MessageRect) => any;
 }
 
 export interface BoardIndex {
@@ -18,11 +23,11 @@ export interface BoardIndex {
 
   off(event: BoardIndex.Event, handler: BoardIndex.EventHandler): void;
 
-  get(id: string): MessageItem | undefined;
+  get(id: string): MessageRect | undefined;
 
-  all(): MessageItem[];
+  all(): MessageRect[];
 
-  search(box: Rectangle): MessageItem[];
+  search(box: Rectangle): MessageRect[];
 
   collides(box: Rectangle): boolean;
 
@@ -30,16 +35,10 @@ export interface BoardIndex {
    * Finds a location for new messages, with a preference for left-to-right then
    * top-to-bottom reading order.
    */
-  findSpace(near: MessageItem,
+  findSpace(near: MessageRect,
     size?: [number, number],
     startTheta?: number,
     margin?: number): [number, number];
-
-  /**
-   * Gets the most important messages on the board, e.g. for bot reaction.
-   * Messages from the current board user and new messages rank highest.
-   */
-  topMessages(count?: number, excludeIds?: Set<string>): string[];
 }
 
 /**
@@ -61,23 +60,23 @@ export class BoardBushIndex extends MessageBush implements BoardIndex {
     this.events.on(event, handler);
   }
 
-  private emit(event: BoardIndex.Event, item: MessageItem) {
+  private emit(event: BoardIndex.Event, item: MessageRect) {
     // Clear is called before class initialisation
     this.events?.emit(event, item);
   }
 
-  get(id: string): MessageItem | undefined {
+  get(id: string): MessageRect | undefined {
     return this.all().find(item => item['@id'] === id);
   }
 
-  insert(item: MessageItem): BoardBushIndex {
+  insert(item: MessageRect): BoardBushIndex {
     super.insert(item);
     this.top.add(item['@id']);
     this.emit('insert', item);
     return this;
   }
 
-  update(item: MessageItem): BoardBushIndex {
+  update(item: MessageRect): BoardBushIndex {
     if (item.deleted)
       return this.remove(item);
     const prev = this.get(item['@id']);
@@ -91,7 +90,7 @@ export class BoardBushIndex extends MessageBush implements BoardIndex {
     return this;
   }
 
-  remove(item: MessageItem): BoardBushIndex {
+  remove(item: MessageRect): BoardBushIndex {
     // Bug in RBush https://github.com/mourner/rbush/issues/95
     const prev = this.get(item['@id']);
     if (prev != null) {
@@ -102,7 +101,7 @@ export class BoardBushIndex extends MessageBush implements BoardIndex {
     return this;
   }
 
-  findSpace(near: MessageItem,
+  findSpace(near: MessageRect,
     size: [number, number] = MIN_MESSAGE_SIZE,
     startTheta: number = Math.PI / 2,
     margin: number = 20): [number, number] {
@@ -128,11 +127,5 @@ export class BoardBushIndex extends MessageBush implements BoardIndex {
     }
     // Sane default if we can't find a gap
     return [nx, ny + height];
-  }
-
-  topMessages(count?: number, excludeIds?: Set<string>): string[] {
-    return Array.from(this.top)
-      .reverse().filter(id => excludeIds == null || !excludeIds.has(id))
-      .slice(0, count).map(id => this.get(id)?.text ?? ''); // Should exist
   }
 }

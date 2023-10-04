@@ -21,7 +21,10 @@ allows the app to choose an appropriate messaging service for its requirements
 and architecture, and also to secure access to the service prior to passing it
 to the clone.
 
-Message-layer adapters are currently specified for:
+> ⭐️ The [**m-ld** Gateway](https://gw.m-ld.org/) provides secure message delivery (and data backup) for collaborative apps using **m-ld**. It's the easiest way to get started, without having to set up your own messaging.
+
+Self-service message-layer adapters are currently specified for:
+- [Socket.IO](https://socket.io/): enables real-time, bidirectional and event-based communication. Convenient to use when the app architecture has a live web server or app server, using HTTP.
 - [MQTT](http://mqtt.org/): a machine-to-machine (M2M)/"Internet of Things"
   connectivity protocol. Convenient to use for local development or if the
   deployment environment has an MQTT broker available.

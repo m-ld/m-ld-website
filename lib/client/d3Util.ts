@@ -5,7 +5,7 @@ export type SVG = d3.Selection<SVGSVGElement, unknown, HTMLElement, unknown>;
 export type d3Selection<E extends d3.BaseType = d3.BaseType, D = unknown> =
   d3.Selection<E, D, d3.BaseType, unknown>;
 
-export function node<E extends d3.BaseType>(selection: d3Selection<E>): E {
+export function node<E extends d3.BaseType>(selection: d3Selection<E>): NonNullable<E> {
   const node = selection.node();
   if (node == null)
     throw new Error('Node expected');
@@ -49,3 +49,15 @@ export function svgParent(el: SVGElement): SVGElement {
     throw new Error('SVG parent expected');
 }
 
+export type Setup = { [key: string]: string | string[] | undefined };
+/**
+ * Extracts a JSON value from a parsed query string (using `querystring`)
+ */
+export function setupJson(key: string, setup: Setup, def?: any): any {
+  const val = setup[key];
+  try {
+    return typeof val == 'string' ? JSON.parse(val) : def;
+  } catch (err) {
+    return def;
+  }
+}

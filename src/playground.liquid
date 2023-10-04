@@ -12,236 +12,278 @@
   <script src="https://www.google.com/recaptcha/api.js?render={{ env.RECAPTCHA_SITE }}"></script>
   <script src="playground.js"></script>
   <style>
-    body {
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-    #playground-ide {
-      flex: 1;
-      display: flex;
-      flex-direction: row;
-      min-height: 0;
-    }
-    #data-pane {
-      padding: 1em;
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-    }
-    #txn-pane {
-      padding: 1em;
-      flex: 1;
-    }
-    .card-json {
-      height: 200px;
-    }
-    .vflow-item:not(:last-child) {
-      margin-bottom: 16px;
-    }
-    .fill-down {
-      flex: 1;
-    }
-    .card {
-      overflow: visible;
-    }
-    .card-preview {
-      max-width: 25em;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .update-card .card-header-title {
-      font-weight: unset;
-    }
-    #domain-input {
-      min-width: 300px;
-    }
-    #domain-join {
-      position: absolute;
-      right: 25px;
-      pointer-events: none;
-      opacity: 0.75;
-    }
-    .jsoneditor-menu {
-        background-color: darkgrey;
-        border-bottom: thin solid darkgrey;
-    }
-    .jsoneditor {
-        border: thin solid darkgrey;
-    }
+      body {
+          min-height: 100vh;
+          display: flex;
+          flex-direction: column;
+      }
+
+      #playground-ide {
+          flex: 1;
+          display: flex;
+          flex-direction: row;
+          min-height: 0;
+      }
+
+      #data-pane {
+          padding: 1em;
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+      }
+
+      #txn-pane {
+          padding: 1em;
+          flex: 1;
+      }
+
+      .card-json {
+          height: 200px;
+      }
+
+      .vflow-item:not(:last-child) {
+          margin-bottom: 16px;
+      }
+
+      .fill-down {
+          flex: 1;
+      }
+
+      .card {
+          overflow: visible;
+      }
+
+      .card-preview {
+          max-width: 25em;
+          overflow: hidden;
+          text-overflow: ellipsis;
+      }
+
+      .update-card .card-header-title {
+          font-weight: unset;
+      }
+
+      #domain-input {
+          min-width: 300px;
+      }
+
+      #domain-join {
+          position: absolute;
+          right: 25px;
+          pointer-events: none;
+          opacity: 0.75;
+      }
+
+      .jsoneditor-menu {
+          background-color: darkgrey;
+          border-bottom: thin solid darkgrey;
+      }
+
+      .jsoneditor {
+          border: thin solid darkgrey;
+      }
   </style>
 </head>
 
 <body>
-  <nav class="navbar" role="navigation" aria-label="main navigation">
-    <div class="navbar-brand">
-      <div class="navbar-item">
-        <a href="/"><img src="/m-ld.svg" width="112" /></a>
-        playground
-      </div>
-      <script>
+<nav class="navbar" role="navigation" aria-label="main navigation">
+  <div class="navbar-brand">
+    <div class="navbar-item">
+      <a href="/"><img src="/m-ld.svg" width="112"/></a>
+      playground
+    </div>
+    <script>
       function playgroundNavbarToggle() {
         document.querySelector('#playground-burger').classList.toggle('is-active');
         document.querySelector('#playground-navbar').classList.toggle('is-active');
       }
-      </script>
-      <a role="button" id="playground-burger" class="navbar-burger burger" onclick="playgroundNavbarToggle()"
-        aria-label="menu" aria-expanded="false" data-target="playground-navbar">
-        <span aria-hidden="true"></span>
-        <span aria-hidden="true"></span>
-        <span aria-hidden="true"></span>
-      </a>
-    </div>
-    <div id="playground-navbar" class="navbar-menu">
-      <div class="navbar-start">
-        <div class="navbar-item">
-          <input id="domain-input" class="input is-fullwidth" type="text"
-            placeholder="enter m-ld domain or click new">
-          <i id="domain-join" class="fas fa-level-down-alt fa-rotate-90"></i>
-        </div>
-        <div class="navbar-item buttons">
-          <button id="domain-new" class="button">
+    </script>
+    <a role="button" id="playground-burger" class="navbar-burger burger"
+       onclick="playgroundNavbarToggle()"
+       aria-label="menu" aria-expanded="false" data-target="playground-navbar">
+      <span aria-hidden="true"></span>
+      <span aria-hidden="true"></span>
+      <span aria-hidden="true"></span>
+    </a>
+  </div>
+  <div id="playground-navbar" class="navbar-menu">
+    <div class="navbar-start">
+      <div class="navbar-item">
+        <input id="domain-input"
+               class="input is-fullwidth"
+               type="text"
+               placeholder="enter m-ld domain or click new"
+               onfocus="this.select()">
+        <i id="domain-join" class="fas fa-level-down-alt fa-rotate-90"></i>
+      </div>
+      <div class="navbar-item dropdown is-hoverable">
+        <div class="dropdown-trigger">
+          <button class="button domain-new" aria-haspopup="true" aria-controls="new-menu">
             <span class="icon">
-              <i class="fas fa-chalkboard-teacher"></i>
+              <i class="fas fa-file"></i>
             </span>
             <span>new</span>
+            <span class="icon is-small">
+              <i class="fas fa-angle-down" aria-hidden="true"></i>
+            </span>
           </button>
         </div>
+        <div class="dropdown-menu" id="new-menu" role="menu">
+          <div class="dropdown-content">
+            <a class="dropdown-item domain-new" data-gateway="false">
+              without a Gateway <span class="domain-new-default is-hidden">(default)</span>
+            </a>
+            <a class="dropdown-item domain-new" data-gateway="true">
+              using the Gateway, see <span class="icon">
+                <i class="fas fa-cog"></i>
+              </span> Options <span class="domain-new-default is-hidden">(default)</span>
+            </a>
+          </div>
+        </div>
       </div>
-      <div class="navbar-end">
-        <div class="navbar-item buttons">
-          <button id="show-options" class="button" title="Options">
+    </div>
+    <div class="navbar-end">
+      <div class="navbar-item buttons">
+        <button id="share-domain" class="button" title="Share">
+          <span class="icon">
+            <i class="fas fa-share-alt"></i>
+          </span>
+        </button>
+        <button id="show-options" class="button" title="Options">
             <span class="icon">
               <i class="fas fa-cog"></i>
             </span>
-          </button>
-          <button id="show-help" class="button" title="Help">
+        </button>
+        <button id="show-help" class="button" title="Help">
             <span class="icon">
               <i class="fas fa-question"></i>
             </span>
-          </button>
-        </div>
+        </button>
       </div>
     </div>
-  </nav>
-  <section id="playground-intro" class="section notification is-info is-light is-hidden">
-    <button class="delete"></button>
-    <div class="columns">
-      <div class="column content">
-        {% include 'playground-intro.html' %}
-      </div>
-      <div class="column">
-        <iframe src="https://player.vimeo.com/video/463091725" width="100%" height="100%"
-          frameborder="0" allow="autoplay; fullscreen" allowfullscreen></iframe>
-      </div>
+  </div>
+</nav>
+<section id="playground-intro" class="section notification is-info is-light is-hidden">
+  <button class="delete"></button>
+  <div class="columns">
+    <div class="column content">
+      {% include 'playground-intro.html' %}
     </div>
-  </section>
-  <section id="playground-ide">
-    <div id="data-pane">
-      <div id="query-card" class="card is-fullwidth vflow-item">
-        <header class="card-header">
-          <p class="card-header-title">Query</p>
-          <pre class="card-preview"></pre>
-          <a class="card-header-icon card-toggle">
-            <i class="fa fa-angle-down"></i>
-          </a>
-        </header>
-        <div class="card-content is-hidden">
-          <div class="card-json vflow-item"></div>
-          <nav class="level vflow-item">
-            <div class="level-left">
-              <button id="query-apply" class="level-item button is-primary requires-domain">apply</button>
-              <a class="level-item button card-link" title="Copy permalink">
+    <div class="column">
+      <iframe src="https://player.vimeo.com/video/463091725" width="100%" height="100%"
+              frameborder="0" allow="autoplay; fullscreen" allowfullscreen></iframe>
+    </div>
+  </div>
+</section>
+<section id="playground-ide">
+  <div id="data-pane">
+    <div id="query-card" class="card is-fullwidth vflow-item">
+      <header class="card-header">
+        <p class="card-header-title">Query</p>
+        <pre class="card-preview"></pre>
+        <a class="card-header-icon card-toggle">
+          <i class="fa fa-angle-down"></i>
+        </a>
+      </header>
+      <div class="card-content is-hidden">
+        <div class="card-json vflow-item"></div>
+        <nav class="level vflow-item">
+          <div class="level-left">
+            <button id="query-apply" class="level-item button is-primary requires-domain">apply
+            </button>
+            <a class="level-item button card-link" title="Copy permalink">
                 <span class="icon is-small">
                   <i class="fas fa-link"></i>
                 </span>
-              </a>
-            </div>
-            <div class="level-right">
-              <div class="level-item dropdown is-right is-hoverable">
-                <div class="dropdown-trigger">
-                  <button class="button" aria-haspopup="true" aria-controls="query-templates-menu">
-                    <span>templates</span>
-                    <span class="icon is-small">
+            </a>
+          </div>
+          <div class="level-right">
+            <div class="level-item dropdown is-right is-hoverable">
+              <div class="dropdown-trigger">
+                <button class="button" aria-haspopup="true" aria-controls="query-templates-menu">
+                  <span>templates</span>
+                  <span class="icon is-small">
                       <i class="fas fa-angle-down" aria-hidden="true"></i>
                     </span>
-                  </button>
-                </div>
-                <div class="dropdown-menu templates-menu" id="query-templates-menu" role="menu">
-                  <div class="dropdown-content">
-                  </div>
+                </button>
+              </div>
+              <div class="dropdown-menu templates-menu" id="query-templates-menu" role="menu">
+                <div class="dropdown-content">
                 </div>
               </div>
             </div>
-          </nav>
-        </div>
+          </div>
+        </nav>
       </div>
-      <div class="card is-fullwidth">
-        <header class="card-header">
-          <p class="card-header-title">Data&nbsp;<span style="font-weight: normal;">– Query Results</span></p>
-          <a class="card-header-icon">
-            <i id="data-spinner" class="fas fa-spinner fa-spin is-hidden"></i>
-          </a>
-        </header>
-      </div>
-      <div id="data-jsoneditor" class="vflow-item fill-down"></div>
     </div>
-    <div id="txn-pane">
-      <div id="txn-card" class="card is-fullwidth vflow-item">
-        <header class="card-header">
-          <p class="card-header-title">Transact</p>
-          <a class="card-header-icon card-toggle">
-            <i class="fa fa-angle-up"></i>
-          </a>
-        </header>
-        <div class="card-content">
-          <div class="card-json vflow-item"></div>
-          <nav class="level vflow-item">
-            <div class="level-left">
-              <button id="txn-apply" class="level-item button is-primary requires-domain">apply</button>
-              <a class="level-item button card-link" title="Copy permalink">
+    <div class="card is-fullwidth">
+      <header class="card-header">
+        <p class="card-header-title">Data&nbsp;<span
+              style="font-weight: normal;">– Query Results</span></p>
+        <a class="card-header-icon">
+          <i id="data-spinner" class="fas fa-spinner fa-spin is-hidden"></i>
+        </a>
+      </header>
+    </div>
+    <div id="data-jsoneditor" class="vflow-item fill-down"></div>
+  </div>
+  <div id="txn-pane">
+    <div id="txn-card" class="card is-fullwidth vflow-item">
+      <header class="card-header">
+        <p class="card-header-title">Transact</p>
+        <a class="card-header-icon card-toggle">
+          <i class="fa fa-angle-up"></i>
+        </a>
+      </header>
+      <div class="card-content">
+        <div class="card-json vflow-item"></div>
+        <nav class="level vflow-item">
+          <div class="level-left">
+            <button id="txn-apply" class="level-item button is-primary requires-domain">apply
+            </button>
+            <a class="level-item button card-link" title="Copy permalink">
                 <span class="icon is-small">
                   <i class="fas fa-link"></i>
                 </span>
-              </a>
-            </div>
-            <div class="level-right">
-              <div class="level-item dropdown is-right is-hoverable">
-                <div class="dropdown-trigger">
-                  <button class="button" aria-haspopup="true" aria-controls="txn-templates-menu">
-                    <span>templates</span>
-                    <span class="icon is-small">
+            </a>
+          </div>
+          <div class="level-right">
+            <div class="level-item dropdown is-right is-hoverable">
+              <div class="dropdown-trigger">
+                <button class="button" aria-haspopup="true" aria-controls="txn-templates-menu">
+                  <span>templates</span>
+                  <span class="icon is-small">
                       <i class="fas fa-angle-down" aria-hidden="true"></i>
                     </span>
-                  </button>
-                </div>
-                <div class="dropdown-menu templates-menu" id="txn-templates-menu" role="menu">
-                  <div class="dropdown-content">
-                  </div>
+                </button>
+              </div>
+              <div class="dropdown-menu templates-menu" id="txn-templates-menu" role="menu">
+                <div class="dropdown-content">
                 </div>
               </div>
             </div>
-          </nav>
-        </div>
-      </div>
-      <div id="update-template" class="card update-card is-fullwidth vflow-item is-hidden">
-        <header class="card-header">
-          <p class="card-header-title">just now</p>
-          <pre class="card-preview"></pre>
-          <a class="card-header-icon card-toggle">
-            <i class="fa fa-angle-down"></i>
-          </a>
-        </header>
-        <div class="card-content is-hidden">
-          <div class="card-json vflow-item"></div>
-        </div>
-      </div>
-      <div id="updates-log" class="vflow-item">
+          </div>
+        </nav>
       </div>
     </div>
-  </section>
-  {% include 'popup.liquid', id: 'options-dialog', content: 'playground-options.html' %}
-  {% include 'popups.liquid', help: 'playground-help.html' %}
+    <div id="update-template" class="card update-card is-fullwidth vflow-item is-hidden">
+      <header class="card-header">
+        <p class="card-header-title">just now</p>
+        <pre class="card-preview"></pre>
+        <a class="card-header-icon card-toggle">
+          <i class="fa fa-angle-down"></i>
+        </a>
+      </header>
+      <div class="card-content is-hidden">
+        <div class="card-json vflow-item"></div>
+      </div>
+    </div>
+    <div id="updates-log" class="vflow-item">
+    </div>
+  </div>
+</section>
+{% include 'popup.liquid', id: 'options-dialog', content: 'playground-options.html' %}
+{% include 'popups.liquid', help: 'playground-help.html' %}
 </body>
 
 </html>

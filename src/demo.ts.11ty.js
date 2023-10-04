@@ -6,13 +6,13 @@ const { renderTs } = require('@m-ld/io-web-build');
 
 module.exports = class {
   data() {
-    return {
-      permalink: 'demo/demo.js',
-      tsPath: join(__dirname, 'demo.ts'),
-      tsConfig: require('../tsconfig.json')
-    };
+    return { permalink: 'demo/demo.js' };
   }
   render() {
-    return renderTs.apply(this, arguments);
+    return renderTs({
+      tsPath: join(__dirname, 'demo.ts'),
+      shims: ['events', 'buffer'],
+      envVars: ['RECAPTCHA_SITE', 'RECAPTCHA_V2_SITE', 'GTAG_ID']
+    });
   }
 }

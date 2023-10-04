@@ -1,24 +1,31 @@
 import * as d3 from 'd3';
-import JSONEditor, { JSONEditorOptions } from 'jsoneditor';
+import JSONEditor from 'jsoneditor';
 import { D3View } from '../lib/client/D3View';
-import { d3Selection, fromTemplate } from '../lib/client/d3Util';
+import { d3Selection, fromTemplate, node, Setup, setupJson } from '../lib/client/d3Util';
 import { Grecaptcha, modernizd } from '@m-ld/io-web-runtime/dist/client';
 import {
-  initPopupControls, showInfo, showMessage, showNotModern, showWarning
+  initPopupControls, initShareButton, showInfo, showMessage, showNotModern, showWarning
 } from '../lib/client/PopupControls';
 import { fetchConfig } from '../lib/client/Api';
 import { clone, isRead, isWrite, MeldClone, MeldUpdate } from '@m-ld/m-ld';
-import { AblyWrtcRemotes } from '@m-ld/m-ld/ext/ably';
+import { AblyRemotes, AblyWrtcRemotes } from '@m-ld/m-ld/ext/ably';
+import { IoRemotes } from '@m-ld/m-ld/ext/socket.io';
 import { MemoryLevel } from 'memory-level';
 import { render as renderTime } from 'timeago.js';
-import { parse, stringify } from 'querystring';
+import * as querystring from 'querystring';
 import * as local from 'local-storage';
 import { LevelDownResponse } from '../lib/client/LevelDownResponse';
 import { saveAs } from 'file-saver';
+import { JsonEditorCard } from '../lib/client/JsonEditorCard';
+import { DetailsCard } from '../lib/client/DetailsCard';
+import { Config } from '../lib/dto';
 
-// Ensure that the SHACL plugin exists for schema constraints
-require('@m-ld/m-ld/ext/shacl');
-globalThis.require = require;
+// Ensure that common plugins exist
+// @ts-ignore
+globalThis.require = mod => ({
+  '@m-ld/m-ld/ext/tseq': require('@m-ld/m-ld/ext/tseq'),
+  '@m-ld/m-ld/ext/shacl': require('@m-ld/m-ld/ext/shacl')
+}[mod]);
 
 const queryTemplates = require('../lib/templates/query-templates.json');
 const txnTemplates = require('../lib/templates/txn-templates.json');
@@ -33,7 +40,7 @@ window.onload = async function () {
 
   await Grecaptcha.ready;
 
-  const pg = new Playground(parse(window.location.hash.slice(1)));
+  const pg = new Playground(querystring.parse(window.location.hash.slice(1)));
   window.addEventListener('beforeunload', e => {
     if (pg.unsaved) {
       e.preventDefault();
@@ -43,41 +50,132 @@ window.onload = async function () {
   window.onunload = () => pg.close();
 };
 
-function validContext(context: any): boolean {
-  return context != null && typeof context == 'object' && !Array.isArray(context);
+interface Options {
+  context: {};
+  gateway: Config.GatewayOptions;
 }
 
-class OptionsDialog extends D3View<HTMLDivElement> {
-  contextEditor: JSONEditor;
-  prevContext: any = {};
+class ContextCard extends DetailsCard {
+  private readonly contextEditor: JSONEditor;
 
   constructor() {
-    super(d3.select('#options-dialog'));
-    this.contextEditor = new JSONEditor(d3.select('#context-jsoneditor').node() as HTMLElement, {
-      mode: 'code', mainMenuBar: false, statusBar: false,
-      onChange: () => this.applyButton.property('disabled', !this.valid),
-      onValidate: json => validContext(json) ? [] : [{ path: [], message: NOT_A_CONTEXT }]
-    }, {}); // Default empty context
-    this.applyButton.on('click', () => {
-      this.d3.classed('is-active', false);
-    });
-    this.cancelButton.on('click', () => {
-      this.d3.classed('is-active', false);
-      this.contextEditor.set(this.prevContext);
-    });
+    super('context');
+    this.contextEditor = new JSONEditor(
+      d3.select('#context-jsoneditor').node() as HTMLElement,
+      {
+        mode: 'code', mainMenuBar: false, statusBar: false,
+        onChange: () => this.emit('change'),
+        onValidate: json => ContextCard.validContext(json) ? [] : [{
+          path: [], message: NOT_A_CONTEXT
+        }]
+      },
+      {} // Default empty context
+    );
   }
 
   get context() {
     return this.contextEditor.get();
   }
 
-  get valid(): boolean {
+  set context(context: {}) {
+    this.contextEditor.set(context);
+  }
+
+  get valid() {
     try {
-      const context = this.contextEditor.get();
-      return validContext(context);
-    } catch (err) {
+      return ContextCard.validContext(this.context);
+    } catch (e) {
       return false;
     }
+  }
+
+  static validContext(context: any): context is {} {
+    return context != null && typeof context == 'object' && !Array.isArray(context);
+  }
+}
+
+class GatewayCard extends DetailsCard {
+  constructor() {
+    super('gateway');
+    const onChange = () => this.emit('change');
+    this.useGatewayCheckbox.on('change', onChange);
+    this.gatewayOriginInput.on('input', onChange);
+    this.gatewayUserInput.on('input', onChange);
+    this.gatewayKeyInput.on('input', onChange);
+  }
+
+  get gateway() {
+    return {
+      use: !!this.useGatewayCheckbox.property('checked'),
+      origin: this.gatewayOriginInput.property('value'),
+      user: this.gatewayUserInput.property('value'),
+      key: this.gatewayKeyInput.property('value')
+    };
+  }
+
+  get valid() {
+    return node(this.gatewayOriginInput).validity.valid &&
+      node(this.gatewayUserInput).validity.valid &&
+      node(this.gatewayKeyInput).validity.valid;
+  }
+
+  get useGatewayCheckbox(): d3Selection<HTMLInputElement> {
+    return d3.select('#use-gateway');
+  }
+
+  get gatewayOriginInput(): d3Selection<HTMLInputElement> {
+    return d3.select('#gateway-origin');
+  }
+
+  get gatewayUserInput(): d3Selection<HTMLInputElement> {
+    return d3.select('#gateway-user');
+  }
+
+  get gatewayKeyInput(): d3Selection<HTMLInputElement> {
+    return d3.select('#gateway-key');
+  }
+}
+
+class OptionsDialog extends D3View<HTMLDivElement> implements Options {
+  private previous: Options;
+  private contextCard: ContextCard;
+  private gatewayCard: GatewayCard;
+
+  constructor() {
+    super(d3.select('#options-dialog'));
+    const onChange = () => this.applyButton.property('disabled', !this.valid);
+    this.contextCard = new ContextCard().on('change', onChange);
+    this.gatewayCard = new GatewayCard().on('change', onChange);
+    new DetailsCard('debug');
+    this.applyButton.on('click', () => {
+      this.d3.classed('is-active', false);
+      this.emit('apply',
+        ['context', 'gateway'].filter(this.optionChanged));
+    });
+    this.cancelButton.on('click', () => {
+      this.d3.classed('is-active', false);
+      this.contextCard.context = this.previous?.context ?? {};
+      this.emit('cancel');
+    });
+  }
+
+  show() {
+    this.d3.classed('is-active', true);
+    this.applyButton.property('disabled', true);
+    const { context, gateway } = this;
+    this.previous = { context, gateway };
+  }
+
+  get context() {
+    return this.contextCard.context;
+  }
+
+  get gateway() {
+    return this.gatewayCard.gateway;
+  }
+
+  get valid(): boolean {
+    return this.contextCard.valid && this.gatewayCard.valid;
   }
 
   get applyButton() {
@@ -88,10 +186,8 @@ class OptionsDialog extends D3View<HTMLDivElement> {
     return d3.select('#options-cancel');
   }
 
-  show() {
-    this.d3.classed('is-active', true);
-    this.prevContext = this.contextEditor.get();
-  }
+  private optionChanged = (option: keyof Options) =>
+    JSON.stringify(this[option]) !== JSON.stringify(this.previous?.[option]);
 }
 
 const NOT_A_READ = 'Query pattern is not a read operation';
@@ -99,30 +195,23 @@ const NOT_A_WRITE = 'Transaction pattern is not a write operation';
 const NOT_A_CONTEXT = 'A m-ld context must be a JSON object';
 const CONFIRM_CHANGE_DOMAIN = 'You may have unsaved data. Continue changing domain?';
 
-function setupJson(
-  key: string,
-  setup: { [key: string]: string | string[] | undefined },
-  def: any
-): any {
-  const val = setup[key];
-  try {
-    return typeof val == 'string' ? JSON.parse(val) : def;
-  } catch (err) {
-    return def;
-  }
-}
-
-// noinspection JSMethodCanBeStatic
+// noinspection JSIgnoredPromiseFromCall, ES6MissingAwait
 class Playground extends D3View<HTMLDivElement> {
-  queryCard: JsonEditorCard;
-  txnCard: JsonEditorCard;
-  dataEditor: JSONEditor;
-  meld?: { clone: MeldClone, backend: MemoryLevel<string, Buffer> };
-  options: OptionsDialog;
-  previousDomain?: string;
+  readonly queryCard: JsonEditorCard;
+  readonly txnCard: JsonEditorCard;
+  readonly dataEditor: JSONEditor;
+  readonly options: OptionsDialog;
 
-  constructor(setup: { [key: string]: string | string[] | undefined }) {
+  private meld?: {
+    clone: MeldClone,
+    backend: MemoryLevel<string, Buffer>,
+    config: Config.Response
+  };
+  private previousDomain?: string;
+
+  constructor(setup: Setup) {
     super(d3.select('#playground-ide'));
+    ////////////////////////////////////////////////////////////////////////////
     this.queryCard = new JsonEditorCard('query', queryTemplates, {
       mode: 'code', mainMenuBar: false, statusBar: false, onValidate: json =>
         isRead(json) ? [] : [{ path: [], message: NOT_A_READ }]
@@ -134,16 +223,22 @@ class Playground extends D3View<HTMLDivElement> {
     this.dataEditor = new JSONEditor(d3.select('#data-jsoneditor').node() as HTMLElement, {
       modes: ['code', 'view'], enableTransform: false, enableSort: false, onEditable: () => false
     }, []);
+    ////////////////////////////////////////////////////////////////////////////
     this.domain = typeof setup.domain == 'string' ? setup.domain : '';
     this.domainInput.on('keydown', () => {
       this.domainJoinIcon.classed('is-hidden', false);
       if (d3.event.key === 'Enter')
         this.loadDomain();
     });
-    this.newDomainButton.on('click', () => {
-      this.domain = '';
-      this.loadDomain();
-    });
+    for (let newDomainElement of this.newDomainControls.nodes()) {
+      const useGatewayDatum = newDomainElement.dataset.gateway;
+      const useGateway = useGatewayDatum == null ? undefined : useGatewayDatum === 'true';
+      d3.select(newDomainElement).on('click', () => {
+        this.domain = '';
+        this.loadDomain(useGateway);
+      });
+    }
+    ////////////////////////////////////////////////////////////////////////////
     d3.select('#query-apply').on('click', () => {
       this.runQuery('warn');
     });
@@ -165,15 +260,27 @@ class Playground extends D3View<HTMLDivElement> {
         return this.downloadClone();
       }).catch(showWarning);
     });
+    initShareButton(d3.select('#share-domain'), {
+      getHash: () => querystring.stringify({ domain: this.domain }),
+      info: 'Playground link copied to clipboard.'
+    });
     d3.select('#show-options').on('click', () => this.options.show());
+    ////////////////////////////////////////////////////////////////////////////
     this.options = new OptionsDialog();
-
+    this.options.on('apply', changed => {
+      if (changed.includes('context'))
+        this.reloadDomain();
+      if (changed.includes('gateway'))
+        this.updateNewDefaults();
+    });
+    ////////////////////////////////////////////////////////////////////////////
     this.intro.classed('is-hidden', this.introHidden);
     this.intro.select('.delete').on('click', () => this.introHidden = true);
     d3.select('#show-intro').on('click', () => this.introHidden = false);
-
+    ////////////////////////////////////////////////////////////////////////////
     this.loading = false;
     this.loadDomain();
+    this.updateNewDefaults();
   }
 
   private get intro() {
@@ -213,28 +320,56 @@ class Playground extends D3View<HTMLDivElement> {
     }
   }
 
-  async loadDomain() {
-    if (this.previousDomain !== this.domain) {
-      if (this.unsaved && !window.confirm(CONFIRM_CHANGE_DOMAIN))
-        return this.domain = this.previousDomain ?? '';
-      try {
-        this.loading = true;
-        await this.close();
-        this.updatesLog.selectAll('.update-card').remove();
-        const config = await fetchConfig(this.domain);
-        this.domain = this.previousDomain = config['@domain'];
-        Object.assign(config['@context'] ??= {}, this.options.context);
-        const backend = new MemoryLevel<string, Buffer>();
-        this.meld = { clone: await clone(backend, AblyWrtcRemotes, config), backend };
-        this.meld.clone.follow(update => this.onUpdate(update));
-        await this.meld.clone.status.becomes({ outdated: false });
-        showInfo(`Connected to ${config['@domain']}`);
-        this.runQuery('warn');
-      } catch (err) {
-        showWarning(err);
-      } finally {
-        this.loading = false;
-      }
+  async loadDomain(useGateway = this.options.gateway.use) {
+    if (this.previousDomain === this.domain)
+      return;
+    if (this.unsaved && !window.confirm(CONFIRM_CHANGE_DOMAIN))
+      return this.domain = this.previousDomain ?? '';
+    this.doLoading(async () => {
+      this.updatesLog.selectAll('.update-card').remove();
+      const config = await fetchConfig(this.domain, {
+        ...this.options.gateway, use: useGateway
+      });
+      this.domain = this.previousDomain = config['@domain'];
+      const backend = new MemoryLevel<string, Buffer>();
+      const meld = await this.clone(backend, config);
+      await meld.clone.status.becomes({ outdated: false });
+      showInfo(`Connected to ${config['@domain']}`);
+    });
+  }
+
+  private async clone(backend: MemoryLevel<string, Buffer>, config: Config.Response) {
+    const remoting = 'ably' in config ?
+      'wrtc' in config ? AblyWrtcRemotes : AblyRemotes :
+      IoRemotes;
+    this.meld = {
+      clone: await clone(backend, remoting, {
+        ...config, '@context': { ...config['@context'], ...this.options.context }
+      }),
+      backend,
+      config
+    };
+    this.meld.clone.follow(update => this.onUpdate(update));
+    return this.meld;
+  }
+
+  reloadDomain() {
+    if (this.meld == null)
+      return;
+    const { backend, config } = this.meld;
+    this.doLoading(() => this.clone(backend, config));
+  }
+
+  async doLoading(loading: () => Promise<unknown>) {
+    try {
+      this.loading = true;
+      await this.close();
+      await loading();
+      this.runQuery('warn');
+    } catch (err) {
+      showWarning(err);
+    } finally {
+      this.loading = false;
     }
   }
 
@@ -286,8 +421,16 @@ class Playground extends D3View<HTMLDivElement> {
     return d3.select('#domain-join');
   }
 
-  get newDomainButton() {
-    return d3.select('#domain-new');
+  get newDomainControls(): d3Selection<HTMLElement> {
+    return d3.selectAll('.domain-new');
+  }
+
+  private updateNewDefaults() {
+    for (let el of this.newDomainControls.nodes())
+      d3.select(el)
+        .select('.domain-new-default')
+        .classed('is-hidden',
+          !(el.dataset.gateway === `${this.options.gateway.use}`));
   }
 
   get updatesLog() {
@@ -298,139 +441,11 @@ class Playground extends D3View<HTMLDivElement> {
     this.domainJoinIcon.classed('fa-spinner fa-spin', loading);
     this.domainJoinIcon.classed('fa-level-down-alt fa-rotate-90 is-hidden', !loading);
     d3.selectAll('.requires-domain').property('disabled', loading || !this.meld);
-    this.newDomainButton.property('disabled', loading);
+    this.newDomainControls.property('disabled', loading);
     this.domainInput.property('disabled', loading);
   }
 
   set querying(querying: boolean) {
     d3.select('#data-spinner').classed('is-hidden', !querying);
   }
-}
-
-class JsonEditorCard extends D3View<HTMLDivElement> {
-  name?: string;
-  jsonEditor: JSONEditor;
-  expanded: boolean = false;
-
-  constructor(
-    card: d3Selection<HTMLDivElement> | string,
-    templates: object,
-    options?: JSONEditorOptions,
-    json?: any
-  ) {
-    super(typeof card == 'string' ? d3.select(`#${card}-card`) : card);
-    this.name = typeof card == 'string' ? card : undefined;
-    this.d3.datum(this);
-
-    this.toggle.on('click', () => {
-      this.expanded = this.content.classed('is-hidden');
-      this.icon.classed('fa-angle-up', this.expanded);
-      this.icon.classed('fa-angle-down', !this.expanded);
-      this.content.classed('is-hidden', !this.expanded);
-      this.preview.classed('is-hidden', this.expanded);
-      if (this.expanded)
-        this.jsonEditor.focus();
-    });
-
-    if (!this.preview.empty()) {
-      const prevOnChange = options?.onChange;
-      options = {
-        ...options,
-        onChange: async () => {
-          this.updatePreview(options);
-          prevOnChange?.();
-        }
-      };
-    }
-
-    this.jsonEditor = new JSONEditor(
-      this.d3.select('.card-json').node() as HTMLElement, options, json);
-
-    this.templatesContent
-      .selectAll('.dropdown-item').data(Object.entries(templates))
-      .join('a').classed('dropdown-item', true).text(e => e[0])
-      .on('click', e => {
-        this.jsonEditor.set(e[1]);
-        this.updatePreview(options);
-      });
-
-    this.linkButton?.on('click', () => {
-      if (this.name != null) {
-        const icon = this.linkButton.select('i');
-        const link = new URL(window.location.href);
-        link.hash = `#${stringify({ [this.name]: JSON.stringify(this.jsonEditor.get()) })}`;
-        navigator.clipboard.writeText(link.href).then(() => {
-          icon.classed('fa-link', false).classed('fa-check', true);
-          setTimeout(() => icon.classed('fa-check', false).classed('fa-link', true), 1000);
-        });
-      }
-    });
-
-    options?.onChange?.();
-  }
-
-  private async updatePreview(options?: JSONEditorOptions) {
-    try {
-      const pattern = this.jsonEditor.get();
-      const errs = await options?.onValidate?.(pattern);
-      if (errs != null && errs.length > 0)
-        this.preview.html(previewErrHtml(errs.map(err => err.message)));
-      else
-        this.preview.html(JSON.stringify(pattern));
-    } catch (err) {
-      this.preview.html(previewErrHtml('JSON not valid'));
-    }
-  }
-
-  mergeFollowing(skip?: 'skip') {
-    const nextSibling = this.element.nextElementSibling;
-    if (nextSibling != null) {
-      const next = d3.select<Element, JsonEditorCard>(nextSibling).datum();
-      if (skip || this.expanded || this.title.text() !== next.title.text()) {
-        next.mergeFollowing();
-      } else {
-        try {
-          const json = [].concat(this.jsonEditor.get()).concat(next.jsonEditor.get());
-          this.jsonEditor.set(json);
-          this.preview.html(JSON.stringify(json));
-          next.d3.remove();
-          this.mergeFollowing();
-        } catch (err) {
-          next.mergeFollowing();
-        }
-      }
-    }
-  }
-
-  get title() {
-    return this.d3.select<HTMLDivElement>('.card-header-title');
-  }
-
-  get content() {
-    return this.d3.select<HTMLDivElement>('.card-content');
-  }
-
-  get preview() {
-    return this.d3.select<HTMLPreElement>('.card-preview');
-  }
-
-  get toggle() {
-    return this.d3.select<HTMLAnchorElement>('.card-toggle');
-  }
-
-  get icon() {
-    return this.toggle.select('.fa');
-  }
-
-  get templatesContent() {
-    return this.d3.select('.templates-menu .dropdown-content');
-  }
-
-  get linkButton() {
-    return this.d3.select<HTMLAnchorElement>('.card-link');
-  }
-}
-
-function previewErrHtml(err: any): string {
-  return `<i class="fas fa-exclamation-triangle" title="${err}"></i>`;
 }

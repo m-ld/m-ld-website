@@ -2,6 +2,6 @@
   "@describe": "?p",
   "@where": {
     "@id": "?p",
-    "name": { "@contains": "Fred" }
+    "age": { "@gt": 30 }
   }
 }

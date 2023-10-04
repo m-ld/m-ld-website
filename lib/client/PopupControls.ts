@@ -1,6 +1,6 @@
 import * as d3 from 'd3';
 import { d3Selection, fromTemplate, node } from './d3Util';
-import * as LOG from 'loglevel';
+import LOG from 'loglevel';
 import { Grecaptcha } from '@m-ld/io-web-runtime/dist/client';
 
 export function showNotModern(missing: string[]) {
@@ -39,7 +39,8 @@ export function showGrecaptcha() {
 }
 
 export function showMessage<T = unknown>(type: 'warning' | 'info', msg: string,
-  complete: (message: d3Selection<HTMLElement>) => Promise<T>) {
+  complete: (message: d3Selection<HTMLElement>) => Promise<T>
+) {
   const message = d3.select('#popup-messages')
     .insert<HTMLElement>(() => fromTemplate(type), ':first-child')
     .classed('is-hidden', false).attr('id', null);
@@ -86,9 +87,36 @@ export function initPopupControls() {
     d3.event.preventDefault();
     return showAbout(false);
   });
-  d3.selectAll('.share-board').on('mousedown', async () => {
-    await navigator.clipboard.writeText(window.location.href);
-    showInfo(`Board location copied to clipboard!
-    Paste it into an email to send it to your friends.`);
+  initShareButton(d3.selectAll('.share-board'), {
+    event: 'mousedown', info: 'Board location copied to clipboard!\n' +
+      'Paste it into an email to send it to your friends.'
   });
+}
+
+export function initShareButton(
+  btn: d3Selection<HTMLElement>,
+  opts: { event?: string, info?: string, getHash?: () => string } = {}
+) {
+  const icon = btn.select<HTMLElement>('i');
+  if (!icon.empty()) {
+    const faIcon = [...node(icon).classList].find(cls => cls.startsWith('fa-'));
+    if (faIcon == null)
+      throw new RangeError('Share button has no icon');
+    btn.on(opts.event || 'click', () => {
+      const link = new URL(window.location.href);
+      if (opts.getHash)
+        link.hash = `#${opts.getHash()}`;
+      navigator.clipboard.writeText(link.href)
+        .then(() => {
+          icon.classed(faIcon, false)
+            .classed('fa-check', true);
+          setTimeout(() => icon
+            .classed('fa-check', false)
+            .classed(faIcon, true), 1000);
+          if (opts.info)
+            showInfo(opts.info);
+        })
+        .catch(showWarning);
+    });
+  }
 }

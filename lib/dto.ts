@@ -1,9 +1,15 @@
-import { MeldAblyConfig } from '@m-ld/m-ld/ext/ably';
-import { Answer } from './BotBrain';
-import { AuthorisedRequest, Session } from '@m-ld/io-web-runtime/dist/dto';
-import { MeldWrtcConfig } from '@m-ld/m-ld/ext/wrtc';
+import type { MeldAblyConfig } from '@m-ld/m-ld/ext/ably';
+import type { MeldIoConfig } from '@m-ld/m-ld/ext/socket.io';
+import type { AuthorisedRequest, Session } from '@m-ld/io-web-runtime/dist/dto';
 
 export namespace Config {
+  export type GatewayOptions = {
+    use: boolean,
+    origin: string,
+    user: string,
+    key: string
+  };
+
   export interface Request
     extends AuthorisedRequest {
     /**
@@ -11,36 +17,21 @@ export namespace Config {
      */
     '@domain': string | '';
     /**
-     * Domain active bot name, or false if none yet exists
-     */
-    botName?: string | false;
-    /**
      * Google reCAPTCHA token
      */
     token: string;
+    /**
+     * Gateway details, if available
+     */
+    gateway?: GatewayOptions;
   }
 
-  export type Response = MeldAblyConfig & MeldWrtcConfig & AblyTokenSession;
+  export type Response = (MeldAblyConfig | MeldIoConfig) & AblyTokenSession;
 }
 
 export namespace Renew {
   export type Request = AuthorisedRequest & AblyTokenSession;
   export type Response = AblyTokenSession;
-}
-
-export namespace Chat {
-  export interface Request
-    extends AuthorisedRequest {
-    botName: string;
-    message: string;
-    topMessages: string[];
-    /**
-     * JWT token returned from Config request
-     */
-    token: string;
-  }
-
-  export type Response = Answer;
 }
 
 export interface TopicIndexEntry {

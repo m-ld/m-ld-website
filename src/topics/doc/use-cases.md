@@ -8,8 +8,7 @@ patterns:
 summary: '<b>m-ld</b> can be used in apps, robotics, edge computing, personal data and many more'
 date: 2020-02-01 # Used for sort order
 ---
-> Here are just some of the uses for **m-ld**. If you have a use-case, please do
-> [let us know](/hello/).
+Here are just some of the uses for **m-ld**. If you have a use-case, please do [let us know](/hello/).
 
 ### Apps
 App data rarely exists in isolation on a single device, but in-house

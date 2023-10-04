@@ -1,5 +1,4 @@
 import { BoardView } from '../lib/client/BoardView';
-import { MessageSubject } from '../lib/Message';
 import { MeldConfig, shortId } from '@m-ld/m-ld';
 import { configureLogging, Grecaptcha, modernizd } from '@m-ld/io-web-runtime/dist/client';
 import { BoardLocal } from '../lib/client/BoardLocal';
@@ -8,7 +7,7 @@ import {
 } from '../lib/client/PopupControls';
 import { initBoardControls } from '../lib/client/BoardControls';
 import { fetchConfig } from '../lib/client/Api';
-import * as LOG from 'loglevel';
+import LOG from 'loglevel';
 
 window.onload = async function () {
   await modernizd([]).catch(showNotModern);
@@ -74,12 +73,13 @@ class Demo {
     // Add the welcome message if not already there
     const isNew = (await meld.get(welcomeId)) == null;
     if (isNew) {
-      await meld.write(MessageSubject.create({
+      await meld.write({
         '@id': welcomeId,
-        text: `Welcome to your message board, ${config['@domain']}!<br>
-        For help using this app, click the (?) button on the left.`,
+        '@type': 'Message',
+        text: `Welcome to your message board, ${config['@domain']}!\n` +
+        'For help using this app, click the (?) button on the left.',
         x: 200, y: 100
-      }));
+      });
     }
   }
 }
