@@ -13,11 +13,11 @@ Please read this Privacy Notice carefully and ensure that you understand it. You
 1. **Information About Us**
    * m-ld.io Ltd
    * Registered in England under company number 12366979
-   * Registered address: Lyndale House, 24a High Street, Addlestone KT15 1TN
+   * Registered address: 128 City Road, London, England, EC1V 2NX
    * Data Protection Officer: Rob Ellis
    * Email: privacy@m-ld.io
    * Telephone: 0345 214 5030 or +44 1932 840572
-   * Address: Lyndale House, 24a High Street, Addlestone KT15 1TN
+   * Address: m-ld.io Ltd., 128 City Road, London, England, EC1V 2NX
 
 1. **What Does This Notice Cover?**
 
@@ -126,7 +126,7 @@ Please read this Privacy Notice carefully and ensure that you understand it. You
    To contact us about anything to do with your personal data and data protection, including to make a Subject Access Request, please use the following details (for the attention of the Data Protection Officer)
 
    Email: privacy@m-ld.io\
-   Address: Lyndale House, 24a High Street, Addlestone KT15 1TN
+   Address: m-ld.io Ltd., 128 City Road, London, England, EC1V 2NX
 
 1. **Changes to this Privacy Notice**
    We may change this Privacy Notice from time to time. This may be necessary, for example, if the law changes, or if we change our business in a way that affects personal data protection. Any changes to our Privacy Notice will be made available on our website and, where appropriate, notified to you by email.
