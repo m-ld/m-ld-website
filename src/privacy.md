@@ -16,7 +16,6 @@ Please read this Privacy Notice carefully and ensure that you understand it. You
    * Registered address: 128 City Road, London, England, EC1V 2NX
    * Data Protection Officer: Rob Ellis
    * Email: privacy@m-ld.io
-   * Telephone: 0345 214 5030 or +44 1932 840572
    * Address: m-ld.io Ltd., 128 City Road, London, England, EC1V 2NX
 
 1. **What Does This Notice Cover?**
