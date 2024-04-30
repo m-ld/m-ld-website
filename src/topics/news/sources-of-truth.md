@@ -9,16 +9,18 @@ summary: sources of truth in integrated applications
 author:
   git: mcalligator
   name: Angus
-date: 2024-04-25
+date: 2024-04-30
 # linkedin: m-ld-io_news-activity-6975412303856812033--VEC
 ---
 
 In the vast landscape of modern computing, distributed systems have become the backbone of web-scale applications. They offer unparalleled scalability, fault tolerance, and performance, enabling applications to thrive in dynamic environments. However, with great power comes great complexity. Architects and software engineers have to grapple with a whole new slew of challenges that distributed computing throws up - especially when it comes to connecting disparate applications so they share data.
 
 Historically, applications were integrated for reporting purposes.  ETL (Extract-Transform-Load) jobs would be run periodically to aggregate the data into a warehouse for query and reporting.  This was acceptable at a time when business moved relatively slowly, but is no longer suitable for fast-paced decision-making - especially when that increasingly needs to be automated.
+
 ![ETL for Reporting](/media/etl-integration.svg)
 
 More recently, aggregation for reporting has moved towards using streaming data, with transaction feeds from each application involved populating data warehouses or data lakes in near-real time.  This is transforming decision-making by making much more up to date information available.
+
 ![Streaming Data for Reporting](/media/streaming-tl.svg)
 
 However, there are still drawbacks to that approach.  It’s hard to update the source applications with this pooled information, so it can’t easily be round-tripped; the information is read-only; and discrepancies between applications on common data need manual intervention to address, which is time-consuming and error-prone.  That means it either doesn’t happen, or imposes unnecessary costs.
@@ -32,6 +34,7 @@ Let’s take our ticket-booking example for music events.  Imagine a scenario wh
 The concept of a single logical source of truth emerges as a promising approach to addressing these challenges.  But what do we mean by this?  In essence, it’s a local access point for trustworthy information.  It’s local to each application using it, even when those applications are geographically separate.  Where it's not possible to establish a central authority (like a Distributed Transaction Coordinator) or consensus mechanism (such as Paxos or Raft), distributed systems need a new way to converge on a unified view of complex truth.  The approach that m-ld takes enables conflicts either to be resolved automatically, or to be exposed explicitly to client applications for them to determine the best course of action in that context.
 
 Architecturally, this involves retaining the database that each application (or microservice) uses, with the m-ld layer intercepting writes of shared information to that database and using its "remotes" transport to propagate the changes to other integrated applications sharing that information.  m-ld uses CRDTs, or Conflict-Free Replicated Data Types, able to support arbitrarily complex data structures (thanks to the wonders of RDF), to resolve certain conflicts automatically.  For those it's not possible to do that with, it passes the data to the application to handle.  This can even happen after a period of interrupted network connectivity, if the application adopts m-ld's asynchronous conflict notification.  The integrated set of applications now has a single logical source of truth that is centralised, serving as a beacon of consistency and ensuring coherence across the system.
+
 ![Architecture for Logical Single Source of Truth](/media/logical-single-source-of-truth.svg)
 
 We do need to be realistic about the challenges of incorporating m-ld into the context of integrated applications: because it's a very powerful mechanism to enable simultaneous distributed changes, there's also more involved than for say, batch-based ETL.  It does require code changes to get the most out of it, but if the use case demands it, the benefits of making that effort are immense.
