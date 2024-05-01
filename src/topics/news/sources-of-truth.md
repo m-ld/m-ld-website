@@ -10,7 +10,7 @@ author:
   git: mcalligator
   name: Angus
 date: 2024-04-30
-# linkedin: m-ld-io_news-activity-6975412303856812033--VEC
+linkedin: m-ld-io_news-activity:7191426602377838592--VEC
 ---
 
 In the vast landscape of modern computing, distributed systems have become the backbone of web-scale applications. They offer unparalleled scalability, fault tolerance, and performance, enabling applications to thrive in dynamic environments. However, with great power comes great complexity. Architects and software engineers have to grapple with a whole new slew of challenges that distributed computing throws up - especially when it comes to connecting disparate applications so they share data.
