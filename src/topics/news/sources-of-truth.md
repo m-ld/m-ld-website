@@ -2,10 +2,10 @@
 tags:
   - topic # mandatory
   - news # 1th tag is page
-title: Sustaining the Truth across Integrated Applications
+title: Sustaining Truth across Integrated Applications
 patterns:
   - 'Javascript'
-summary: converging several physical sources of truth into one logical distributed source
+summary: converge physical sources into one logical source
 author:
   git: mcalligator
   name: Angus
